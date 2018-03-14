@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Mpb.Consensus.Logic.Block
+namespace Mpb.Consensus.Logic.TransactionLogic
 {
-    public class ValidateBlockService
+    public class TransactionValidator
     {
     }
 }

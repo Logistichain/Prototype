@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Mpb.Consensus.Logic.Transaction
+namespace Mpb.Consensus.Logic.TransactionLogic
 {
-    public class CreateTransactionService
+    public class TransactionCreator
     {
     }
 }
