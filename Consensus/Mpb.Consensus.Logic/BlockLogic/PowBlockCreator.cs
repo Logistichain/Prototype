@@ -26,16 +26,16 @@ namespace Mpb.Consensus.Logic.BlockLogic
         /// Mine a Proof-of-Work block
         /// </summary>
         /// <returns></returns>
-        public async Task<Block> CreateValidBlock(BigInteger target)
+        public async Task<Block> CreateValidBlock(BigInteger _target)
         {
             bool targetMet = false;
             var utcTimestamp = _timestamper.GetCurrentUtcTimestamp();
             Block b = new Block("testnet", 1, "abc", utcTimestamp, new List<Transaction>());
-            List<KeyValuePair<BigInteger, string>> difficultHashes = new List<KeyValuePair<BigInteger, string>>();
+            
 
             while (targetMet == false)
             {
-                if (b.Nonce == long.MaxValue)
+                if (b.Nonce == ulong.MaxValue)
                 {
                     throw new NonceLimitReachedException();
                 }
@@ -45,17 +45,12 @@ namespace Mpb.Consensus.Logic.BlockLogic
                 var blockHash = sha256.ComputeHash(GetBlockHeaderBytes(b));
 
                 var hashString = BitConverter.ToString(blockHash).Replace("-", "");
-                var hashValue = BigInteger.Parse(hashString, NumberStyles.AllowHexSpecifier);
-                var regex = new Regex("^0{"+ (difficultHashes.Count+1) + ",}");
+                var hashValue = BigInteger.Parse(hashString, NumberStyles.HexNumber);
 
-                if (regex.IsMatch(hashString))
-                {
-                    var record = new KeyValuePair<BigInteger, string>(hashValue, hashString);
-                    difficultHashes.Add(record);
-                }
-
-
-                if (difficultHashes.Count > 4)
+                // Hash value must be lower than the target and the first byte must be zero
+                // because the first byte indidates if the hashValue is a positive or negative number,
+                // negative numbers are not allowed.
+                if (hashValue < _target && hashString.StartsWith("0"))
                 {
                     targetMet = true;
                 }

@@ -18,7 +18,6 @@ namespace Mpb.Consensus.Model
         public int Version => _version;
         public string MerkleRoot => _merkleRoot;
         public long Timestamp => _timestamp;
-        public long DifficultyTarget => _difficultyTarget;
         public ulong Nonce => _nonce;
         public IEnumerable<Transaction> Transactions => _transactions;
 
