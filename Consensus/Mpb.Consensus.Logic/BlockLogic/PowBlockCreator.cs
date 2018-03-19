@@ -26,7 +26,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
         /// Mine a Proof-of-Work block
         /// </summary>
         /// <returns></returns>
-        public async Task<Block> CreateValidBlock(BigInteger _target)
+        public async Task<Block> CreateValidBlock(BigDecimal target)
         {
             bool targetMet = false;
             var utcTimestamp = _timestamper.GetCurrentUtcTimestamp();
@@ -45,12 +45,12 @@ namespace Mpb.Consensus.Logic.BlockLogic
                 var blockHash = sha256.ComputeHash(GetBlockHeaderBytes(b));
 
                 var hashString = BitConverter.ToString(blockHash).Replace("-", "");
-                var hashValue = BigInteger.Parse(hashString, NumberStyles.HexNumber);
+                BigDecimal hashValue = BigInteger.Parse(hashString, NumberStyles.HexNumber);
 
                 // Hash value must be lower than the target and the first byte must be zero
                 // because the first byte indidates if the hashValue is a positive or negative number,
                 // negative numbers are not allowed.
-                if (hashValue < _target && hashString.StartsWith("0"))
+                if (hashValue < target && hashString.StartsWith("0"))
                 {
                     targetMet = true;
                 }

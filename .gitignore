@@ -6,6 +6,8 @@
 /app/**/*.js
 /app/**/*.js.map
 
+mining_log*.txt
+
 # dependencies
 /node_modules
 /bower_components

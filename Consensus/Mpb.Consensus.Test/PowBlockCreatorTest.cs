@@ -24,54 +24,58 @@ namespace Mpb.Consensus.Test
         {
             var timestamper = new UnixTimestamper();
             var sut = new PowBlockCreator(timestamper);
-            var maximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", System.Globalization.NumberStyles.HexNumber);
             var blocksList = new List<Block>();
-            var timestampList = new List<DateTime>();
-            var targetList = new List<BigInteger>();
+            var blockCreatedTimestampList = new List<DateTime>();
+            var difficultyList = new List<BigDecimal>();
+            BigDecimal maximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
+            BigDecimal currentDifficulty = 1;
             Block lastBlock = null;
             int i = 1;
-            while(blocksList.Count < 150)
+            while(blocksList.Count < 99)
             {
-                if (i % 11 == 0)
+                if (i % 10 == 0)
                 {
                     // Every 10 times, recalculate difficulty
-                    lock(timestampList)
+                    lock(blockCreatedTimestampList)
                     {
-                        var previousDateTime = timestampList[timestampList.Count - 10];
+                        var previousDateTime = blockCreatedTimestampList[blockCreatedTimestampList.Count - 9];
                         var timeForLastTenBlocks = DateTime.UtcNow - previousDateTime;
                         if (timeForLastTenBlocks.TotalSeconds > 0)
                         {
-                            var targetChangePercentage = (BigInteger)(150 / timeForLastTenBlocks.TotalSeconds);
-                            maximumTarget = targetChangePercentage == 0 ? maximumTarget : (maximumTarget / targetChangePercentage);
+                            var difficultyAdjustmentPercentage = (20 / timeForLastTenBlocks.TotalSeconds);
+                            currentDifficulty = currentDifficulty * difficultyAdjustmentPercentage;
                         }
                     }
                 }
-                lock (timestampList)
+                lock (blockCreatedTimestampList)
                 {
-                    timestampList.Add(DateTime.UtcNow);
-                    targetList.Add(maximumTarget);
-                    lastBlock = sut.CreateValidBlock(maximumTarget).Result;
+                    var target = maximumTarget / currentDifficulty;
+                    difficultyList.Add(target);
+                    lastBlock = sut.CreateValidBlock(target).Result;
+                    blockCreatedTimestampList.Add(DateTime.UtcNow);
                     blocksList.Add(lastBlock);
                 }
                 i++;
             }
 
             // Logging
-            string s = "Gestart || Gestopt ||| Seconden |||| Hash ||||| Difficulty |||||| Target\n";
+            string s = "Gestart || Gestopt ||| Seconden |||| Hash ||||| Target\n";
             var sha256 = SHA256.Create();
-            for (int timestampIndex = 0; timestampIndex < timestampList.Count; timestampIndex++)
+            var lastTenBlocksTotalTime = new TimeSpan();
+            for (int timestampIndex = 0; timestampIndex < blockCreatedTimestampList.Count; timestampIndex++)
             {
-                var target = targetList[timestampIndex];
-                var startedTimestamp = timestampList[timestampIndex];
+                var target = difficultyList[timestampIndex];
                 var block = blocksList[timestampIndex];
-                var finishedTimestamp = timestamper.GetUtcDateTimeFromTimestamp(block.Timestamp);
-                var timeToCreate = block.Timestamp - timestamper.GetUtcTimestamp(startedTimestamp);
+                var startedTimestamp = timestamper.GetUtcDateTimeFromTimestamp(block.Timestamp);
+                var finishedTimestamp = blockCreatedTimestampList[timestampIndex];
+                var timeToCreate = finishedTimestamp - startedTimestamp;
+                lastTenBlocksTotalTime += timeToCreate;
 
                 var blockHash = sha256.ComputeHash(sut.GetBlockHeaderBytes(block));
                 var hashString = BitConverter.ToString(blockHash).Replace("-", "");
                 var hashValue = BigInteger.Parse(hashString, NumberStyles.HexNumber);
 
-                s += startedTimestamp.ToString("HH:mm:ss") + " || " + finishedTimestamp.ToString("HH:mm:ss") + " ||| " + timeToCreate + " |||| " + hashString + " ||||| " + hashValue + " ||||| " + target + "\n";
+                s += startedTimestamp.ToString("HH:mm:ss") + " || " + finishedTimestamp.ToString("HH:mm:ss") + " ||| " + timeToCreate + " |||| " + hashString + " ||||| " + target + "\n";
             }
 
             File.WriteAllText(@"C:\Users\Gebruiker\Documents\repo\stockchain\Consensus\Mpb.Consensus.Logic\mining_log.txt", s);
