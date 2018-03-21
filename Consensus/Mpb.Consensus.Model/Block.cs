@@ -10,7 +10,6 @@ namespace Mpb.Consensus.Model
         private readonly int _version;
         private readonly string _merkleRoot;
         private readonly long _timestamp;
-        private long _difficultyTarget;
         private ulong _nonce = ulong.MinValue;
         private readonly IEnumerable<Transaction> _transactions;
 

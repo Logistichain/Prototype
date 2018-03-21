@@ -20,7 +20,7 @@ namespace Mpb.Consensus.Test
     public class PowBlockCreatorTest
     {
         [TestMethod]
-        public async Task CreateValidBlock()
+        public void CreateValidBlockSync()
         {
             var timestamper = new UnixTimestamper();
             var sut = new PowBlockCreator(timestamper);
@@ -31,30 +31,25 @@ namespace Mpb.Consensus.Test
             BigDecimal currentDifficulty = 1;
             Block lastBlock = null;
             int i = 1;
-            while(blocksList.Count < 99)
+            while (blocksList.Count < 99)
             {
                 if (i % 10 == 0)
                 {
                     // Every 10 times, recalculate difficulty
-                    lock(blockCreatedTimestampList)
+                    var previousDateTime = blockCreatedTimestampList[blockCreatedTimestampList.Count - 9];
+                    var timeForLastTenBlocks = DateTime.UtcNow - previousDateTime;
+                    if (timeForLastTenBlocks.TotalSeconds > 0)
                     {
-                        var previousDateTime = blockCreatedTimestampList[blockCreatedTimestampList.Count - 9];
-                        var timeForLastTenBlocks = DateTime.UtcNow - previousDateTime;
-                        if (timeForLastTenBlocks.TotalSeconds > 0)
-                        {
-                            var difficultyAdjustmentPercentage = (20 / timeForLastTenBlocks.TotalSeconds);
-                            currentDifficulty = currentDifficulty * difficultyAdjustmentPercentage;
-                        }
+                        var difficultyAdjustmentPercentage = (20 / timeForLastTenBlocks.TotalSeconds);
+                        currentDifficulty = currentDifficulty * difficultyAdjustmentPercentage;
                     }
                 }
-                lock (blockCreatedTimestampList)
-                {
-                    var target = maximumTarget / currentDifficulty;
-                    difficultyList.Add(target);
-                    lastBlock = sut.CreateValidBlock(target).Result;
-                    blockCreatedTimestampList.Add(DateTime.UtcNow);
-                    blocksList.Add(lastBlock);
-                }
+                var target = maximumTarget / currentDifficulty;
+                difficultyList.Add(target);
+                lastBlock = sut.CreateValidBlock(target);
+                blockCreatedTimestampList.Add(DateTime.UtcNow);
+                blocksList.Add(lastBlock);
+
                 i++;
             }
 

@@ -6,5 +6,6 @@ namespace Mpb.Consensus.Logic.BlockLogic
 {
     public class PowBlockValidator
     {
+
     }
 }

@@ -46,6 +46,15 @@ namespace Mpb.Consensus.Model
             }
         }
 
+        public BigDecimal(long value)
+            : this(new BigInteger(value), 0) { }
+
+        public BigDecimal(uint value)
+            : this(new BigInteger(value), 0) { }
+
+        public BigDecimal(ulong value)
+            : this(new BigInteger(value), 0) { }
+
         /// <summary>
         /// Removes trailing zeros on the mantissa
         /// </summary>
@@ -302,6 +311,13 @@ namespace Mpb.Consensus.Model
         #endregion
 
         #region Conversions
+        public static implicit operator BigDecimal(byte value) { return new BigDecimal(value); }
+        public static implicit operator BigDecimal(sbyte value) { return new BigDecimal(value); }
+        public static implicit operator BigDecimal(short value) { return new BigDecimal(value); }
+        public static implicit operator BigDecimal(long value) { return new BigDecimal(value); }
+        public static implicit operator BigDecimal(ushort value) { return new BigDecimal(value); }
+        public static implicit operator BigDecimal(uint value) { return new BigDecimal(value); }
+        public static implicit operator BigDecimal(ulong value) { return new BigDecimal(value); }
         public static implicit operator BigDecimal(BigInteger value) { return new BigDecimal(value, 0); }
         #endregion
 

@@ -10,6 +10,7 @@ using System.Numerics;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using Mpb.Consensus.Logic.Exceptions;
+using Mpb.Consensus.Logic.Constants;
 
 namespace Mpb.Consensus.Logic.BlockLogic
 {
@@ -25,13 +26,14 @@ namespace Mpb.Consensus.Logic.BlockLogic
         /// <summary>
         /// Mine a Proof-of-Work block
         /// </summary>
-        /// <returns></returns>
-        public async Task<Block> CreateValidBlock(BigDecimal target)
+        /// <param name="difficulty">The target to start with</param>
+        /// <returns>A valid block that meets the consensus conditions</returns>
+        public Block CreateValidBlock(BigDecimal difficulty)
         {
             bool targetMet = false;
             var utcTimestamp = _timestamper.GetCurrentUtcTimestamp();
             Block b = new Block("testnet", 1, "abc", utcTimestamp, new List<Transaction>());
-            
+            var currentTarget = BlockchainConstants.MaximumTarget / difficulty;
 
             while (targetMet == false)
             {
@@ -50,7 +52,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
                 // Hash value must be lower than the target and the first byte must be zero
                 // because the first byte indidates if the hashValue is a positive or negative number,
                 // negative numbers are not allowed.
-                if (hashValue < target && hashString.StartsWith("0"))
+                if (hashValue < currentTarget && hashString.StartsWith("0"))
                 {
                     targetMet = true;
                 }
