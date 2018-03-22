@@ -9,7 +9,7 @@ namespace Mpb.Consensus.Logic.Constants
 {
     internal class BlockchainConstants
     {
-        internal const int BlockVersion = 1;
+        internal const string DefaultNetworkIdentifier = "testnet";
         internal const int TransactionVersion = 1;
         internal const int ProtocolVersion = 1;
         internal const int SecondsPerBlockGoal = 15; // We want to create one block each 15 seconds (average)

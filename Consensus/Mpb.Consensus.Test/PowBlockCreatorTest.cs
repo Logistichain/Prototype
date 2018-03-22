@@ -4,76 +4,98 @@ using Moq;
 using Mpb.Consensus.Logic.BlockLogic;
 using Mpb.Consensus.Logic.MiscLogic;
 using System.Numerics;
-using System.Threading.Tasks;
-using System.Text;
-using System.Security.Cryptography;
 using Mpb.Consensus.Model;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Threading;
-using System.IO;
 using System.Globalization;
+using Mpb.Consensus.Logic.Exceptions;
+using Mpb.Consensus.Contract;
+using System.Collections.Generic;
 
 namespace Mpb.Consensus.Test
 {
     [TestClass]
     public class PowBlockCreatorTest
     {
+        Mock<PowBlockValidator> _validatorMock = new Mock<PowBlockValidator>(MockBehavior.Strict);
+        Mock<ITimestamper> _timestamperMock = new Mock<ITimestamper>(MockBehavior.Strict);
+        BigDecimal _maximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
+        string _netId = "testnet";
+        int _protocol = 1;
+        IEnumerable<Transaction> _transactions = new List<Transaction>();
+
         [TestMethod]
-        public void CreateValidBlockSync()
+        public void CreateValidBlock_ThrowsException_NullTimestamper()
         {
-            var timestamper = new UnixTimestamper();
-            var sut = new PowBlockCreator(timestamper);
-            var blocksList = new List<Block>();
-            var blockCreatedTimestampList = new List<DateTime>();
-            var difficultyList = new List<BigDecimal>();
-            BigDecimal maximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            BigDecimal currentDifficulty = 1;
-            Block lastBlock = null;
-            int i = 1;
-            while (blocksList.Count < 99)
-            {
-                if (i % 10 == 0)
-                {
-                    // Every 10 times, recalculate difficulty
-                    var previousDateTime = blockCreatedTimestampList[blockCreatedTimestampList.Count - 9];
-                    var timeForLastTenBlocks = DateTime.UtcNow - previousDateTime;
-                    if (timeForLastTenBlocks.TotalSeconds > 0)
-                    {
-                        var difficultyAdjustmentPercentage = (20 / timeForLastTenBlocks.TotalSeconds);
-                        currentDifficulty = currentDifficulty * difficultyAdjustmentPercentage;
-                    }
-                }
-                var target = maximumTarget / currentDifficulty;
-                difficultyList.Add(target);
-                lastBlock = sut.CreateValidBlock(target);
-                blockCreatedTimestampList.Add(DateTime.UtcNow);
-                blocksList.Add(lastBlock);
+            var ex = Assert.ThrowsException<ArgumentNullException>(
+                    () => new PowBlockCreator(null, _validatorMock.Object)
+                );
 
-                i++;
-            }
+            Assert.AreEqual(ex.ParamName, "timestamper");
+        }
 
-            // Logging
-            string s = "Gestart || Gestopt ||| Seconden |||| Hash ||||| Target\n";
-            var sha256 = SHA256.Create();
-            var lastTenBlocksTotalTime = new TimeSpan();
-            for (int timestampIndex = 0; timestampIndex < blockCreatedTimestampList.Count; timestampIndex++)
-            {
-                var target = difficultyList[timestampIndex];
-                var block = blocksList[timestampIndex];
-                var startedTimestamp = timestamper.GetUtcDateTimeFromTimestamp(block.Timestamp);
-                var finishedTimestamp = blockCreatedTimestampList[timestampIndex];
-                var timeToCreate = finishedTimestamp - startedTimestamp;
-                lastTenBlocksTotalTime += timeToCreate;
+        [TestMethod]
+        public void CreateValidBlock_ThrowsException_NullValidator()
+        {
+            var ex = Assert.ThrowsException<ArgumentNullException>(
+                    () => new PowBlockCreator(_timestamperMock.Object, null)
+                );
 
-                var blockHash = sha256.ComputeHash(sut.GetBlockHeaderBytes(block));
-                var hashString = BitConverter.ToString(blockHash).Replace("-", "");
-                var hashValue = BigInteger.Parse(hashString, NumberStyles.HexNumber);
+            Assert.AreEqual(ex.ParamName, "validator");
+        }
 
-                s += startedTimestamp.ToString("HH:mm:ss") + " || " + finishedTimestamp.ToString("HH:mm:ss") + " ||| " + timeToCreate + " |||| " + hashString + " ||||| " + target + "\n";
-            }
+        /// <summary>
+        /// The 'bare' overload of the CreateValidBlock method uses BlockchainConstants values.
+        /// We can't access those values from our assembly so we will copy those values.
+        /// Once a BlockchainConstants value changes, this test will fail. That means
+        /// you need to check all custom parameters which defer from the usual consensus rules.
+        /// </summary>
+        [TestMethod]
+        public void CreateValidBlockOverload_Uses_ConstantValues()
+        {
+            BigDecimal difficulty = 1;
+            string expectedNetworkIdentifier = "testnet";
+            int expectedProtocolVersion = 1;
+            BigDecimal expectedMaximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
+            var expectedBlock = new Block(expectedNetworkIdentifier, expectedProtocolVersion, "abc", 123, _transactions);
+            var mock = new Mock<PowBlockCreator>(MockBehavior.Strict, new object[] { _timestamperMock.Object, _validatorMock.Object }) { CallBase = true };
+            mock.Setup(m => m.CreateValidBlock(_transactions, difficulty)).CallBase();
+            mock.Setup(m => m.CreateValidBlock(expectedNetworkIdentifier, expectedProtocolVersion, _transactions, difficulty, expectedMaximumTarget))
+                .Returns(expectedBlock);
+            PowBlockCreator sut = mock.Object;
 
-            File.WriteAllText(@"C:\Users\Gebruiker\Documents\repo\stockchain\Consensus\Mpb.Consensus.Logic\mining_log.txt", s);
+            var result = sut.CreateValidBlock(_transactions, difficulty);
+
+            Assert.AreEqual(expectedBlock, result);
+            mock.VerifyAll();
+        }
+
+        [TestMethod]
+        public void CreateValidBlock_ThrowsException_NegativeDifficulty()
+        {
+            CreateValidBlockThatShouldThrowExceptionOnInvalidDifficulty(-2);
+        }
+
+        [TestMethod]
+        public void CreateValidBlock_ThrowsException_ZeroDifficulty()
+        {
+            CreateValidBlockThatShouldThrowExceptionOnInvalidDifficulty(0);
+        }
+
+        private void CreateValidBlockThatShouldThrowExceptionOnInvalidDifficulty(BigDecimal difficulty)
+        {
+            var expectedExceptionMessage = "Difficulty cannot be zero.";
+            var sut = new PowBlockCreator(_timestamperMock.Object, _validatorMock.Object);
+
+            var ex = Assert.ThrowsException<DifficultyCalculationException>(
+                    () => sut.CreateValidBlock(_netId, _protocol, _transactions, difficulty, _maximumTarget)
+                );
+
+            Assert.AreEqual(ex.Message, expectedExceptionMessage);
+        }
+
+        [TestMethod]
+        public void CreateValidBlock_Calls_Validator_AndCreates_ValidBlock()
+        {
+            var sut = new PowBlockCreator(_timestamperMock.Object, _validatorMock.Object);
         }
     }
 }

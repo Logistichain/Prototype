@@ -17,23 +17,45 @@ namespace Mpb.Consensus.Logic.BlockLogic
     public class PowBlockCreator
     {
         private readonly ITimestamper _timestamper;
+        private readonly PowBlockValidator _validator;
 
-        public PowBlockCreator(ITimestamper timestamper)
+        public PowBlockCreator(ITimestamper timestamper, PowBlockValidator validator)
         {
             _timestamper = timestamper ?? throw new ArgumentNullException(nameof(timestamper));
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator)); ;
         }
 
         /// <summary>
-        /// Mine a Proof-of-Work block
+        /// Mine a Proof-of-Work block by following the current consensus rules
         /// </summary>
-        /// <param name="difficulty">The target to start with</param>
+        /// <param name="transactions">The transactions that will be included in the new block</param>
+        /// <param name="difficulty">The difficulty to start with. Must be atleast 1</param>
         /// <returns>A valid block that meets the consensus conditions</returns>
-        public Block CreateValidBlock(BigDecimal difficulty)
+        public virtual Block CreateValidBlock(IEnumerable<Transaction> transactions, BigDecimal difficulty)
         {
+            return CreateValidBlock(BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget);
+        }
+
+        /// <summary>
+        /// Mine a Proof-of-Work block with custom parameters
+        /// </summary>
+        /// <param name="netIdentifier">The net identifier for this block</param>
+        /// <param name="protocolVersion">The current protocol version</param>
+        /// <param name="transactions">The transactions that will be included in the new block</param>
+        /// <param name="difficulty">The difficulty to start with. Must be atleast 1</param>
+        /// <param name="maximumtarget">The maximum (easiest) target possible</param>
+        /// <returns>A valid block that meets the consensus conditions, unless a different maximumTarget was given!</returns>
+        public virtual Block CreateValidBlock(string netIdentifier, int protocolVersion, IEnumerable<Transaction> transactions, BigDecimal difficulty, BigDecimal maximumTarget)
+        {
+            if (difficulty < 1)
+            {
+                throw new DifficultyCalculationException("Difficulty cannot be zero.");
+            }
+
             bool targetMet = false;
             var utcTimestamp = _timestamper.GetCurrentUtcTimestamp();
-            Block b = new Block("testnet", 1, "abc", utcTimestamp, new List<Transaction>());
-            var currentTarget = BlockchainConstants.MaximumTarget / difficulty;
+            Block b = new Block(netIdentifier, protocolVersion, "abc", utcTimestamp, transactions);
+            var currentTarget = maximumTarget / difficulty;
 
             while (targetMet == false)
             {
@@ -46,16 +68,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
                 var sha256 = SHA256.Create();
                 var blockHash = sha256.ComputeHash(GetBlockHeaderBytes(b));
 
-                var hashString = BitConverter.ToString(blockHash).Replace("-", "");
-                BigDecimal hashValue = BigInteger.Parse(hashString, NumberStyles.HexNumber);
-
-                // Hash value must be lower than the target and the first byte must be zero
-                // because the first byte indidates if the hashValue is a positive or negative number,
-                // negative numbers are not allowed.
-                if (hashValue < currentTarget && hashString.StartsWith("0"))
-                {
-                    targetMet = true;
-                }
+                targetMet = _validator.BlockIsValid(b, currentTarget, blockHash);
             }
 
             return b;

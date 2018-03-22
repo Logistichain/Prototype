@@ -10,6 +10,7 @@ using System.Reflection;
 using System.IO;
 using System.Numerics;
 using System.Globalization;
+using System.Collections.Generic;
 
 namespace Mpb.Consensus.PoC
 {
@@ -18,12 +19,13 @@ namespace Mpb.Consensus.PoC
         public static void Main(string[] args)
         {
             var persistence = new BlockchainPersistence();
+            var validator = new PowBlockValidator();
             var timestamper = new UnixTimestamper();
             var difficultyCalculator = new DifficultyCalculator();
-            var miner = new PowBlockCreator(timestamper);
+            var miner = new PowBlockCreator(timestamper, validator);
             var logger = CreateLogger();
-
-
+            var transactions = new List<Transaction>(); // Just an empty list of transactions to put in the block.
+            
             BigDecimal MaximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             BigDecimal difficulty = 1;
             var secondsPerBlockGoal = 3;
@@ -51,7 +53,7 @@ namespace Mpb.Consensus.PoC
                 }
 
                 logger.Debug("Current height: {0}", blockchain.CurrentHeight);
-                var newBlock = miner.CreateValidBlock(difficulty);
+                var newBlock = miner.CreateValidBlock(transactions, difficulty);
                 blockchain.Blocks.Add(newBlock);
                 logger.Information("Found a new block!");
                 createdBlocks++;
