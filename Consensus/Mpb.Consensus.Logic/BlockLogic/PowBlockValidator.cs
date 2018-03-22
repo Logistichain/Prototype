@@ -9,7 +9,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
 {
     public class PowBlockValidator
     {
-        internal bool BlockIsValid(Block b, BigDecimal currentTarget, byte[] blockHash)
+        public virtual bool BlockIsValid(Block b, BigDecimal currentTarget, byte[] blockHash)
         {
             var hashString = BitConverter.ToString(blockHash).Replace("-", "");
             BigDecimal hashValue = BigInteger.Parse(hashString, NumberStyles.HexNumber);

@@ -45,8 +45,8 @@ namespace Mpb.Consensus.Test
         /// <summary>
         /// The 'bare' overload of the CreateValidBlock method uses BlockchainConstants values.
         /// We can't access those values from our assembly so we will copy those values.
-        /// Once a BlockchainConstants value changes, this test will fail. That means
-        /// you need to check all custom parameters which defer from the usual consensus rules.
+        /// Once a BlockchainConstants value changes, this test will fail. That means you will
+        /// need to check all custom parameters in other projects which defer from the usual consensus rules!
         /// </summary>
         [TestMethod]
         public void CreateValidBlockOverload_Uses_ConstantValues()
@@ -74,6 +74,9 @@ namespace Mpb.Consensus.Test
             CreateValidBlockThatShouldThrowExceptionOnInvalidDifficulty(-2);
         }
 
+        /// <summary>
+        /// We don't like dividing with 0.
+        /// </summary>
         [TestMethod]
         public void CreateValidBlock_ThrowsException_ZeroDifficulty()
         {
@@ -93,9 +96,24 @@ namespace Mpb.Consensus.Test
         }
 
         [TestMethod]
-        public void CreateValidBlock_Calls_Validator_AndCreates_ValidBlock()
+        public void CreateValidBlock_Calls_Validator_AndCalls_Validator()
         {
+            var expectedTimestamp = 1;
             var sut = new PowBlockCreator(_timestamperMock.Object, _validatorMock.Object);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp())
+                            .Returns(expectedTimestamp);
+            _validatorMock.Setup(m => m.BlockIsValid(It.IsAny<Block>(), It.IsAny<BigDecimal>(), It.IsAny<byte[]>()))
+                          .Returns(true);
+            var result = sut.CreateValidBlock(_netId, _protocol, _transactions, 1, _maximumTarget);
+
+            Assert.AreEqual(result.MagicNumber, _netId);
+            Assert.AreEqual(result.Version, _protocol);
+            Assert.AreEqual(result.Timestamp, expectedTimestamp);
+            Assert.AreEqual(result.MerkleRoot, "abc");
+            Assert.AreEqual(result.Transactions, _transactions);
+            Assert.AreEqual(result.Nonce, 1UL);
+            _validatorMock.VerifyAll();
+            _timestamperMock.VerifyAll();
         }
     }
 }
