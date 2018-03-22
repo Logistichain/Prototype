@@ -6,6 +6,10 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Mpb.Consensus.Model;
+using System.Reflection;
+using System.IO;
+using System.Numerics;
+using System.Globalization;
 
 namespace Mpb.Consensus.PoC
 {
@@ -19,27 +23,34 @@ namespace Mpb.Consensus.PoC
             var miner = new PowBlockCreator(timestamper);
             var logger = CreateLogger();
 
+
+            BigDecimal MaximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
+            BigDecimal difficulty = 1;
+            var secondsPerBlockGoal = 3;
+            var difficultyUpdateCycle = 5;
+            int createdBlocks = 0;
+
             // Get the local blockchain copy
             var blockchain = persistence.FindLocalBlockchain("testnet");
-            logger.Information("Loaded blockchain. Current height: {Height}", blockchain.Blocks.Count);
+            logger.Information("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight);
+            logger.Information("We want to achieve a total of {0} seconds for each {1} blocks to be created.", (secondsPerBlockGoal * difficultyUpdateCycle), difficultyUpdateCycle);
 
             logger.Information("Mining for blocks..");
-            BigDecimal difficulty = 1;
-            var difficultyUpdatecycle = 10;
-            int createdBlocks = 0;
-            while (createdBlocks < 81)
+            while (createdBlocks < 102)
             {
                 // Every 10 blocks, recalculate the difficulty and save the blockchain.
-                if (createdBlocks % difficultyUpdatecycle == 0)
+                if (blockchain.CurrentHeight % difficultyUpdateCycle == 0 && blockchain.CurrentHeight > 0)
                 {
-                    difficulty = difficultyCalculator.CalculateCurrentDifficulty(blockchain);
+                    difficulty = difficultyCalculator.CalculateDifficulty(blockchain, blockchain.CurrentHeight, 1, secondsPerBlockGoal, difficultyUpdateCycle);
                     persistence.SaveBlockchain(blockchain);
                     logger.Information("Blockchain persisted.");
+                    var difficultyInfo = difficultyCalculator.GetPreviousDifficultyUpdateInformation(blockchain, difficultyUpdateCycle);
+                    logger.Information("Total time to create blocks {0}-{1}: {2} sec", difficultyInfo.BeginHeight, difficultyInfo.EndHeight - 1, difficultyInfo.TotalSecondsForBlocks);
+                    logger.Debug("Difficulty for next block {0}", difficulty);
+                    logger.Debug("Target for next block {0}", difficulty);
                 }
 
-                Thread.Sleep(1000);
-                logger.Debug("Difficulty for next block {Difficulty}", difficulty);
-                logger.Debug("Current height: {Height}", blockchain.Blocks.Count);
+                logger.Debug("Current height: {0}", blockchain.CurrentHeight);
                 var newBlock = miner.CreateValidBlock(difficulty);
                 blockchain.Blocks.Add(newBlock);
                 logger.Information("Found a new block!");
@@ -53,9 +64,12 @@ namespace Mpb.Consensus.PoC
 
         private static ILogger CreateLogger()
         {
+            var time = DateTime.Now.Hour + "" + DateTime.Now.Minute;
+            var fileLocation = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "log-" + time + ".txt");
             return new LoggerConfiguration()
                     .MinimumLevel.Debug()
                     .WriteTo.ColoredConsole()
+                    .WriteTo.File(fileLocation)
                     .CreateLogger();
         }
     }

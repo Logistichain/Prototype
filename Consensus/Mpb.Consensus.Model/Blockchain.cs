@@ -21,6 +21,11 @@ namespace Mpb.Consensus.Model
         /// </summary>
         public String NetIdentifier => _net;
 
+        /// <summary>
+        /// The index of the last block that was added to this chain
+        /// </summary>
+        public int CurrentHeight => _blocks.Count - 1;
+
         public Blockchain(List<Block> existingChain, string netIdentifier)
         {
             _blocks = existingChain;
