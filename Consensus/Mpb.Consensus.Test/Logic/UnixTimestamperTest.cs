@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Mpb.Consensus.Logic.MiscLogic;
 
-namespace Mpb.Consensus.Test
+namespace Mpb.Consensus.Test.Logic
 {
     /// <summary>
     /// These testmethods are structured by using the AAA method (Arrange, Act, Assert).

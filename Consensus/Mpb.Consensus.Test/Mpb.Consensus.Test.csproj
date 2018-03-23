@@ -17,4 +17,9 @@
     <ProjectReference Include="..\Mpb.Consensus.Logic\Mpb.Consensus.Logic.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Model\" />
+    <Folder Include="DAL\" />
+  </ItemGroup>
+
 </Project>

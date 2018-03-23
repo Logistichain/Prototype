@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Mpb.Consensus.Test
+namespace Mpb.Consensus.Test.Logic
 {
     /// <summary>
     /// These testmethods are structured by using the AAA method (Arrange, Act, Assert).

@@ -10,7 +10,7 @@ using Mpb.Consensus.Logic.Exceptions;
 using Mpb.Consensus.Contract;
 using System.Collections.Generic;
 
-namespace Mpb.Consensus.Test
+namespace Mpb.Consensus.Test.Logic
 {
     /// <summary>
     /// These testmethods are structured by using the AAA method (Arrange, Act, Assert).

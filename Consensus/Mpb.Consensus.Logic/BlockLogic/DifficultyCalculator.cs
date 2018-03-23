@@ -9,16 +9,17 @@ namespace Mpb.Consensus.Logic.BlockLogic
 {
     public class DifficultyCalculator
     {
-        public BigDecimal CalculateCurrentDifficulty(Blockchain chain)
+        public virtual BigDecimal CalculateCurrentDifficulty(Blockchain chain)
         {
             return CalculateDifficultyForHeight(chain, chain.CurrentHeight);
         }
-        public BigDecimal CalculateDifficultyForHeight(Blockchain chain, int height)
+
+        public virtual BigDecimal CalculateDifficultyForHeight(Blockchain chain, int height)
         {
             return CalculateDifficulty(chain, height, BlockchainConstants.ProtocolVersion, BlockchainConstants.SecondsPerBlockGoal, BlockchainConstants.DifficultyUpdateCycle);
         }
 
-        public BigDecimal CalculateDifficulty(Blockchain chain, int height, int protocolVersion, int secondsPerBlockGoal, int difficultyUpdateCycle)
+        public virtual BigDecimal CalculateDifficulty(Blockchain chain, int height, int protocolVersion, int secondsPerBlockGoal, int difficultyUpdateCycle)
         {
             if (height < difficultyUpdateCycle)
             {
@@ -33,26 +34,41 @@ namespace Mpb.Consensus.Logic.BlockLogic
             return previousDifficulty * difficultyMultiplier;
         }
 
+        /// <summary>
+        /// Get previous difficulty, following the consensus rules
+        /// </summary>
+        /// <param name="chain">The blockchain to calculate the difficulty from</param>
+        /// <returns>Information about the last block difficulty update</returns>
+        public virtual BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(Blockchain chain) {
+            return GetPreviousDifficultyUpdateInformation(chain.CurrentHeight, chain, BlockchainConstants.DifficultyUpdateCycle);
+        }
 
-        public BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(Blockchain chain) { return GetPreviousDifficultyUpdateInformation(chain.CurrentHeight, chain, BlockchainConstants.DifficultyUpdateCycle); }
+        /// <summary>
+        /// Get the previous difficulty with a custom update cycle
+        /// </summary>
+        /// <param name="chain">The blockchain to calculate the difficulty from</param>
+        /// <param name="difficultyUpdateCycle">This describes that the difficulty is recalculated every x blocks</param>
+        /// <returns>Information about the last block difficulty update</returns>
+        public virtual BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(Blockchain chain, int difficultyUpdateCycle) {
+            return GetPreviousDifficultyUpdateInformation(chain.CurrentHeight, chain, difficultyUpdateCycle);
+        }
 
-        public BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(Blockchain chain, int difficultyUpdateCycle) { return GetPreviousDifficultyUpdateInformation(chain.CurrentHeight, chain, difficultyUpdateCycle); }
-
-        public BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(int height, Blockchain chain, int difficultyUpdateCycle)
+        public virtual BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(int height, Blockchain chain, int difficultyUpdateCycle)
         {
-            if (height < difficultyUpdateCycle)
+            // The difficulty is calculated every n'th block.
+            // If the given height is 2n+3, we need to calculate the difficulty for block 2n
+            // - 1 because difficultyUpdate is based on counts, as where calculateForHeight is based on index.
+            int calculateForHeight = height - height % difficultyUpdateCycle;
+
+            if (calculateForHeight < difficultyUpdateCycle)
             {
                 throw new DifficultyCalculationException("Unable to calculate the previous difficulty because the height is lower than the DifficultyUpdateCycle.");
             }
 
-            // The difficulty is calculated every n'th block.
-            // If the given height is 2n+1, we need to calculate the difficulty for block 2n
-            int calculateForHeight = height - height % difficultyUpdateCycle;
             long firstBlockStarted = chain.Blocks[calculateForHeight - difficultyUpdateCycle].Timestamp;
-            long lastBlockStarted = chain.Blocks[calculateForHeight].Timestamp; // Take care, this is the time when the miner STARTED mining this block
-            long totalSecondsNeeded = lastBlockStarted - firstBlockStarted;
+            long lastBlockStarted = chain.Blocks[calculateForHeight-1].Timestamp; // Take care, this is the time when the miner STARTED mining this block
 
-            return new BlockDifficultyUpdate(chain, calculateForHeight - difficultyUpdateCycle, calculateForHeight);
+            return new BlockDifficultyUpdate(chain, calculateForHeight - difficultyUpdateCycle, calculateForHeight-1);
         }
     }
 }
