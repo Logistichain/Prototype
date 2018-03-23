@@ -6,6 +6,8 @@ using Mpb.Consensus.Logic.MiscLogic;
 namespace Mpb.Consensus.Test
 {
     /// <summary>
+    /// These testmethods are structured by using the AAA method (Arrange, Act, Assert).
+    ///
     /// This class tests some of the unix timestamper functionalities, but not all
     /// because the timestamper uses local system time on unspecified datetime objects.
     /// So system time tests may fail on other computers from different timezones.

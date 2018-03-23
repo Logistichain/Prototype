@@ -12,21 +12,37 @@ using System.Collections.Generic;
 
 namespace Mpb.Consensus.Test
 {
+    /// <summary>
+    /// These testmethods are structured by using the AAA method (Arrange, Act, Assert).
+    /// </summary>
     [TestClass]
     public class PowBlockCreatorTest
     {
-        Mock<PowBlockValidator> _validatorMock = new Mock<PowBlockValidator>(MockBehavior.Strict);
-        Mock<ITimestamper> _timestamperMock = new Mock<ITimestamper>(MockBehavior.Strict);
-        BigDecimal _maximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-        string _netId = "testnet";
-        int _protocol = 1;
-        IEnumerable<Transaction> _transactions = new List<Transaction>();
+        Mock<BlockHeaderHelper> _blockHeaderHelper;
+        Mock<PowBlockValidator> _validatorMock;
+        Mock<ITimestamper> _timestamperMock;
+        BigDecimal _maximumTarget;
+        string _netId;
+        int _protocol;
+        IEnumerable<Transaction> _transactions;
+
+        [TestInitialize]
+        public void Initialize()
+        {
+            _blockHeaderHelper = new Mock<BlockHeaderHelper>(MockBehavior.Strict);
+            _validatorMock = new Mock<PowBlockValidator>(MockBehavior.Strict, new object[] { _blockHeaderHelper.Object });
+            _timestamperMock = new Mock<ITimestamper>(MockBehavior.Strict);
+            _maximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
+            _netId = "testnet";
+            _protocol = 1;
+            _transactions = new List<Transaction>();
+        }
 
         [TestMethod]
         public void CreateValidBlock_ThrowsException_NullTimestamper()
         {
             var ex = Assert.ThrowsException<ArgumentNullException>(
-                    () => new PowBlockCreator(null, _validatorMock.Object)
+                    () => new PowBlockCreator(null, _validatorMock.Object, _blockHeaderHelper.Object)
                 );
 
             Assert.AreEqual(ex.ParamName, "timestamper");
@@ -36,10 +52,20 @@ namespace Mpb.Consensus.Test
         public void CreateValidBlock_ThrowsException_NullValidator()
         {
             var ex = Assert.ThrowsException<ArgumentNullException>(
-                    () => new PowBlockCreator(_timestamperMock.Object, null)
+                    () => new PowBlockCreator(_timestamperMock.Object, null, _blockHeaderHelper.Object)
                 );
 
             Assert.AreEqual(ex.ParamName, "validator");
+        }
+
+        [TestMethod]
+        public void CreateValidBlock_ThrowsException_NullBlockHeaderHelper()
+        {
+            var ex = Assert.ThrowsException<ArgumentNullException>(
+                    () => new PowBlockCreator(_timestamperMock.Object, _validatorMock.Object, null)
+                );
+
+            Assert.AreEqual(ex.ParamName, "blockHeaderHelper");
         }
 
         /// <summary>
@@ -56,16 +82,16 @@ namespace Mpb.Consensus.Test
             int expectedProtocolVersion = 1;
             BigDecimal expectedMaximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var expectedBlock = new Block(expectedNetworkIdentifier, expectedProtocolVersion, "abc", 123, _transactions);
-            var mock = new Mock<PowBlockCreator>(MockBehavior.Strict, new object[] { _timestamperMock.Object, _validatorMock.Object }) { CallBase = true };
-            mock.Setup(m => m.CreateValidBlock(_transactions, difficulty)).CallBase();
-            mock.Setup(m => m.CreateValidBlock(expectedNetworkIdentifier, expectedProtocolVersion, _transactions, difficulty, expectedMaximumTarget))
+            var selfCallingMock = new Mock<PowBlockCreator>(MockBehavior.Strict, new object[] { _timestamperMock.Object, _validatorMock.Object, _blockHeaderHelper.Object }) { CallBase = true };
+            selfCallingMock.Setup(m => m.CreateValidBlock(_transactions, difficulty)).CallBase();
+            selfCallingMock.Setup(m => m.CreateValidBlock(expectedNetworkIdentifier, expectedProtocolVersion, _transactions, difficulty, expectedMaximumTarget))
                 .Returns(expectedBlock);
-            PowBlockCreator sut = mock.Object;
+            PowBlockCreator sut = selfCallingMock.Object;
 
             var result = sut.CreateValidBlock(_transactions, difficulty);
 
             Assert.AreEqual(expectedBlock, result);
-            mock.VerifyAll();
+            selfCallingMock.VerifyAll();
         }
 
         [TestMethod]
@@ -86,34 +112,37 @@ namespace Mpb.Consensus.Test
         private void CreateValidBlockThatShouldThrowExceptionOnInvalidDifficulty(BigDecimal difficulty)
         {
             var expectedExceptionMessage = "Difficulty cannot be zero.";
-            var sut = new PowBlockCreator(_timestamperMock.Object, _validatorMock.Object);
+            var sut = new PowBlockCreator(_timestamperMock.Object, _validatorMock.Object, _blockHeaderHelper.Object);
 
             var ex = Assert.ThrowsException<DifficultyCalculationException>(
                     () => sut.CreateValidBlock(_netId, _protocol, _transactions, difficulty, _maximumTarget)
                 );
 
-            Assert.AreEqual(ex.Message, expectedExceptionMessage);
+            Assert.AreEqual(expectedExceptionMessage, ex.Message);
         }
 
         [TestMethod]
-        public void CreateValidBlock_Calls_Validator_AndCalls_Validator()
+        public void CreateValidBlock_Calls_Validator()
         {
             var expectedTimestamp = 1;
-            var sut = new PowBlockCreator(_timestamperMock.Object, _validatorMock.Object);
+            var sut = new PowBlockCreator(_timestamperMock.Object, _validatorMock.Object, _blockHeaderHelper.Object);
             _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp())
                             .Returns(expectedTimestamp);
             _validatorMock.Setup(m => m.BlockIsValid(It.IsAny<Block>(), It.IsAny<BigDecimal>(), It.IsAny<byte[]>()))
                           .Returns(true);
+            _blockHeaderHelper.Setup(m => m.GetBlockHeaderBytes(It.IsAny<Block>()))
+                          .Returns(new byte[] { });
             var result = sut.CreateValidBlock(_netId, _protocol, _transactions, 1, _maximumTarget);
 
-            Assert.AreEqual(result.MagicNumber, _netId);
-            Assert.AreEqual(result.Version, _protocol);
-            Assert.AreEqual(result.Timestamp, expectedTimestamp);
-            Assert.AreEqual(result.MerkleRoot, "abc");
-            Assert.AreEqual(result.Transactions, _transactions);
-            Assert.AreEqual(result.Nonce, 1UL);
+            Assert.AreEqual(_netId, result.MagicNumber);
+            Assert.AreEqual(_protocol, result.Version);
+            Assert.AreEqual(expectedTimestamp, result.Timestamp);
+            Assert.AreEqual("abc", result.MerkleRoot);
+            Assert.AreEqual(_transactions, result.Transactions);
+            Assert.AreEqual(1UL, result.Nonce);
             _validatorMock.VerifyAll();
             _timestamperMock.VerifyAll();
+            _blockHeaderHelper.VerifyAll();
         }
     }
 }

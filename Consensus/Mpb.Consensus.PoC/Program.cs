@@ -19,10 +19,11 @@ namespace Mpb.Consensus.PoC
         public static void Main(string[] args)
         {
             var persistence = new BlockchainPersistence();
-            var validator = new PowBlockValidator();
+            var blockHeaderHelper = new BlockHeaderHelper();
+            var validator = new PowBlockValidator(blockHeaderHelper);
             var timestamper = new UnixTimestamper();
             var difficultyCalculator = new DifficultyCalculator();
-            var miner = new PowBlockCreator(timestamper, validator);
+            var miner = new PowBlockCreator(timestamper, validator, blockHeaderHelper);
             var logger = CreateLogger();
             var transactions = new List<Transaction>(); // Just an empty list of transactions to put in the block.
             
