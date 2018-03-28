@@ -30,8 +30,8 @@ namespace Mpb.Consensus.Test.Logic
         public void Initialize()
         {
             _blockHeaderHelper = new Mock<BlockHeaderHelper>(MockBehavior.Strict);
-            _validatorMock = new Mock<PowBlockValidator>(MockBehavior.Strict, new object[] { _blockHeaderHelper.Object });
             _timestamperMock = new Mock<ITimestamper>(MockBehavior.Strict);
+            _validatorMock = new Mock<PowBlockValidator>(MockBehavior.Strict, new object[] { _blockHeaderHelper.Object, _timestamperMock.Object });
             _maximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             _netId = "testnet";
             _protocol = 1;
@@ -122,14 +122,13 @@ namespace Mpb.Consensus.Test.Logic
         }
 
         [TestMethod]
-        public void CreateValidBlock_Calls_Validator()
+        public void CreateValidBlock_CallsValidator_HappyFlow()
         {
             var expectedTimestamp = 1;
             var sut = new PowBlockCreator(_timestamperMock.Object, _validatorMock.Object, _blockHeaderHelper.Object);
             _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp())
                             .Returns(expectedTimestamp);
-            _validatorMock.Setup(m => m.BlockIsValid(It.IsAny<Block>(), It.IsAny<BigDecimal>(), It.IsAny<byte[]>()))
-                          .Returns(true);
+            _validatorMock.Setup(m => m.ValidateBlock(It.IsAny<Block>(), It.IsAny<BigDecimal>(), false));
             _blockHeaderHelper.Setup(m => m.GetBlockHeaderBytes(It.IsAny<Block>()))
                           .Returns(new byte[] { });
             var result = sut.CreateValidBlock(_netId, _protocol, _transactions, 1, _maximumTarget);

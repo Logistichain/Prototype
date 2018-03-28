@@ -63,8 +63,17 @@ namespace Mpb.Consensus.Logic.BlockLogic
                 b.IncrementNonce();
                 var sha256 = SHA256.Create();
                 var blockHash = sha256.ComputeHash(_blockHeaderHelper.GetBlockHeaderBytes(b));
+                b.SetHash(blockHash);
 
-                targetMet = _validator.BlockIsValid(b, currentTarget, blockHash);
+                try
+                {
+                    _validator.ValidateBlock(b, currentTarget, false);
+                    targetMet = true;
+                }
+                catch (BlockRejectedException ex)
+                {
+                    // Todo: Log, but continue
+                }
             }
 
             return b;

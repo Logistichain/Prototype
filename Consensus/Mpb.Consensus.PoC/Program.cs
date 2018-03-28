@@ -20,8 +20,8 @@ namespace Mpb.Consensus.PoC
         {
             var persistence = new BlockchainPersistence();
             var blockHeaderHelper = new BlockHeaderHelper();
-            var validator = new PowBlockValidator(blockHeaderHelper);
             var timestamper = new UnixTimestamper();
+            var validator = new PowBlockValidator(blockHeaderHelper, timestamper);
             var difficultyCalculator = new DifficultyCalculator();
             var miner = new PowBlockCreator(timestamper, validator, blockHeaderHelper);
             var logger = CreateLogger();

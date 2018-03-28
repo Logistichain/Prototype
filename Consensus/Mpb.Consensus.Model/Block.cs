@@ -6,6 +6,7 @@ namespace Mpb.Consensus.Model
 {
     public class Block
     {
+        private byte[] _hash;
         private readonly string _magicNumber;
         private readonly int _version;
         private readonly string _merkleRoot;
@@ -13,6 +14,7 @@ namespace Mpb.Consensus.Model
         private ulong _nonce = ulong.MinValue;
         private readonly IEnumerable<Transaction> _transactions;
 
+        public byte[] Hash => _hash;
         public string MagicNumber => _magicNumber;
         public int Version => _version;
         public string MerkleRoot => _merkleRoot;
@@ -30,5 +32,12 @@ namespace Mpb.Consensus.Model
         }
 
         public ulong IncrementNonce() => ++_nonce;
+        public ulong IncrementNonce(ulong i) => _nonce += i;
+
+        public Block SetHash(byte[] hash)
+        {
+            _hash = hash;
+            return this;
+        }
     }
 }
