@@ -17,7 +17,7 @@ namespace Mpb.Consensus.Test.Logic
     public class DifficultyCalculatorTest
     {
         string _netId;
-        int _protocol;
+        uint _protocol;
 
         [TestInitialize]
         public void Initialize()
@@ -55,9 +55,9 @@ namespace Mpb.Consensus.Test.Logic
         [TestMethod]
         public void CalculateDifficultyForHeight_Uses_ConstantValues()
         {
-            var protocol = 1;
-            var secondsPerBlockGoal = 15;
-            var difficultyUpdateCycle = 10;
+            uint protocol = 1;
+            uint secondsPerBlockGoal = 15;
+            int difficultyUpdateCycle = 10;
             var blockchainHeight = -1;
             BigDecimal expectedDifficulty = 1;
             var selfCallingMock = new Mock<DifficultyCalculator>(MockBehavior.Strict);
@@ -90,7 +90,7 @@ namespace Mpb.Consensus.Test.Logic
             var blocks = new List<Block>();
             for (int i = 10; i < 111; i = i + 10)
             {
-                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<Transaction>()));
+                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<AbstractTransaction>()));
             }
             CalculateDifficultyAndExpectValue(10, "16666666666666668E-16", blocks);
         }
@@ -101,15 +101,15 @@ namespace Mpb.Consensus.Test.Logic
             var blocks = new List<Block>();
             for (int i = 10; i < 641; i = i + 10)
             {
-                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<Transaction>()));
+                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<AbstractTransaction>()));
             }
             CalculateDifficultyAndExpectValue(63, "21433470507544591906721536351168038408779149520109739368998628271056241426611797403566529492455424E-96", blocks);
         }
 
         private void CalculateDifficultyAndExpectValue(int height, string expectedValue, List<Block> blocks)
         {
-            var secondsPerBlockGoal = 15;
-            var difficultyUpdateCycle = 10;
+            uint secondsPerBlockGoal = 15;
+            int difficultyUpdateCycle = 10;
             var blockchain = blocks == null ? new Blockchain(_netId) : new Blockchain(blocks, _netId);
             var sut = new DifficultyCalculator();
 
@@ -194,7 +194,7 @@ namespace Mpb.Consensus.Test.Logic
             // Add 11 blocks
             for (int i = 10; i < 111; i = i+10)
             {
-                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<Transaction>()));
+                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<AbstractTransaction>()));
             }
             var blockchain = new Blockchain(blocks, _netId);
 
@@ -216,7 +216,7 @@ namespace Mpb.Consensus.Test.Logic
             // Add 64 blocks
             for (int i = 10; i < 641; i = i + 10)
             {
-                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<Transaction>()));
+                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<AbstractTransaction>()));
             }
             var blockchain = new Blockchain(blocks, _netId);
 

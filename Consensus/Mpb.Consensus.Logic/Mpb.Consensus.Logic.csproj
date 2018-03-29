@@ -9,7 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Mpb.Consensus.Contract\Mpb.Consensus.Contract.csproj" />
     <ProjectReference Include="..\Mpb.Consensus.Model\Mpb.Consensus.Model.csproj" />
   </ItemGroup>
 

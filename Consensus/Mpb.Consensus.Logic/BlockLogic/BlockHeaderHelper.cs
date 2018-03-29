@@ -10,7 +10,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
     /// Todo: Make this more efficient by only updating the nonce in the block header bytes.
     /// In order to achieve this, every field must have a predefined length so we can allocate them.
     /// </summary>
-    public class BlockHeaderHelper
+    public class BlockHeaderHelper : IBlockHeaderHelper
     {
         public virtual byte[] GetBlockHeaderBytes(Block block)
         {

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Mpb.Consensus.Contract;
 
 namespace Mpb.Consensus.Logic.MiscLogic
 {

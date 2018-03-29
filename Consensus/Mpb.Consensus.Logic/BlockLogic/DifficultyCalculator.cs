@@ -19,7 +19,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
             return CalculateDifficulty(chain, height, BlockchainConstants.ProtocolVersion, BlockchainConstants.SecondsPerBlockGoal, BlockchainConstants.DifficultyUpdateCycle);
         }
 
-        public virtual BigDecimal CalculateDifficulty(Blockchain chain, int height, int protocolVersion, int secondsPerBlockGoal, int difficultyUpdateCycle)
+        public virtual BigDecimal CalculateDifficulty(Blockchain chain, int height, uint protocolVersion, uint secondsPerBlockGoal, int difficultyUpdateCycle)
         {
             if (height < difficultyUpdateCycle)
             {
@@ -55,6 +55,8 @@ namespace Mpb.Consensus.Logic.BlockLogic
 
         public virtual BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(int height, Blockchain chain, int difficultyUpdateCycle)
         {
+            // todo throw on difficultyUpdateCycle negative value
+
             // The difficulty is calculated every n'th block.
             // If the given height is 2n+3, we need to calculate the difficulty for block 2n
             // - 1 because difficultyUpdate is based on counts, as where calculateForHeight is based on index.

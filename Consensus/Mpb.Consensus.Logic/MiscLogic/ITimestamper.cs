@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Mpb.Consensus.Contract
+namespace Mpb.Consensus.Logic.MiscLogic
 {
     public interface ITimestamper
     {

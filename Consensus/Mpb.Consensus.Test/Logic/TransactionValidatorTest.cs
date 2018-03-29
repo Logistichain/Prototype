@@ -1,15 +1,8 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Mpb.Consensus.Logic.BlockLogic;
-using System.Numerics;
-using Mpb.Consensus.Model;
-using System.Globalization;
-using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text;
-using Mpb.Consensus.Logic.Exceptions;
-using Mpb.Consensus.Contract;
+using Mpb.Consensus.Logic.MiscLogic;
 
 namespace Mpb.Consensus.Test.Logic
 {
@@ -20,13 +13,11 @@ namespace Mpb.Consensus.Test.Logic
     public class TransactionValidatorTest
     {
         Mock<ITimestamper> _timestamper;
-        SHA256 _sha256;
 
         [TestInitialize]
         public void Initialize()
         {
             _timestamper = new Mock<ITimestamper>(MockBehavior.Strict);
-            _sha256 = SHA256.Create();
         }
 
         

@@ -7,8 +7,8 @@ using System.Numerics;
 using Mpb.Consensus.Model;
 using System.Globalization;
 using Mpb.Consensus.Logic.Exceptions;
-using Mpb.Consensus.Contract;
 using System.Collections.Generic;
+using Mpb.Consensus.Logic.TransactionLogic;
 
 namespace Mpb.Consensus.Test.Logic
 {
@@ -18,24 +18,26 @@ namespace Mpb.Consensus.Test.Logic
     [TestClass]
     public class PowBlockCreatorTest
     {
-        Mock<BlockHeaderHelper> _blockHeaderHelper;
+        Mock<IBlockHeaderHelper> _blockHeaderHelper;
         Mock<PowBlockValidator> _validatorMock;
         Mock<ITimestamper> _timestamperMock;
+        Mock<StateTransactionValidator> _transactionValidator;
         BigDecimal _maximumTarget;
         string _netId;
-        int _protocol;
-        IEnumerable<Transaction> _transactions;
+        uint _protocol;
+        IEnumerable<AbstractTransaction> _transactions;
 
         [TestInitialize]
         public void Initialize()
         {
-            _blockHeaderHelper = new Mock<BlockHeaderHelper>(MockBehavior.Strict);
+            _blockHeaderHelper = new Mock<IBlockHeaderHelper>(MockBehavior.Strict);
             _timestamperMock = new Mock<ITimestamper>(MockBehavior.Strict);
-            _validatorMock = new Mock<PowBlockValidator>(MockBehavior.Strict, new object[] { _blockHeaderHelper.Object, _timestamperMock.Object });
+            _transactionValidator = new Mock<StateTransactionValidator>(MockBehavior.Strict, new object[] { new TransactionByteConverter() });
+            _validatorMock = new Mock<PowBlockValidator>(MockBehavior.Strict, new object[] { _blockHeaderHelper.Object, _transactionValidator.Object, _timestamperMock.Object });
             _maximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             _netId = "testnet";
             _protocol = 1;
-            _transactions = new List<Transaction>();
+            _transactions = new List<AbstractTransaction>();
         }
 
         [TestMethod]
@@ -79,7 +81,7 @@ namespace Mpb.Consensus.Test.Logic
         {
             BigDecimal difficulty = 1;
             string expectedNetworkIdentifier = "testnet";
-            int expectedProtocolVersion = 1;
+            uint expectedProtocolVersion = 1;
             BigDecimal expectedMaximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var expectedBlock = new Block(expectedNetworkIdentifier, expectedProtocolVersion, "abc", 123, _transactions);
             var selfCallingMock = new Mock<PowBlockCreator>(MockBehavior.Strict, new object[] { _timestamperMock.Object, _validatorMock.Object, _blockHeaderHelper.Object }) { CallBase = true };

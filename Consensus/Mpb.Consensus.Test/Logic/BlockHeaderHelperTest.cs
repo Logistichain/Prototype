@@ -7,7 +7,6 @@ using System.Numerics;
 using Mpb.Consensus.Model;
 using System.Globalization;
 using Mpb.Consensus.Logic.Exceptions;
-using Mpb.Consensus.Contract;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 
@@ -19,14 +18,6 @@ namespace Mpb.Consensus.Test.Logic
     [TestClass]
     public class BlockHeaderHelperTest
     {
-        SHA256 _sha256;
-
-        [TestInitialize]
-        public void Initialize()
-        {
-            _sha256 = SHA256.Create();
-        }
-
         [TestMethod]
         public void GetBlockHeaderBytes_ThrowsException_NullBlock()
         {
@@ -48,11 +39,16 @@ namespace Mpb.Consensus.Test.Logic
         {
             var sut = new BlockHeaderHelper();
             var expectedHash = "FF5648F9B5FEB7AA0ACECA5AF77938A811B5F18E4D1CC5A806C475E4AFED47EA";
-            var blockToTest = new Block("testnet", 1, "abc", 1, new List<Transaction>());
+            var blockToTest = new Block("testnet", 1, "abc", 1, new List<AbstractTransaction>());
 
             var bytesResult = sut.GetBlockHeaderBytes(blockToTest);
-            var hashResult = _sha256.ComputeHash(bytesResult);
-            var hashString = BitConverter.ToString(hashResult).Replace("-", ""); // Microsoft's SHA adds dashes. I don't like that :)
+            var hashString = "";
+
+            using (var sha256 = SHA256.Create())
+            {
+                var hash = sha256.ComputeHash(bytesResult);
+                hashString = BitConverter.ToString(hash).Replace("-", ""); // Microsoft's SHA adds dashes. I don't like that :)
+            }
 
             Assert.AreEqual(expectedHash, hashString);
         }
