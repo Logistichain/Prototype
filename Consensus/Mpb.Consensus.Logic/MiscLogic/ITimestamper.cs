@@ -2,6 +2,7 @@
 
 namespace Mpb.Consensus.Logic.MiscLogic
 {
+    // Todo update documentation
     public interface ITimestamper
     {
         long GetCurrentUtcTimestamp();
