@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Mpb.Consensus.Logic.MiscLogic
@@ -22,11 +23,15 @@ namespace Mpb.Consensus.Logic.MiscLogic
             JObject jo = JObject.Load(reader);
             string netId = (string)jo["NetIdentifier"];
             JToken jBlocks = jo["Blocks"];
-            List<Block> blocks = new List<Block>();
+            List<BlockWithStateTransactions> stateTransactionBlocks = new List<BlockWithStateTransactions>();
             if (jBlocks != null && jBlocks.Type == JTokenType.Array)
             {
-                blocks = jBlocks.ToObject<List<Block>>(serializer);
+                // BlockWithStateTransactions is required, otherwise the json serializer
+                // tries to instantiate an AbstractTransaction.
+                // The list will be converted back to regular blocks later on.
+                stateTransactionBlocks = jBlocks.ToObject<List<BlockWithStateTransactions>>(serializer);
             }
+            var blocks = stateTransactionBlocks.OfType<Block>().ToList();
             Blockchain result = new Blockchain(blocks, netId);
             return result;
         }

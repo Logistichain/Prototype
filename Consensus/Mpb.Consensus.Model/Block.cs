@@ -12,7 +12,7 @@ namespace Mpb.Consensus.Model
         private readonly string _merkleRoot;
         private readonly long _timestamp;
         private ulong _nonce = ulong.MinValue;
-        private readonly IEnumerable<AbstractTransaction> _transactions;
+        protected readonly IEnumerable<AbstractTransaction> _transactions;
 
         public string Hash => _hash;
         public string MagicNumber => _magicNumber;
