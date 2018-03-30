@@ -28,7 +28,7 @@ namespace Mpb.Consensus.PoC
             Blockchain blockchain = blockchainRepo.GetByNetId(networkIdentifier);
             ITransactionRepository transactionRepo = new StateTransactionLocalFileRepository(blockchain);
             ITransactionCreator transactionCreator = new StateTransactionCreator(new TransactionByteConverter());
-            var walletPubKey = "montapublickey";
+            var walletPubKey = "montaminer";
             var walletPrivKey = "montaprivatekey";
             Miner miner = new Miner(blockchain, walletPubKey, walletPrivKey, logger);
             logger.Information("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
@@ -70,6 +70,7 @@ namespace Mpb.Consensus.PoC
                             Console.WriteLine("Total balance: " + addressBalance);
                             Console.WriteLine("-------=========-------");
                         }
+                        Console.Write("> ");
                         break;
                     case "txpool":
                     case "transactionpool":
@@ -100,6 +101,7 @@ namespace Mpb.Consensus.PoC
                             Console.WriteLine("Data: " + transaction.Data);
                             Console.WriteLine("-----=====================-----");
                         }
+                        Console.Write("> ");
                         break;
                     case "transactions":
                         Console.WriteLine("Transactions:");
@@ -119,9 +121,11 @@ namespace Mpb.Consensus.PoC
                             Console.WriteLine("Data: " + transaction.Data);
                             Console.WriteLine("-----=============-----");
                         }
+                        Console.Write("> ");
                         break;
                     case "startmining":
                         miner.StartMining();
+                        Console.Write("> ");
                         break;
                     case "stopmining":
                         miner.StopMining(true);
@@ -136,19 +140,20 @@ namespace Mpb.Consensus.PoC
                         transactionRepo = new StateTransactionLocalFileRepository(blockchain);
                         miner = new Miner(blockchain, walletPubKey, walletPrivKey, logger);
                         logger.Information("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
+                        Console.Write("> ");
                         break;
                     case "transfertokens":
                         uint tokenFee = 10; // From BlockchainConstants.cs
                         Console.WriteLine("Current transfer token fee is " + tokenFee + " TK.");
-                        Console.WriteLine("Enter the sender's public key:");
+                        WriteLineWithInputCursor("Enter the sender's public key:");
                         var fromPub = Console.ReadLine().ToLower();
                         var balance = GetBalanceForPubKey(fromPub, networkIdentifier, transactionRepo);
 
                         Console.WriteLine("The sender's balance: " + balance);
-                        Console.WriteLine("Enter the sender's private key (can be anything for now):");
+                        WriteLineWithInputCursor("Enter the sender's private key (can be anything for now):");
                         var fromPriv = Console.ReadLine().ToLower();
-
-                        Console.WriteLine("Enter the receiver's public key:");
+                        
+                        WriteLineWithInputCursor("Enter the receiver's public key:");
                         var toPub = Console.ReadLine().ToLower();
 
                         var askFeeFirstTime = true;
@@ -156,14 +161,14 @@ namespace Mpb.Consensus.PoC
                         while (tokenFee < 10 && !forceLowerFee || askFeeFirstTime)
                         {
                             askFeeFirstTime = false;
-                            Console.WriteLine("Use a different fee [10]:");
+                            WriteLineWithInputCursor("Use a different fee [10]:");
                             var feeInput = Console.ReadLine().ToLower();
                             while (!UInt32.TryParse(feeInput, out tokenFee))
                             {
                                 tokenFee = 10;
                                 if (feeInput != "")
                                 {
-                                    Console.WriteLine("Invalid value. Use a positive numeric value without decimals.");
+                                    WriteLineWithInputCursor("Invalid value. Use a positive numeric value without decimals.");
                                 }
                                 else
                                 {
@@ -173,7 +178,8 @@ namespace Mpb.Consensus.PoC
 
                             if (tokenFee < 10 && !forceLowerFee)
                             {
-                                Console.WriteLine("This low fee might result into a rejection. Type 'force' to use the given fee. Press ENTER to specify another amount.");
+                                Console.WriteLine("This low fee might result into a rejection. ");
+                                WriteLineWithInputCursor("Type 'force' to use the given fee. Press ENTER to specify another amount.");
                                 feeInput = Console.ReadLine().ToLower();
                                 if (feeInput == "force")
                                 {
@@ -191,12 +197,13 @@ namespace Mpb.Consensus.PoC
                             var amountInput = Console.ReadLine().ToLower();
                             while (!UInt32.TryParse(amountInput, out amount))
                             {
-                                Console.WriteLine("Invalid value. Use a positive numeric value without decimals.");
+                                WriteLineWithInputCursor("Invalid value. Use a positive numeric value without decimals.");
                             }
 
                             if (amount + tokenFee > balance && !forceAmount)
                             {
-                                Console.WriteLine("The given amount + fee is higher than the sender's balance and can cause a rejection. Type 'force' to use the given amount. Press ENTER to specify another amount.");
+                                Console.WriteLine("The given amount + fee is higher than the sender's balance and can cause a rejection.");
+                                WriteLineWithInputCursor("Type 'force' to use the given amount. Press ENTER to specify another amount.");
                                 amountInput = Console.ReadLine().ToLower();
                                 if (amountInput == "force")
                                 {
@@ -204,18 +211,25 @@ namespace Mpb.Consensus.PoC
                                 }
                             }
                         }
-
-                        Console.WriteLine("Enter optional data []:");
+                        
+                        WriteLineWithInputCursor("Enter optional data []:");
                         var optionalData = Console.ReadLine().ToLower();
 
                         AbstractTransaction transactionToSend = transactionCreator.CreateTokenTransferTransaction(fromPub, fromPriv, toPub, amount, optionalData);
                         miner.AddTransactionToPool(transactionToSend);
+                        Console.Write("> ");
                         break;
                     default:
-                        Console.WriteLine("I don't recognize that command.");
+                        WriteLineWithInputCursor("I don't recognize that command.");
                         break;
                 }
             }
+        }
+
+        private static void WriteLineWithInputCursor(string writeLine)
+        {
+            Console.WriteLine(writeLine);
+            Console.Write("> ");
         }
 
         private static void PrintConsoleCommands()
@@ -230,7 +244,7 @@ namespace Mpb.Consensus.PoC
             Console.WriteLine("- stopmining");
             Console.WriteLine("- resetblockchain");
             Console.WriteLine("- transfertokens");
-            Console.WriteLine("What would you like to do:");
+            WriteLineWithInputCursor("What would you like to do:");
         }
 
         public static long GetBalanceForPubKey(string pubKey, string netId, ITransactionRepository transactionRepo)
