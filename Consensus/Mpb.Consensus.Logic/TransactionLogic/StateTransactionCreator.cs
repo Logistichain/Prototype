@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Mpb.Consensus.Logic.TransactionLogic
 {
-    public class StateTransactionCreator
+    public class StateTransactionCreator : ITransactionCreator
     {
         private readonly TransactionByteConverter _byteConverter;
 

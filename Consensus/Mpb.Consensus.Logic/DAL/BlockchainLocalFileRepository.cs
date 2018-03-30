@@ -31,6 +31,20 @@ namespace Mpb.Consensus.Logic.DAL
         }
 
         /// <summary>
+        /// REMOVE the blockchain file and start all over again.
+        /// </summary>
+        /// <param name="netIdentifier">The blockchain that will be removed</param>
+        public void Delete(string netIdentifier)
+        {
+            var filePath = Path.Combine(_blockchainFolderPath, $"blockchain-{netIdentifier}.json");
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+                _trackingBlockchain = null;
+            }
+        }
+
+        /// <summary>
         /// Returns the entire blockchain that is locally stored.
         /// If the blockchain file does not exist, a new blockchain object is returned.
         /// </summary>

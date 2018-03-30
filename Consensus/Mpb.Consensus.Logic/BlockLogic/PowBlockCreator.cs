@@ -5,43 +5,34 @@ using System.Security.Cryptography;
 using Mpb.Consensus.Logic.Exceptions;
 using Mpb.Consensus.Logic.Constants;
 using Mpb.Consensus.Logic.MiscLogic;
+using System.Threading;
 
 namespace Mpb.Consensus.Logic.BlockLogic
 {
-    public class PowBlockCreator
+    public class PowBlockCreator : IPowBlockCreator
     {
         private readonly ITimestamper _timestamper;
-        private readonly PowBlockValidator _validator;
+        private readonly IBlockValidator _validator;
         private readonly IBlockHeaderHelper _blockHeaderHelper;
 
-        public PowBlockCreator(ITimestamper timestamper, PowBlockValidator validator, IBlockHeaderHelper blockHeaderHelper)
+        public PowBlockCreator(ITimestamper timestamper, IBlockValidator validator, IBlockHeaderHelper blockHeaderHelper)
         {
             _timestamper = timestamper ?? throw new ArgumentNullException(nameof(timestamper));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
             _blockHeaderHelper = blockHeaderHelper ?? throw new ArgumentNullException(nameof(blockHeaderHelper));
         }
 
-        /// <summary>
-        /// Mine a Proof-of-Work block by following the current consensus rules
-        /// </summary>
-        /// <param name="transactions">The transactions that will be included in the new block</param>
-        /// <param name="difficulty">The difficulty to start with. Must be atleast 1</param>
-        /// <returns>A valid block that meets the consensus conditions</returns>
         public virtual Block CreateValidBlock(IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty)
         {
-            return CreateValidBlock(BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget);
+            return CreateValidBlock(BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget, CancellationToken.None);
+        }
+        
+        public virtual Block CreateValidBlock(IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, CancellationToken ct)
+        {
+            return CreateValidBlock(BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget, ct);
         }
 
-        /// <summary>
-        /// Mine a Proof-of-Work block with custom parameters
-        /// </summary>
-        /// <param name="netIdentifier">The net identifier for this block</param>
-        /// <param name="protocolVersion">The current protocol version</param>
-        /// <param name="transactions">The transactions that will be included in the new block</param>
-        /// <param name="difficulty">The difficulty to start with. Must be atleast 1</param>
-        /// <param name="maximumtarget">The maximum (easiest) target possible</param>
-        /// <returns>A valid block that meets the consensus conditions, unless a different maximumTarget was given!</returns>
-        public virtual Block CreateValidBlock(string netIdentifier, uint protocolVersion, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, BigDecimal maximumTarget)
+        public virtual Block CreateValidBlock(string netIdentifier, uint protocolVersion, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, BigDecimal maximumTarget, CancellationToken ct)
         {
             if (difficulty < 1)
             {
@@ -55,6 +46,8 @@ namespace Mpb.Consensus.Logic.BlockLogic
 
             while (targetMet == false)
             {
+                ct.ThrowIfCancellationRequested();
+
                 if (b.Nonce == ulong.MaxValue)
                 {
                     throw new NonceLimitReachedException();

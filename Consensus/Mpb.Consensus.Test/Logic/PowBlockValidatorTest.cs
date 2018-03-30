@@ -22,14 +22,14 @@ namespace Mpb.Consensus.Test.Logic
     {
         Mock<BlockHeaderHelper> _blockHeaderHelper; // Using implementation because some tests require calling the base.
         Mock<ITimestamper> _timestamper;
-        Mock<StateTransactionValidator> _transactionValidator;
+        Mock<ITransactionValidator> _transactionValidator;
 
         [TestInitialize]
         public void Initialize()
         {
             _blockHeaderHelper = new Mock<BlockHeaderHelper>(MockBehavior.Strict);
             _timestamper = new Mock<ITimestamper>(MockBehavior.Strict);
-            _transactionValidator = new Mock<StateTransactionValidator>(MockBehavior.Strict, new object[] { new TransactionByteConverter() });
+            _transactionValidator = new Mock<ITransactionValidator>(MockBehavior.Strict);
         }
         
         [TestMethod]
@@ -329,6 +329,7 @@ namespace Mpb.Consensus.Test.Logic
         {
             _timestamper.VerifyAll();
             _blockHeaderHelper.VerifyAll();
+            _transactionValidator.VerifyAll();
         }
     }
 }

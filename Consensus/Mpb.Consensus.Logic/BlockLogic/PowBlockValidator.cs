@@ -12,13 +12,13 @@ using Mpb.Consensus.Logic.MiscLogic;
 
 namespace Mpb.Consensus.Logic.BlockLogic
 {
-    public class PowBlockValidator
+    public class PowBlockValidator : IBlockValidator
     {
         private readonly IBlockHeaderHelper _blockHeaderHelper;
-        private readonly StateTransactionValidator _transactionValidator;
+        private readonly ITransactionValidator _transactionValidator;
         private readonly ITimestamper _timestamper;
 
-        public PowBlockValidator(IBlockHeaderHelper blockHeaderHelper, StateTransactionValidator transactionValidator, ITimestamper timestamper)
+        public PowBlockValidator(IBlockHeaderHelper blockHeaderHelper, ITransactionValidator transactionValidator, ITimestamper timestamper)
         {
             _blockHeaderHelper = blockHeaderHelper ?? throw new ArgumentNullException(nameof(blockHeaderHelper));
             _transactionValidator = transactionValidator ?? throw new ArgumentNullException(nameof(transactionValidator));
@@ -26,12 +26,6 @@ namespace Mpb.Consensus.Logic.BlockLogic
         }
 
         //! Decorator/composite pattern could be possible here. Only check for PoW things, then call the parent for more generic checks
-        /// <summary>
-        /// Validates a block. Throws BlockRejectedException if the validation fails.
-        /// </summary>
-        /// <param name="b">The block to validate</param>
-        /// <param name="currentTarget">The current target to validate the block's hash</param>
-        /// <param name="setBlockHash">Whether this method needs to calculate and add the hash to the block</param>
         public virtual void ValidateBlock(Block block, BigDecimal currentTarget, bool setBlockHash)
         {
             if (setBlockHash)

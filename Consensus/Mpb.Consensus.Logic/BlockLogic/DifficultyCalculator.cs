@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Mpb.Consensus.Logic.BlockLogic
 {
-    public class DifficultyCalculator
+    public class DifficultyCalculator : IDifficultyCalculator
     {
         public virtual BigDecimal CalculateCurrentDifficulty(Blockchain chain)
         {
@@ -34,32 +34,20 @@ namespace Mpb.Consensus.Logic.BlockLogic
             return previousDifficulty * difficultyMultiplier;
         }
 
-        /// <summary>
-        /// Get previous difficulty, following the consensus rules
-        /// </summary>
-        /// <param name="chain">The blockchain to calculate the difficulty from</param>
-        /// <returns>Information about the last block difficulty update</returns>
         public virtual BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(Blockchain chain) {
             return GetPreviousDifficultyUpdateInformation(chain.CurrentHeight, chain, BlockchainConstants.DifficultyUpdateCycle);
         }
 
-        /// <summary>
-        /// Get the previous difficulty with a custom update cycle
-        /// </summary>
-        /// <param name="chain">The blockchain to calculate the difficulty from</param>
-        /// <param name="difficultyUpdateCycle">This describes that the difficulty is recalculated every x blocks</param>
-        /// <returns>Information about the last block difficulty update</returns>
         public virtual BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(Blockchain chain, int difficultyUpdateCycle) {
             return GetPreviousDifficultyUpdateInformation(chain.CurrentHeight, chain, difficultyUpdateCycle);
         }
 
         public virtual BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(int height, Blockchain chain, int difficultyUpdateCycle)
         {
-            // todo throw on difficultyUpdateCycle negative value
+            // todo throw on difficultyUpdateCycle negative value and test it
 
             // The difficulty is calculated every n'th block.
             // If the given height is 2n+3, we need to calculate the difficulty for block 2n
-            // - 1 because difficultyUpdate is based on counts, as where calculateForHeight is based on index.
             int calculateForHeight = height - height % difficultyUpdateCycle;
 
             if (calculateForHeight < difficultyUpdateCycle)
@@ -67,8 +55,10 @@ namespace Mpb.Consensus.Logic.BlockLogic
                 throw new DifficultyCalculationException("Unable to calculate the previous difficulty because the height is lower than the DifficultyUpdateCycle.");
             }
 
+            // - 1 because difficultyUpdate is based on counts, as where calculateForHeight is based on index.
+            //! Take care, the lastBlockStarted this is the time when the miner STARTED mining this block
             long firstBlockStarted = chain.Blocks[calculateForHeight - difficultyUpdateCycle].Timestamp;
-            long lastBlockStarted = chain.Blocks[calculateForHeight-1].Timestamp; // Take care, this is the time when the miner STARTED mining this block
+            long lastBlockStarted = chain.Blocks[calculateForHeight-1].Timestamp;
 
             return new BlockDifficultyUpdate(chain, calculateForHeight - difficultyUpdateCycle, calculateForHeight-1);
         }

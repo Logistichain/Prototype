@@ -7,13 +7,18 @@ using Mpb.Consensus.Model;
 
 namespace Mpb.Consensus.Logic.DAL
 {
-    public class StateTransactionLocalFileRepository
+    public class StateTransactionLocalFileRepository : ITransactionRepository
     {
         private Blockchain _trackingBlockchain;
 
         public StateTransactionLocalFileRepository (Blockchain blockchainSource)
         {
             _trackingBlockchain = blockchainSource;
+        }
+
+        public IEnumerable<AbstractTransaction> GetAll(string netId)
+        {
+            return GetAllByPredicate(tx => true);
         }
 
         public IEnumerable<AbstractTransaction> GetAllByPublicKey(string pubKey, string netId)

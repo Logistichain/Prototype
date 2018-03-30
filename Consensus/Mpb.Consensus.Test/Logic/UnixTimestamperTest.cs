@@ -18,10 +18,10 @@ namespace Mpb.Consensus.Test.Logic
         [TestMethod]
         public void GetCurrentUtcTimestamp_Calls_GetUtcTimestamp()
         {
-            var mock = new Mock<UnixTimestamper>() { CallBase = true };
+            var selfCallingMock = new Mock<UnixTimestamper>() { CallBase = true };
             var expectedResult = 123L;
-            mock.Setup((m) => m.GetUtcTimestamp(It.IsAny<DateTime>())).Returns(expectedResult);
-            var sut = mock.Object;
+            selfCallingMock.Setup((m) => m.GetUtcTimestamp(It.IsAny<DateTime>())).Returns(expectedResult);
+            var sut = selfCallingMock.Object;
 
             var result = sut.GetCurrentUtcTimestamp();
 
