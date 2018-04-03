@@ -8,5 +8,6 @@ namespace Mpb.Consensus.Logic.MiscLogic
         long GetCurrentUtcTimestamp();
 
         long GetUtcTimestamp(DateTime dateTime);
+        DateTime GetUtcDateTimeFromTimestamp(long timestamp);
     }
 }

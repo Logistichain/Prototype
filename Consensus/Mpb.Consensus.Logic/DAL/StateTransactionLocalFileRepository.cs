@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Mpb.Consensus.Logic.Constants;
 using Mpb.Consensus.Model;
 
@@ -14,6 +13,46 @@ namespace Mpb.Consensus.Logic.DAL
         public StateTransactionLocalFileRepository (Blockchain blockchainSource)
         {
             _trackingBlockchain = blockchainSource;
+        }
+
+        public ulong GetTokenBalanceForPubKey(string publicKey, string netId)
+        {
+            ulong totalReceived = 0;
+            ulong totalSpent = 0;
+            var tokenTransactions = GetAllByPublicKey(publicKey, netId)
+                                    .Where(tx =>
+                                        tx.Action == TransactionAction.ClaimCoinbase.ToString()
+                                        || tx.Action == TransactionAction.TransferToken.ToString())
+                                    .OfType<StateTransaction>()
+                                    .ToList();
+            var otherTransactions = GetAllByPublicKey(publicKey, netId)
+                                    .Where(tx =>
+                                        tx.Action != TransactionAction.ClaimCoinbase.ToString()
+                                        && tx.Action != TransactionAction.TransferToken.ToString())
+                                    .OfType<StateTransaction>()
+                                    .ToList();
+            foreach (StateTransaction tx in tokenTransactions)
+            {
+                if (tx.FromPubKey == publicKey)
+                {
+                    totalSpent += tx.Amount + tx.Fee;
+                }
+
+                if (tx.ToPubKey == publicKey)
+                {
+                    totalReceived += tx.Amount;
+                }
+            }
+
+            foreach (StateTransaction tx in otherTransactions)
+            {
+                if (tx.FromPubKey == publicKey)
+                {
+                    totalSpent += tx.Fee;
+                }
+            }
+
+            return totalReceived - totalSpent;
         }
 
         public IEnumerable<AbstractTransaction> GetAll(string netId)

@@ -13,6 +13,10 @@ namespace Mpb.Consensus.Model
     {
         public new IEnumerable<StateTransaction> Transactions => _transactions.OfType<StateTransaction>();
 
-        public BlockWithStateTransactions(string magicNumber, uint version, string merkleRoot, long timestamp, IEnumerable<StateTransaction> transactions) : base(magicNumber, version, merkleRoot, timestamp, transactions) { }
+        public BlockWithStateTransactions(string hash, ulong nonce, string magicNumber, uint version, string merkleRoot, long timestamp, IEnumerable<StateTransaction> transactions) : base(magicNumber, version, merkleRoot, timestamp, transactions)
+        {
+            this.IncrementNonce(nonce);
+            this.SetHash(hash);
+        }
     }
 }

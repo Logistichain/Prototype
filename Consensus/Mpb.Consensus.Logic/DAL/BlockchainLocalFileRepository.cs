@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System.IO;
 using System.Reflection;
 using Mpb.Consensus.Logic.MiscLogic;
+using System.Linq;
 
 namespace Mpb.Consensus.Logic.DAL
 {
@@ -49,7 +50,7 @@ namespace Mpb.Consensus.Logic.DAL
         /// If the blockchain file does not exist, a new blockchain object is returned.
         /// </summary>
         /// <returns>The deserialized blockchain object</returns>
-        public Blockchain GetByNetId(string netIdentifier)
+        public Blockchain GetChainByNetId(string netIdentifier)
         {
             if (_trackingBlockchain == null)
             {
@@ -57,6 +58,75 @@ namespace Mpb.Consensus.Logic.DAL
             }
 
             return _trackingBlockchain;
+        }
+
+        public Block GetBlockByHash(string blockHash, string netIdentifier)
+        {
+            if (_trackingBlockchain == null)
+            {
+                GetChainByNetId(netIdentifier);
+            }
+
+            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Hash == blockHash.ToUpper());
+            if (searchQuery.Count() > 0)
+            {
+                return searchQuery.First();
+            }
+
+            throw new KeyNotFoundException("Block not found in blockchain");
+        }
+
+        /// <summary>
+        /// Returns a block which contains the transactionHash.
+        /// Throws KeyNotFoundException when no block was found.
+        /// </summary>
+        /// <param name="transactionHash">The hash of the transaction</param>
+        /// <param name="netIdentifier">The network identifier</param>
+        /// <returns>The block that contains the transaction</returns>
+        public Block GetBlockByTransactionHash(string transactionHash, string netIdentifier)
+        {
+            if (_trackingBlockchain == null)
+            {
+                GetChainByNetId(netIdentifier);
+            }
+
+            foreach(var block in _trackingBlockchain.Blocks)
+            {
+                if (block.Transactions.Where(tx => tx.Hash == transactionHash).Count() > 0)
+                {
+                    return block;
+                }
+            }
+
+            throw new KeyNotFoundException("Transaction not found in blockchain");
+        }
+
+        /// <summary>
+        /// Get the height for a block in the given blockchain network.
+        /// Throws KeyNotFoundException when no block was found.
+        /// </summary>
+        /// <param name="hash">The block hash</param>
+        /// <param name="netIdentifier">The network identifier</param>
+        /// <returns>The height for the given block hash</returns>
+        public int GetHeightForBlock(string hash, string netIdentifier)
+        {
+            int height = 0;
+
+            if (_trackingBlockchain == null)
+            {
+                GetChainByNetId(netIdentifier);
+            }
+
+            foreach (var block in _trackingBlockchain.Blocks)
+            {
+                if (block.Hash == hash)
+                {
+                    return height;
+                }
+                height++;
+            }
+
+            throw new KeyNotFoundException("No block found with the given hash");
         }
 
         private Blockchain LoadBlockchainFromFileSystem(string netIdentifier)
@@ -70,6 +140,7 @@ namespace Mpb.Consensus.Logic.DAL
                 {
                     JsonSerializerSettings settings = new JsonSerializerSettings();
                     settings.Converters.Add(new BlockchainJsonConverter());
+                    settings.Converters.Add(new StateTransactionJsonConverter());
                     return JsonConvert.DeserializeObject<Blockchain>(stream.ReadToEnd(), settings);
                 }
             }
