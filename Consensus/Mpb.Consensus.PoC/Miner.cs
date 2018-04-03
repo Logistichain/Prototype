@@ -164,6 +164,7 @@ namespace Mpb.Consensus.PoC
 
                 try
                 {
+                    if (difficulty < 1) { difficulty = 1; }
                     var newBlock = _blockCreator.CreateValidBlock(transactions, difficulty, cancellationToken);
 
                     lock (_blockchain)

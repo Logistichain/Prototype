@@ -70,7 +70,7 @@ namespace Mpb.Consensus.PoC
                     case "stopmining":
                         miner.StopMining(true);
                         blockchainRepo.Update(blockchain);
-                        PrintConsoleCommands();
+                        //PrintConsoleCommands();
                         break;
                     case "resetblockchain":
                         miner.StopMining(false);

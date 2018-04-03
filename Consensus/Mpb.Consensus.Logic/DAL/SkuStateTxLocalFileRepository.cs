@@ -4,6 +4,7 @@ using System.Linq;
 using Mpb.Consensus.Logic.Constants;
 using Mpb.Consensus.Model;
 using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Mpb.Consensus.Logic.DAL
 {
@@ -83,10 +84,18 @@ namespace Mpb.Consensus.Logic.DAL
             // Fill the list with transactions about this SKU
             foreach (var skuTransaction in allOtherSkuTransactions)
             {
-                // todo handle exceptions
+                // todo handle repo exceptions
                 var block = _blockchainRepo.GetBlockByTransactionHash(skuTransaction.Hash, netId);
-                var skuChange = new Sku(block, skuTransaction, JsonConvert.DeserializeObject<SkuData>(skuTransaction.Data));
-                skuHistoryList.Add(skuChange);
+                try
+                {
+                    var skuChange = new Sku(block, skuTransaction, JsonConvert.DeserializeObject<SkuData>(skuTransaction.Data));
+                    skuHistoryList.Add(skuChange);
+                }
+                catch(JsonReaderException)
+                {
+                    var skuChange = new Sku(block, skuTransaction, skuCreationData);
+                    skuHistoryList.Add(skuChange);
+                }
             }
 
             return skuHistoryList;
