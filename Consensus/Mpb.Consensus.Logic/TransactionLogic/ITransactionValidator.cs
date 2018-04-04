@@ -8,6 +8,6 @@ namespace Mpb.Consensus.Logic.TransactionLogic
     {
         string CalculateMerkleRoot(ICollection<AbstractTransaction> orderedTransactions);
         void ValidateTransaction(AbstractTransaction tx);
-        void ValidateTransaction(AbstractTransaction tx, bool checkBalance);
+        void ValidateTransaction(AbstractTransaction tx, string netIdentifier, bool checkBalance);
     }
 }

@@ -53,7 +53,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
         /// <param name="amount">The initial supply (amount of SKU's)</param>
         /// <param name="sku">This SKU will be generated</param>
         /// <returns>A transaction object</returns>
-        public AbstractTransaction CreateSkuCreationTransaction(string ownerPubKey, string ownerPrivKey, uint amount, Sku sku)
+        public AbstractTransaction CreateSkuCreationTransaction(string ownerPubKey, string ownerPrivKey, uint amount, SkuData sku)
         {
             var skuJson = JsonConvert.SerializeObject(sku);
 
@@ -64,9 +64,9 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 0,
                 amount,
                 BlockchainConstants.TransactionVersion,
-                TransactionAction.TransferToken.ToString(),
+                TransactionAction.CreateSku.ToString(),
                 skuJson,
-                BlockchainConstants.TransferTokenFee
+                BlockchainConstants.CreateSkuFee
                 );
             FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
 
@@ -83,7 +83,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
         /// <param name="skuTxIndex">The transaction index from the SkuBlock, containing the SKU data</param>
         /// <param name="optionalData">Space for data</param>
         /// <returns>A transaction object</returns>
-        public AbstractTransaction CreateSupplyCreationTransaction(string ownerPubKey, string ownerPrivKey, uint amount, string skuBlockHash, uint skuTxIndex, string optionalData)
+        public AbstractTransaction CreateSupplyCreationTransaction(string ownerPubKey, string ownerPrivKey, uint amount, string skuBlockHash, int skuTxIndex, string optionalData)
         {
             var tx = new StateTransaction(
                 ownerPubKey,
@@ -105,27 +105,28 @@ namespace Mpb.Consensus.Logic.TransactionLogic
         /// Create new supply for a given SKU with this transaction, following the current consensus rules.
         /// The new supply will be available to the owner after this transaction has been confirmed in the blockchain.
         /// </summary>
-        /// <param name="ownerPubKey">The owner of the SKU and it's supply</param>
-        /// <param name="ownerPrivKey">The owner's private key to sign the transaction</param>
+        /// <param name="fromPubKey">The owner of the supply</param>
+        /// <param name="fromPrivKey">The owner's private key to sign the transaction</param>
+        /// <param name="toPubKey">The public key to send the supply to</param>
         /// <param name="amount">The initial supply (amount of SKU's)</param
         /// <param name="skuBlockHash">The block where the (latest) SKU transaction resides</param>
         /// <param name="skuTxIndex">The transaction index from the SkuBlock, containing the SKU data</param>
         /// <param name="optionalData">Space for data</param>
         /// <returns>A transaction object</returns>
-        public AbstractTransaction CreateSupplyTransferTransaction(string ownerPubKey, string ownerPrivKey, uint amount, string skuBlockHash, uint skuTxIndex, string optionalData)
+        public AbstractTransaction CreateSupplyTransferTransaction(string fromPubKey, string fromPrivKey, string toPubKey, uint amount, string skuBlockHash, int skuTxIndex, string optionalData)
         {
             var tx = new StateTransaction(
-                ownerPubKey,
-                ownerPubKey,
+                fromPubKey,
+                toPubKey,
                 skuBlockHash,
                 skuTxIndex,
                 amount,
                 BlockchainConstants.TransactionVersion,
-                TransactionAction.TransferToken.ToString(),
+                TransactionAction.TransferSupply.ToString(),
                 optionalData,
-                BlockchainConstants.TransferTokenFee
+                BlockchainConstants.TransferSupplyFee
                 );
-            FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
+            FinalizeTransaction(tx, fromPubKey, fromPrivKey);
 
             return tx;
         }
@@ -140,7 +141,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
         /// <param name="skuTxIndex">The transaction index from the SkuBlock, containing the SKU data</param>
         /// <param name="optionalData">Space for data</param>
         /// <returns>A transaction object</returns>
-        public AbstractTransaction CreateSupplyDestroyTransaction(string ownerPubKey, string ownerPrivKey, uint amount, string skuBlockHash, uint skuTxIndex, string optionalData)
+        public AbstractTransaction CreateSupplyDestroyTransaction(string ownerPubKey, string ownerPrivKey, uint amount, string skuBlockHash, int skuTxIndex, string optionalData)
         {
             var tx = new StateTransaction(
                 ownerPubKey,
@@ -189,8 +190,8 @@ namespace Mpb.Consensus.Logic.TransactionLogic
         /// with the private key from the sender.
         /// </summary>
         /// <param name="tx">The transaction to hash and sign</param>
-        /// <param name="fromPubKey"></param>
-        /// <param name="fromPrivKey"></param>
+        /// <param name="fromPubKey">The creator of the transaction</param>
+        /// <param name="fromPrivKey">The creator's private key to sign the transaction hash</param>
         private void FinalizeTransaction(AbstractTransaction tx, string fromPubKey, string fromPrivKey)
         {
             if (tx.IsFinalized()) { return; }
