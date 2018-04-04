@@ -75,7 +75,7 @@ namespace Mpb.Consensus.PoC.Handlers
             while (supplyAmount < 0 || firstTimeSupplyAmountInput)
             {
                 firstTimeSupplyAmountInput = false;
-                Console.WriteLine("Enter the amount to send:");
+                WriteLineWithInputCursor("Specify the initial supply:");
 
                 var amountInput = Console.ReadLine().ToLower();
                 while (!UInt32.TryParse(amountInput, out supplyAmount))
@@ -93,25 +93,25 @@ namespace Mpb.Consensus.PoC.Handlers
         private SkuData HandleCreateSkuCommand()
         {
             Console.WriteLine("-- SKU information --");
-            Console.WriteLine("The following fields are required to create an SKU: SkuId, EanCode, Description.");
+            Console.WriteLine("The following fields are required to create an SKU: SKU name, Ean code, Description.");
             string skuId = "";
             while (String.IsNullOrWhiteSpace(skuId))
             {
-                Console.WriteLine("Enter the SKU ID:");
+                WriteLineWithInputCursor("Enter the SKU name:");
                 skuId = Console.ReadLine();
             }
 
             string eanCode = "";
             while (String.IsNullOrWhiteSpace(eanCode))
             {
-                Console.WriteLine("Enter the EAN Code:");
+                WriteLineWithInputCursor("Enter the EAN Code:");
                 eanCode = Console.ReadLine();
             }
 
             string description = "";
             while (String.IsNullOrWhiteSpace(description))
             {
-                Console.WriteLine("Enter the description:");
+                WriteLineWithInputCursor("Provide a description:");
                 description = Console.ReadLine();
             }
 

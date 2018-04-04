@@ -104,7 +104,7 @@ namespace Mpb.Consensus.PoC.Handlers
             bool forceAmount = false;
             while (amount < 1 || amount > skuSupply && !forceAmount)
             {
-                WriteLineWithInputCursor("Specify the initial supply:");
+                WriteLineWithInputCursor("Specify the amount to transfer:");
 
                 var amountInput = Console.ReadLine().ToLower();
                 while (!UInt32.TryParse(amountInput, out amount))
