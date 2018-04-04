@@ -63,6 +63,9 @@ namespace Mpb.Consensus.PoC.Handlers
             WriteLineWithInputCursor("Enter the receiver's public key:");
             var toPub = Console.ReadLine().ToLower();
 
+
+            // Todo support custom fees in transactionCreator
+            /*
             var askFeeFirstTime = true;
             var forceHigherFee = false;
             while (transferFee < TransferSupplyFee && !forceHigherFee || askFeeFirstTime)
@@ -95,6 +98,7 @@ namespace Mpb.Consensus.PoC.Handlers
                     }
                 }
             }
+            */
 
             uint amount = 0;
             bool forceAmount = false;
@@ -124,7 +128,6 @@ namespace Mpb.Consensus.PoC.Handlers
             WriteLineWithInputCursor("Enter optional data []:");
             var optionalData = Console.ReadLine();
             
-            // todo support fee
             AbstractTransaction transactionToSend = _transactionCreator.CreateSupplyTransferTransaction(fromPub, fromPriv, toPub, amount, blockHash, txIndex, optionalData);
             miner.AddTransactionToPool(transactionToSend);
             Console.Write("> ");

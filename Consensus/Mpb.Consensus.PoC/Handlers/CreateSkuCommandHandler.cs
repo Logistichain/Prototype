@@ -32,6 +32,8 @@ namespace Mpb.Consensus.PoC.Handlers
             WriteLineWithInputCursor("Enter the sender's private key (can be anything for now):");
             var fromPriv = Console.ReadLine().ToLower();
 
+            // Todo support custom fees in transactionCreator
+            /*
             var askFeeFirstTime = true;
             var forceLowerFee = false;
             while (creationFee < CreateSkuFee && !forceLowerFee || askFeeFirstTime)
@@ -64,6 +66,7 @@ namespace Mpb.Consensus.PoC.Handlers
                     }
                 }
             }
+            */
 
             var sku = HandleCreateSkuCommand();
 
@@ -81,8 +84,7 @@ namespace Mpb.Consensus.PoC.Handlers
                     amountInput = Console.ReadLine().ToLower();
                 }
             }
-
-            // todo support fee
+            
             AbstractTransaction transactionToSend = _transactionCreator.CreateSkuCreationTransaction(fromPub, fromPriv, supplyAmount, sku);
             miner.AddTransactionToPool(transactionToSend);
             Console.Write("> ");
