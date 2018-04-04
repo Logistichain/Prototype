@@ -3,6 +3,7 @@ using Mpb.Consensus.Logic.Constants;
 using Mpb.Consensus.Logic.DAL;
 using Mpb.Consensus.Logic.Exceptions;
 using Mpb.Consensus.Model;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,103 +15,19 @@ namespace Mpb.Consensus.Logic.TransactionLogic
     public class StateTransactionValidator : ITransactionValidator
     {
         private readonly TransactionByteConverter _transactionByteConverter;
+        private readonly IBlockchainRepository _blockchainRepository;
         private readonly ITransactionRepository _transactionRepo;
+        private readonly ISkuRepository _skuRepo;
 
-        public StateTransactionValidator(TransactionByteConverter transactionByteConverter, ITransactionRepository transactionRepo)
+        public StateTransactionValidator(TransactionByteConverter transactionByteConverter, IBlockchainRepository blockchainRepository, ITransactionRepository transactionRepo, ISkuRepository skuRepo)
         {
             _transactionByteConverter = transactionByteConverter;
+            _blockchainRepository = blockchainRepository;
             _transactionRepo = transactionRepo;
+            _skuRepo = skuRepo;
         }
 
-        /// <summary>
-        /// Validates a transaction, including balance checks.
-        /// Throws TransactionRejectedException if the validation fails.
-        /// </summary>
-        /// <param name="tx"></param>
-        public virtual void ValidateTransaction(AbstractTransaction tx)
-        {
-            ValidateTransaction(tx, true);
-        }
-
-
-        public virtual void ValidateTransaction(AbstractTransaction tx, bool checkBalance)
-        {
-            if (!(tx is StateTransaction))
-            {
-                throw new ArgumentException("Transaction is not of type StateTransaction.");
-            }
-
-            var stateTx = (StateTransaction)tx;
-            if (stateTx.Action == TransactionAction.TransferToken.ToString())
-            {
-                ValidateTransferTokenTransaction(stateTx);
-            }
-            else if (stateTx.Action == TransactionAction.TransferSupply.ToString())
-            {
-                ValidateTransferSupplyTransaction(stateTx);
-            }
-            else if (stateTx.Action == TransactionAction.DestroySupply.ToString())
-            {
-                ValidateDestroySupplyTransaction(stateTx);
-            }
-            else if (stateTx.Action == TransactionAction.CreateSupply.ToString())
-            {
-                ValidateCreateSupplyTransaction(stateTx);
-            }
-            else if (stateTx.Action == TransactionAction.CreateSku.ToString())
-            {
-                ValidateCreateSkuTransaction(stateTx);
-            }
-            else if (stateTx.Action == TransactionAction.ChangeSku.ToString())
-            {
-                ValidateChangeSkuTransaction(stateTx);
-            }
-            else if (stateTx.Action == TransactionAction.ClaimCoinbase.ToString())
-            {
-                ValidateCoinbaseTransaction(stateTx);
-            }
-            else
-            {
-                throw new TransactionRejectedException("Unrecognized action", stateTx);
-            }
-        }
-
-        private void ValidateTransferTokenTransaction(StateTransaction tx)
-        {
-
-        }
-
-        private void ValidateTransferSupplyTransaction(StateTransaction tx)
-        {
-
-        }
-
-        private void ValidateDestroySupplyTransaction(StateTransaction tx)
-        {
-
-        }
-
-        private void ValidateCreateSupplyTransaction(StateTransaction tx)
-        {
-
-        }
-
-        private void ValidateCreateSkuTransaction(StateTransaction tx)
-        {
-
-        }
-
-        private void ValidateChangeSkuTransaction(StateTransaction tx)
-        {
-
-        }
-
-        private void ValidateCoinbaseTransaction(StateTransaction tx)
-        {
-
-        }
-
-        // Todo this is not state-specific. Apply decorator/composite pattern?
+        // Todo this is not state-specific. Place this in an abstract class?
         //! This method does not build a merkle tree, but just hashes every transaction and adds them together!
         // Todo Implement a proper merkle root algorithm
         /// <summary>
@@ -120,7 +37,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
         /// transactions before signing them.
         /// NOTE: This method does not build a merkle tree, but just hashes every transaction and adds them together!
         /// </summary>
-        /// <param name="orderedTransactions"></param>
+        /// <param name="orderedTransactions">The transactions, in the correct order</param>
         /// <returns>The SHA-256 value for the merkleroot</returns>
         public virtual string CalculateMerkleRoot(ICollection<AbstractTransaction> orderedTransactions)
         {
@@ -160,5 +77,271 @@ namespace Mpb.Consensus.Logic.TransactionLogic
 
             return hashString;
         }
+
+        // Maybe we can solve the scalability of this class with a pattern: Visitor?
+        // Also take into account the multiple transaction versions that may exist.
+        /// <summary>
+        /// Validates a transaction, including balance checks, on the current network.
+        /// Throws TransactionRejectedException if the validation fails.
+        /// </summary>
+        /// <param name="tx">The transaction to validate</param>
+        public virtual void ValidateTransaction(AbstractTransaction tx)
+        {
+            ValidateTransaction(tx, BlockchainConstants.DefaultNetworkIdentifier, true);
+        }
+
+
+        public virtual void ValidateTransaction(AbstractTransaction tx, string netIdentifier, bool checkBalance)
+        {
+            if (!(tx is StateTransaction))
+            {
+                throw new ArgumentException("Transaction is not of type StateTransaction.");
+            }
+
+            var stateTx = (StateTransaction)tx;
+
+            if (tx.Version != BlockchainConstants.TransactionVersion)
+            {
+                throw new TransactionRejectedException("Unsupported transaction version", tx);
+            }
+
+            CheckTxSignature(stateTx);
+
+            // Action-specific checks
+            if (stateTx.Action == TransactionAction.TransferToken.ToString())
+            {
+                ValidateTransferTokenTransaction(stateTx, netIdentifier);
+            }
+            else if (stateTx.Action == TransactionAction.TransferSupply.ToString())
+            {
+                ValidateTransferSupplyTransaction(stateTx, netIdentifier);
+            }
+            else if (stateTx.Action == TransactionAction.DestroySupply.ToString())
+            {
+                ValidateDestroySupplyTransaction(stateTx, netIdentifier);
+            }
+            else if (stateTx.Action == TransactionAction.CreateSupply.ToString())
+            {
+                ValidateCreateSupplyTransaction(stateTx, netIdentifier);
+            }
+            else if (stateTx.Action == TransactionAction.CreateSku.ToString())
+            {
+                ValidateCreateSkuTransaction(stateTx, netIdentifier);
+            }
+            else if (stateTx.Action == TransactionAction.ChangeSku.ToString())
+            {
+                ValidateChangeSkuTransaction(stateTx, netIdentifier);
+            }
+            else if (stateTx.Action == TransactionAction.ClaimCoinbase.ToString())
+            {
+                ValidateCoinbaseTransaction(stateTx, netIdentifier);
+            }
+            else
+            {
+                throw new TransactionRejectedException("Unrecognized action", stateTx);
+            }
+        }
+
+        private void ValidateTransferTokenTransaction(StateTransaction tx, string netIdentifier)
+        {
+            CheckFromAndToNotNull(tx);
+            CheckTransactionFee(tx, BlockchainConstants.TransferTokenFee);
+            CheckTokenBalance(tx.FromPubKey, netIdentifier, tx.Amount + BlockchainConstants.TransferTokenFee);
+        }
+
+        private void ValidateTransferSupplyTransaction(StateTransaction tx, string netIdentifier)
+        {
+            CheckFromAndToNotNull(tx);
+
+            if (tx.SkuBlockHash == null)
+            {
+                throw new TransactionRejectedException(nameof(tx.SkuBlockHash) + " field cannot be null", tx);
+            }
+
+            if (tx.ToPubKey != null)
+            {
+                throw new TransactionRejectedException(nameof(tx.ToPubKey) + " field must be null", tx);
+            }
+
+            CheckSkuBlockHashAndTxIndex(tx.SkuBlockHash, tx.SkuTxIndex, TransactionAction.CreateSku, netIdentifier);
+            CheckTransactionFee(tx, BlockchainConstants.TransferSupplyFee);
+            CheckTokenBalance(tx.FromPubKey, netIdentifier, BlockchainConstants.TransferSupplyFee);
+            CheckSupplyBalance(tx.FromPubKey, tx.SkuBlockHash, tx.SkuTxIndex, netIdentifier, tx.Amount);
+        }
+
+        private void ValidateDestroySupplyTransaction(StateTransaction tx, string netIdentifier)
+        {
+            if (tx.FromPubKey == null)
+            {
+                throw new TransactionRejectedException(nameof(tx.FromPubKey) + " field cannot be null", tx);
+            }
+
+            if (tx.ToPubKey != null)
+            {
+                throw new TransactionRejectedException(nameof(tx.ToPubKey) + " field must be null", tx);
+            }
+
+            CheckSkuBlockHashAndTxIndex(tx.SkuBlockHash, tx.SkuTxIndex, TransactionAction.CreateSku, netIdentifier);
+            CheckTransactionFee(tx, BlockchainConstants.DestroySupplyFee);
+            CheckTokenBalance(tx.FromPubKey, netIdentifier, BlockchainConstants.DestroySupplyFee);
+            CheckSupplyBalance(tx.FromPubKey, tx.SkuBlockHash, tx.SkuTxIndex, netIdentifier, tx.Amount);
+        }
+
+        private void ValidateCreateSupplyTransaction(StateTransaction tx, string netIdentifier)
+        {
+            CheckFromAndToNotNull(tx);
+
+            if (tx.FromPubKey != tx.ToPubKey)
+            {
+                throw new TransactionRejectedException(nameof(tx.FromPubKey) + " and " + nameof(tx.ToPubKey) + " fields must be equal", tx);
+            }
+
+            if (tx.SkuBlockHash != null)
+            {
+                throw new TransactionRejectedException(nameof(tx.SkuBlockHash) + " must be null", tx);
+            }
+
+            CheckSkuBlockHashAndTxIndex(tx.SkuBlockHash, tx.SkuTxIndex, TransactionAction.CreateSku, netIdentifier);
+            CheckTransactionFee(tx, BlockchainConstants.CreateSupplyFee);
+            CheckTokenBalance(tx.FromPubKey, netIdentifier, BlockchainConstants.CreateSupplyFee);
+        }
+
+        private void ValidateCreateSkuTransaction(StateTransaction tx, string netIdentifier)
+        {
+            CheckFromAndToNotNull(tx);
+
+            if (tx.FromPubKey != tx.ToPubKey)
+            {
+                throw new TransactionRejectedException(nameof(tx.FromPubKey) + " and " + nameof(tx.ToPubKey) + " fields must be equal", tx);
+            }
+
+            if (tx.SkuBlockHash != null)
+            {
+                throw new TransactionRejectedException(nameof(tx.SkuBlockHash) + " must be null", tx);
+            }
+
+            // Check SKU fields
+            TryDeserializeSkuData(tx.Data, out SkuData skuData);
+
+            if (String.IsNullOrWhiteSpace(skuData.SkuId))
+            {
+                throw new TransactionRejectedException(nameof(skuData.SkuId) + " field cannot be null or empty", tx);
+            }
+
+            if (String.IsNullOrWhiteSpace(skuData.EanCode))
+            {
+                throw new TransactionRejectedException(nameof(skuData.EanCode) + " field cannot be null or empty", tx);
+            }
+
+            CheckTransactionFee(tx, BlockchainConstants.CreateSkuFee);
+            CheckTokenBalance(tx.FromPubKey, netIdentifier, BlockchainConstants.CreateSkuFee);
+        }
+
+        private void ValidateChangeSkuTransaction(StateTransaction tx, string netIdentifier)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ValidateCoinbaseTransaction(StateTransaction tx, string netIdentifier)
+        {
+            if (tx.FromPubKey != null)
+            {
+                throw new TransactionRejectedException(nameof(tx.FromPubKey) + " field must be null in a Coinbase transaction", tx);
+            }
+
+            if (tx.ToPubKey == null)
+            {
+                throw new TransactionRejectedException(nameof(tx.ToPubKey) + " field cannot be null", tx);
+            }
+
+            if (tx.Fee != 0)
+            {
+                throw new TransactionRejectedException("Fee must be zero on Coinbase transactions", tx);
+            }
+
+            if (tx.Amount > BlockchainConstants.CoinbaseReward)
+            {
+                throw new TransactionRejectedException("Coinbase reward is too high. Maximum: " + BlockchainConstants.CoinbaseReward, tx);
+            }
+        }
+
+        // Helpers
+        private void TryDeserializeSkuData(string data, out SkuData skuData)
+        {
+            try
+            {
+                skuData = JsonConvert.DeserializeObject<SkuData>(data);
+            }
+            catch (JsonReaderException)
+            {
+                throw new TransactionRejectedException("Invalid data contents: Unable to deserialize to SkuData object");
+            }
+        }
+
+        private void CheckTransactionFee(StateTransaction tx, uint minimumFee)
+        {
+            if (tx.Fee < minimumFee)
+            {
+                throw new TransactionRejectedException("Fee is too low. Minimum fee is "+minimumFee+" tokens for this action", tx);
+            }
+        }
+
+        private void CheckFromAndToNotNull(StateTransaction tx)
+        {
+            if (tx.FromPubKey == null)
+            {
+                throw new TransactionRejectedException(nameof(tx.FromPubKey) + " field cannot be null", tx);
+            }
+
+            if (tx.ToPubKey == null)
+            {
+                throw new TransactionRejectedException(nameof(tx.ToPubKey) + " field cannot be null", tx);
+            }
+        }
+
+        private void CheckTokenBalance(string pubKey, string netId, ulong minimumBalance)
+        {
+            ulong currentBalance = _transactionRepo.GetTokenBalanceForPubKey(pubKey, netId);
+            if (currentBalance < minimumBalance)
+            {
+                throw new TransactionRejectedException("Insufficient token balance");
+            }
+        }
+
+        private void CheckSkuBlockHashAndTxIndex(string skuBlockHash, int skuTxIndex, TransactionAction expectedTxAction, string netId)
+        {
+            try
+            {
+                var block = _blockchainRepository.GetBlockByHash(skuBlockHash, netId);
+                var transaction = block.Transactions.ToList()[skuTxIndex];
+                if (transaction.Action != expectedTxAction.ToString())
+                {
+                    throw new TransactionRejectedException("Invalid transaction action in SkuBlock. Expected action: "+ expectedTxAction.ToString());
+                }
+            }
+            catch(KeyNotFoundException e)
+            {
+                throw new TransactionRejectedException(e.Message);
+            }
+            catch (IndexOutOfRangeException)
+            {
+                throw new TransactionRejectedException("SKU transaction does not exist in SkuBlock");
+            }
+        }
+
+        private void CheckSupplyBalance(string pubKey, string createdSkuBlockHash, int skuTxId, string netId, ulong minimumBalance)
+        {
+            ulong currentBalance = _skuRepo.GetSupplyBalanceForPubKey(pubKey, createdSkuBlockHash, skuTxId, netId);
+            if (currentBalance < minimumBalance)
+            {
+                throw new TransactionRejectedException("Insufficient supply balance");
+            }
+        }
+
+        // todo finish this with wallet implementation
+        private void CheckTxSignature(StateTransaction tx)
+        {
+            // if tx.action == coinbase, use the 'To' field for the signature. Otherwise, use the 'From' field.
+        }        
     }
 }

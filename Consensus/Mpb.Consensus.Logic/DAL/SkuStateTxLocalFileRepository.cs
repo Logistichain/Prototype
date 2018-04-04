@@ -18,16 +18,17 @@ namespace Mpb.Consensus.Logic.DAL
             _transactionRepo = transactionRepo;
         }
 
-        public long GetSupplyBalanceForPubKey(string publicKey, string createdSkuBlockHash, int skuTxIndex, string netId)
+        // todo add parameter 'includeTxPool' so StateTransactionValidator can correctly check balances
+        public ulong GetSupplyBalanceForPubKey(string publicKey, string createdSkuBlockHash, int skuTxIndex, string netId)
         {
             var skuHistory = GetSkuWithHistory(createdSkuBlockHash, skuTxIndex, netId).ToList();
             return GetSupplyBalanceForPubKey(publicKey, skuHistory);
         }
 
-        public long GetSupplyBalanceForPubKey(string publicKey, IEnumerable<Sku> skuHistory)
+        public ulong GetSupplyBalanceForPubKey(string publicKey, IEnumerable<Sku> skuHistory)
         {
-            long totalReceived = 0;
-            long totalSpent = 0;
+            ulong totalReceived = 0;
+            ulong totalSpent = 0;
             foreach (Sku skuChange in skuHistory)
             {
                 var tx = (StateTransaction)skuChange.Transaction;

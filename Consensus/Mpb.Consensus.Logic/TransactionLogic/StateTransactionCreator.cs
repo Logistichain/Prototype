@@ -66,7 +66,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 BlockchainConstants.TransactionVersion,
                 TransactionAction.CreateSku.ToString(),
                 skuJson,
-                BlockchainConstants.TransferTokenFee
+                BlockchainConstants.CreateSkuFee
                 );
             FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
 
@@ -124,7 +124,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 BlockchainConstants.TransactionVersion,
                 TransactionAction.TransferSupply.ToString(),
                 optionalData,
-                BlockchainConstants.TransferTokenFee
+                BlockchainConstants.TransferSupplyFee
                 );
             FinalizeTransaction(tx, fromPubKey, fromPrivKey);
 

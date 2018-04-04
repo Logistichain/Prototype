@@ -15,6 +15,7 @@ namespace Mpb.Consensus.Logic.DAL
             _trackingBlockchain = blockchainSource;
         }
 
+        // todo add parameter 'includeTxPool' so StateTransactionValidator can correctly check balances
         public ulong GetTokenBalanceForPubKey(string publicKey, string netId)
         {
             ulong totalReceived = 0;

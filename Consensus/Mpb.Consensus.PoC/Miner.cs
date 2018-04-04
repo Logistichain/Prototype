@@ -33,6 +33,7 @@ namespace Mpb.Consensus.PoC
         IBlockValidator _validator;
         IDifficultyCalculator _difficultyCalculator;
         IPowBlockCreator _blockCreator;
+        ISkuRepository _skuRepo;
         List<AbstractTransaction> _txPool;
         ILogger _logger;
         string _walletPubKey;
@@ -53,7 +54,8 @@ namespace Mpb.Consensus.PoC
             _timestamper = new UnixTimestamper();
             _transactionByteConverter = new TransactionByteConverter();
             _transactionCreator = new StateTransactionCreator(_transactionByteConverter);
-            _transactionValidator = new StateTransactionValidator(_transactionByteConverter, _transactionRepo);
+            _skuRepo = new SkuStateTxLocalFileRepository(_blockchainRepo, _transactionRepo);
+            _transactionValidator = new StateTransactionValidator(_transactionByteConverter, _blockchainRepo, _transactionRepo, _skuRepo);
             _validator = new PowBlockValidator(_blockHeaderHelper, _transactionValidator, _timestamper);
             _difficultyCalculator = new DifficultyCalculator();
             _blockCreator = new PowBlockCreator(_timestamper, _validator, _blockHeaderHelper);

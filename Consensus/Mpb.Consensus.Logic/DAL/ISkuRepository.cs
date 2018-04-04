@@ -7,7 +7,7 @@ namespace Mpb.Consensus.Logic.DAL
     {
         IEnumerable<IEnumerable<Sku>> GetAllWithHistory(string netId);
         IEnumerable<Sku> GetSkuWithHistory(string createdSkuBlockHash, int skuTxIndex, string netId);
-        long GetSupplyBalanceForPubKey(string publicKey, IEnumerable<Sku> skuHistory);
-        long GetSupplyBalanceForPubKey(string publicKey, string createdSkuBlockHash, int skuTxIndex, string netId);
+        ulong GetSupplyBalanceForPubKey(string publicKey, IEnumerable<Sku> skuHistory);
+        ulong GetSupplyBalanceForPubKey(string publicKey, string createdSkuBlockHash, int skuTxIndex, string netId);
     }
 }
