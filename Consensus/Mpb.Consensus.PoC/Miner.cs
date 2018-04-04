@@ -157,7 +157,6 @@ namespace Mpb.Consensus.PoC
                     for (int i = 0; i < _txPool.Count(); i++)
                     {
                         transactions.Add(_txPool[i]);
-                        _txPool.RemoveAt(i);
                     }
 
                     transactionsIncludedInBlock = transactionsIncludedInBlock - _txPool.Count();
@@ -173,7 +172,16 @@ namespace Mpb.Consensus.PoC
                     {
                         _blockchain.Blocks.Add(newBlock);
                     }
-                    _logger.Information("Found a new block!");
+
+                    lock (_txPool)
+                    {
+                        foreach(var transaction in newBlock.Transactions)
+                        {
+                            _txPool.Remove(transaction);
+                        }
+                    }
+
+                    _logger.Information("Created a new block!");
                 }
                 catch (OperationCanceledException)
                 {
