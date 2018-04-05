@@ -1,6 +1,5 @@
 ﻿using Mpb.Consensus.Logic.BlockLogic;
 using Mpb.Consensus.Logic.DAL;
-using Serilog;
 using System;
 using Mpb.Consensus.Model;
 using System.Reflection;
@@ -8,24 +7,36 @@ using System.IO;
 using Mpb.Consensus.Logic.TransactionLogic;
 using Mpb.Consensus.PoC.Handlers;
 using Mpb.Consensus.Logic.MiscLogic;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace Mpb.Consensus.PoC
 {
     public class Program
     {
+        private static Microsoft.Extensions.Logging.ILogger _logger;
+
         public static void Main(string[] args)
         {
-            ILogger logger = CreateLogger();
-            var networkIdentifier = "testnet";
-            IBlockchainRepository blockchainRepo = new BlockchainLocalFileRepository();
-            Blockchain blockchain = blockchainRepo.GetChainByNetId(networkIdentifier);
-            ITransactionRepository transactionRepo = new StateTransactionLocalFileRepository(blockchain);
-            ITransactionCreator transactionCreator = new StateTransactionCreator(new TransactionByteConverter());
-            ITimestamper timestamper = new UnixTimestamper();
-            ISkuRepository skuRepository = new SkuStateTxLocalFileRepository(blockchainRepo, transactionRepo);
             var walletPubKey = "montaminer";
             var walletPrivKey = "montaprivatekey";
-            Miner miner = new Miner(blockchain, walletPubKey, walletPrivKey, logger);
+            var networkIdentifier = "testnet";
+            var services = SetupDI(networkIdentifier);
+
+            _logger = services.GetService<ILoggerFactory>().CreateLogger<Program>();
+
+            GetServices(
+                services,
+                out IBlockchainRepository blockchainRepo,
+                out ITransactionRepository transactionRepo,
+                out ITransactionCreator transactionCreator,
+                out ITimestamper timestamper,
+                out ISkuRepository skuRepository
+                );
+            Blockchain blockchain = blockchainRepo.GetChainByNetId(networkIdentifier);
+            Miner miner = new Miner(blockchain, walletPubKey, walletPrivKey, services.GetService<ILoggerFactory>());
+
             // Command handlers, only large commands are handles by these separate handlers.
             AccountsCommandHandler accountsCmdHandler = new AccountsCommandHandler(transactionRepo, networkIdentifier);
             SkusCommandHandler skusCmdHandler = new SkusCommandHandler(blockchainRepo, timestamper, skuRepository, networkIdentifier);
@@ -35,7 +46,7 @@ namespace Mpb.Consensus.PoC
             CreateSkuCommandHandler createSkuCmdHandler = new CreateSkuCommandHandler(transactionRepo, transactionCreator);
             TransferSupplyCommandHandler transferSupplyCmdHandler = new TransferSupplyCommandHandler(skuRepository, transactionRepo, transactionCreator, networkIdentifier);
 
-            logger.Information("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
+            _logger.LogInformation("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
             PrintConsoleCommands();
 
             var input = "";
@@ -77,17 +88,23 @@ namespace Mpb.Consensus.PoC
                         blockchainRepo.Delete(networkIdentifier);
                         Console.WriteLine("Blockchain deleted.");
                         // Initialize all variables again because the heap references changed.
-                        blockchain = blockchainRepo.GetChainByNetId(networkIdentifier);
-                        transactionRepo = new StateTransactionLocalFileRepository(blockchain);
-                        miner = new Miner(blockchain, walletPubKey, walletPrivKey, logger);
+                        services = SetupDI(networkIdentifier);
+                        GetServices(
+                            services,
+                            out blockchainRepo,
+                            out transactionRepo,
+                            out transactionCreator,
+                            out timestamper,
+                            out skuRepository
+                        );
+                        miner = new Miner(blockchain, walletPubKey, walletPrivKey, services.GetService<ILoggerFactory>());
                         accountsCmdHandler = new AccountsCommandHandler(transactionRepo, networkIdentifier);
-                        skuRepository = new SkuStateTxLocalFileRepository(blockchainRepo, transactionRepo);
                         skusCmdHandler = new SkusCommandHandler(blockchainRepo, timestamper, skuRepository, networkIdentifier);
                         transactionsCmdHandler = new TransactionsCommandHandler(transactionRepo, networkIdentifier);
                         txpoolCmdHandler = new TransactionPoolCommandHandler();
                         transferTokensCmdHandler = new TransferTokensCommandHandler(transactionRepo, transactionCreator);
                         createSkuCmdHandler = new CreateSkuCommandHandler(transactionRepo, transactionCreator);
-                        logger.Information("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
+                        _logger.LogInformation("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
                         Console.Write("> ");
                         break;
                     case "transfertokens":
@@ -105,6 +122,40 @@ namespace Mpb.Consensus.PoC
                         break;
                 }
             }
+        }
+
+        private static void GetServices(IServiceProvider services, out IBlockchainRepository blockchainRepo, out ITransactionRepository transactionRepo, out ITransactionCreator transactionCreator, out ITimestamper timestamper, out ISkuRepository skuRepository)
+        {
+            blockchainRepo = services.GetService<IBlockchainRepository>();
+            transactionRepo = services.GetService<ITransactionRepository>();
+            transactionCreator = services.GetService<ITransactionCreator>();
+            timestamper = services.GetService<ITimestamper>();
+            skuRepository = services.GetService<ISkuRepository>();
+        }
+
+        private static IServiceProvider SetupDI(string networkIdentifier)
+        {
+            var blockchainRepo = new BlockchainLocalFileRepository();
+            var services = new ServiceCollection()
+                .AddSingleton(CreateLoggerFactory())
+                .AddTransient<IBlockHeaderHelper, BlockHeaderHelper>()
+                .AddTransient<IBlockValidator, PowBlockValidator>()
+                .AddTransient<IDifficultyCalculator, DifficultyCalculator>()
+                .AddTransient<IPowBlockCreator, PowBlockCreator>()
+
+                .AddTransient<IBlockchainRepository, BlockchainLocalFileRepository>()
+                .AddTransient<ISkuRepository, SkuStateTxLocalFileRepository>()
+                .AddTransient<ITransactionRepository>(
+                        (x) => new StateTransactionLocalFileRepository(x.GetService<IBlockchainRepository>().GetChainByNetId(networkIdentifier))
+                    )
+                .AddTransient<ITimestamper, UnixTimestamper>()
+
+                .AddTransient<ITransactionCreator, StateTransactionCreator>()
+                .AddTransient<ITransactionValidator, StateTransactionValidator>()
+                .AddTransient<TransactionByteConverter>()
+                .BuildServiceProvider();
+
+            return services;
         }
 
         private static void PrintConsoleCommands()
@@ -126,15 +177,19 @@ namespace Mpb.Consensus.PoC
             Console.Write("> ");
         }
 
-        private static ILogger CreateLogger()
+        private static ILoggerFactory CreateLoggerFactory()
         {
-            var time = DateTime.Now.Hour + "" + DateTime.Now.Minute;
-            var fileLocation = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "log-" + time + ".txt");
-            return new LoggerConfiguration()
-                    .MinimumLevel.Debug()
-                    .WriteTo.ColoredConsole()
-                    .WriteTo.File(fileLocation)
-                    .CreateLogger();
+            var logger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Debug()
+                .WriteTo.ColoredConsole()
+                .WriteTo.File("log.txt", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+
+            var loggerFactory = new LoggerFactory()
+                .AddSerilog(logger);
+
+            return loggerFactory;
         }
     }
 }

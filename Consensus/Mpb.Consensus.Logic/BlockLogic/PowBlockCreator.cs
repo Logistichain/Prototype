@@ -41,6 +41,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
 
             bool targetMet = false;
             var utcTimestamp = _timestamper.GetCurrentUtcTimestamp();
+            // todo merkle root calculation (instead of "abc")
             Block b = new Block(netIdentifier, protocolVersion, "abc", utcTimestamp, transactions);
             var currentTarget = maximumTarget / difficulty;
 

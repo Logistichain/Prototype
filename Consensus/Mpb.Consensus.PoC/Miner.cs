@@ -1,7 +1,6 @@
 ﻿using Mpb.Consensus.Logic.BlockLogic;
 using Mpb.Consensus.Logic.DAL;
 using Mpb.Consensus.Logic.MiscLogic;
-using Serilog;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +12,7 @@ using System.Collections.Generic;
 using Mpb.Consensus.Logic.TransactionLogic;
 using Newtonsoft.Json;
 using Mpb.Consensus.Logic.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace Mpb.Consensus.PoC
 {
@@ -41,9 +41,9 @@ namespace Mpb.Consensus.PoC
         Task _miningTask;
         CancellationTokenSource _miningCancellationToken;
 
-        public Miner(Blockchain blockchain, string minerWalletPubKey, string minerWalletPrivKey, ILogger logger)
+        public Miner(Blockchain blockchain, string minerWalletPubKey, string minerWalletPrivKey, ILoggerFactory logger)
         {
-            _logger = logger;
+            _logger = logger.CreateLogger<Miner>();
             _walletPubKey = minerWalletPubKey;
             _walletPrivKey = minerWalletPrivKey;
             _blockchainRepo = new BlockchainLocalFileRepository();
@@ -68,7 +68,7 @@ namespace Mpb.Consensus.PoC
 
         public void AddTransactionToPool(AbstractTransaction tx)
         {
-            _logger.Information("Miner received transaction: {0}", JsonConvert.SerializeObject(tx));
+            _logger.LogInformation("Miner received transaction: {0}", JsonConvert.SerializeObject(tx));
             try
             {
                 if (_txPool.Contains(tx))
@@ -78,15 +78,15 @@ namespace Mpb.Consensus.PoC
 
                 _transactionValidator.ValidateTransaction(tx);
                 _txPool.Add(tx);
-                _logger.Information("Added transaction to txpool ({0})", tx.Hash);
+                _logger.LogInformation("Added transaction to txpool ({0})", tx.Hash);
             }
             catch (TransactionRejectedException e)
             {
-                _logger.Information("Transaction with hash {0} was rejected: {1}", e.Transaction.Hash, e.Message);
+                _logger.LogInformation("Transaction with hash {0} was rejected: {1}", e.Transaction.Hash, e.Message);
             }
             catch (Exception e)
             {
-                _logger.Information("An {0} occurred: {1}", e.GetType().Name, e.Message);
+                _logger.LogInformation("An {0} occurred: {1}", e.GetType().Name, e.Message);
             }
         }
 
@@ -125,8 +125,8 @@ namespace Mpb.Consensus.PoC
             uint secondsPerBlockGoal = 3;
             var difficultyUpdateCycle = 5;
 
-            _logger.Information("We want to achieve a total of {0} seconds for each {1} blocks to be created.", (secondsPerBlockGoal * difficultyUpdateCycle), difficultyUpdateCycle);
-            _logger.Information("Mining for blocks..");
+            _logger.LogInformation("We want to achieve a total of {0} seconds for each {1} blocks to be created.", (secondsPerBlockGoal * difficultyUpdateCycle), difficultyUpdateCycle);
+            _logger.LogInformation("Mining for blocks..");
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -135,18 +135,18 @@ namespace Mpb.Consensus.PoC
                 {
                     difficulty = _difficultyCalculator.CalculateDifficulty(_blockchain, _blockchain.CurrentHeight, 1, secondsPerBlockGoal, difficultyUpdateCycle);
                     _blockchainRepo.Update(_blockchain);
-                    _logger.Information("Blockchain persisted.");
+                    _logger.LogInformation("Blockchain persisted.");
                     var difficultyInfo = _difficultyCalculator.GetPreviousDifficultyUpdateInformation(_blockchain, difficultyUpdateCycle);
-                    _logger.Information("Total time to create blocks {0}-{1}: {2} sec", difficultyInfo.BeginHeight, difficultyInfo.EndHeight - 1, difficultyInfo.TotalSecondsForBlocks);
-                    _logger.Debug("Difficulty for next block {0}", difficulty);
-                    _logger.Debug("Target for next block {0}", difficulty);
+                    _logger.LogInformation("Total time to create blocks {0}-{1}: {2} sec", difficultyInfo.BeginHeight, difficultyInfo.EndHeight - 1, difficultyInfo.TotalSecondsForBlocks);
+                    _logger.LogDebug("Difficulty for next block {0}", difficulty);
+                    _logger.LogDebug("Target for next block {0}", difficulty);
                 }
-                _logger.Debug("Current height: {0}", _blockchain.CurrentHeight);
+                _logger.LogDebug("Current height: {0}", _blockchain.CurrentHeight);
 
                 // Calculate our current balance
                 var allReceivedTransactions = _transactionRepo.GetAllReceivedByPublicKey(_walletPubKey, _networkIdentifier);
                 ulong balance = _transactionRepo.GetTokenBalanceForPubKey(_walletPubKey, _networkIdentifier);
-                _logger.Debug("Our balance: {0}", balance);
+                _logger.LogDebug("Our balance: {0}", balance);
 
                 // Create & add the coinbase transaction and then mine the block
                 var coinbaseTx = _transactionCreator.CreateCoinBaseTransaction(_walletPubKey, _walletPrivKey, "Mined by Montapacking!");
@@ -160,7 +160,7 @@ namespace Mpb.Consensus.PoC
                     }
 
                     transactionsIncludedInBlock = transactionsIncludedInBlock - _txPool.Count();
-                    _logger.Debug("Inserted {0} transactions from the txpool into this block", transactionsIncludedInBlock);
+                    _logger.LogDebug("Inserted {0} transactions from the txpool into this block", transactionsIncludedInBlock);
                 }
 
                 try
@@ -181,11 +181,11 @@ namespace Mpb.Consensus.PoC
                         }
                     }
 
-                    _logger.Information("Created a new block!");
+                    _logger.LogInformation("Created a new block!");
                 }
                 catch (OperationCanceledException)
                 {
-                    _logger.Information("Mining operation canceled.");
+                    _logger.LogInformation("Mining operation canceled.");
                 }
             }
         }

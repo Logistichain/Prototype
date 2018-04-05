@@ -4,7 +4,7 @@ using Moq;
 using System.Security.Cryptography;
 using Mpb.Consensus.Logic.MiscLogic;
 
-namespace Mpb.Consensus.Test.Logic
+namespace Mpb.Consensus.Test.Logic.TransactionValidator
 {
     /// <summary>
     /// These testmethods are structured by using the AAA method (Arrange, Act, Assert).
@@ -18,9 +18,7 @@ namespace Mpb.Consensus.Test.Logic
         public void Initialize()
         {
             _timestamper = new Mock<ITimestamper>(MockBehavior.Strict);
-        }
-
-        
+        }        
 
         [TestCleanup]
         public void Cleanup()
