@@ -21,44 +21,38 @@ namespace Mpb.Consensus.PoC
     /// </summary>
     public class Miner
     {
+        ILogger _logger;
         IBlockchainRepository _blockchainRepo;
-        string _networkIdentifier;
-        Blockchain _blockchain;
         ITransactionRepository _transactionRepo;
-        IBlockHeaderHelper _blockHeaderHelper;
-        ITimestamper _timestamper;
-        TransactionByteConverter _transactionByteConverter;
         ITransactionCreator _transactionCreator;
         ITransactionValidator _transactionValidator;
-        IBlockValidator _validator;
         IDifficultyCalculator _difficultyCalculator;
         IPowBlockCreator _blockCreator;
-        ISkuRepository _skuRepo;
+        CancellationTokenSource _miningCancellationToken;
+        Task _miningTask;
+        Blockchain _blockchain;
         List<AbstractTransaction> _txPool;
-        ILogger _logger;
+        string _networkIdentifier;
         string _walletPubKey;
         string _walletPrivKey;
-        Task _miningTask;
-        CancellationTokenSource _miningCancellationToken;
 
-        public Miner(Blockchain blockchain, string minerWalletPubKey, string minerWalletPrivKey, ILoggerFactory logger)
+        public Miner(string netId, string minerWalletPubKey, string minerWalletPrivKey,
+                    IBlockchainRepository blockchainRepo, ITransactionRepository transactionRepo,
+                    ITransactionCreator transactionCreator, ITransactionValidator transactionValidator,
+                    IDifficultyCalculator difficultyCalculator, IPowBlockCreator blockCreator,
+                    ILoggerFactory loggerFactory)
         {
-            _logger = logger.CreateLogger<Miner>();
+            _logger = loggerFactory.CreateLogger<Miner>();
             _walletPubKey = minerWalletPubKey;
             _walletPrivKey = minerWalletPrivKey;
-            _blockchainRepo = new BlockchainLocalFileRepository();
-            _networkIdentifier = "testnet";
-            _blockchain = blockchain;
-            _transactionRepo = new StateTransactionLocalFileRepository(blockchain);
-            _blockHeaderHelper = new BlockHeaderHelper();
-            _timestamper = new UnixTimestamper();
-            _transactionByteConverter = new TransactionByteConverter();
-            _transactionCreator = new StateTransactionCreator(_transactionByteConverter);
-            _skuRepo = new SkuStateTxLocalFileRepository(_blockchainRepo, _transactionRepo);
-            _transactionValidator = new StateTransactionValidator(_transactionByteConverter, _blockchainRepo, _transactionRepo, _skuRepo);
-            _validator = new PowBlockValidator(_blockHeaderHelper, _transactionValidator, _timestamper);
-            _difficultyCalculator = new DifficultyCalculator();
-            _blockCreator = new PowBlockCreator(_timestamper, _validator, _blockHeaderHelper);
+            _blockchainRepo = blockchainRepo;
+            _networkIdentifier = netId;
+            _blockchain = _blockchainRepo.GetChainByNetId(_networkIdentifier);
+            _transactionRepo = transactionRepo;
+            _transactionCreator = transactionCreator;
+            _transactionValidator = transactionValidator;
+            _difficultyCalculator = difficultyCalculator;
+            _blockCreator = blockCreator;
             _txPool = new List<AbstractTransaction>();
         }
 

@@ -22,20 +22,19 @@ namespace Mpb.Consensus.PoC
             var walletPubKey = "montaminer";
             var walletPrivKey = "montaprivatekey";
             var networkIdentifier = "testnet";
-            var services = SetupDI(networkIdentifier);
-
-            _logger = services.GetService<ILoggerFactory>().CreateLogger<Program>();
-
+            var services = SetupDI(networkIdentifier, walletPubKey, walletPrivKey);
+            
             GetServices(
                 services,
                 out IBlockchainRepository blockchainRepo,
                 out ITransactionRepository transactionRepo,
                 out ITransactionCreator transactionCreator,
                 out ITimestamper timestamper,
-                out ISkuRepository skuRepository
+                out ISkuRepository skuRepository,
+                out Miner miner
                 );
+            _logger = services.GetService<ILoggerFactory>().CreateLogger<Program>();
             Blockchain blockchain = blockchainRepo.GetChainByNetId(networkIdentifier);
-            Miner miner = new Miner(blockchain, walletPubKey, walletPrivKey, services.GetService<ILoggerFactory>());
 
             // Command handlers, only large commands are handles by these separate handlers.
             AccountsCommandHandler accountsCmdHandler = new AccountsCommandHandler(transactionRepo, networkIdentifier);
@@ -81,23 +80,23 @@ namespace Mpb.Consensus.PoC
                     case "stopmining":
                         miner.StopMining(true);
                         blockchainRepo.Update(blockchain);
-                        //PrintConsoleCommands();
+                        PrintConsoleCommands();
                         break;
                     case "resetblockchain":
                         miner.StopMining(false);
                         blockchainRepo.Delete(networkIdentifier);
                         Console.WriteLine("Blockchain deleted.");
                         // Initialize all variables again because the heap references changed.
-                        services = SetupDI(networkIdentifier);
+                        services = SetupDI(networkIdentifier, walletPubKey, walletPrivKey);
                         GetServices(
                             services,
                             out blockchainRepo,
                             out transactionRepo,
                             out transactionCreator,
                             out timestamper,
-                            out skuRepository
+                            out skuRepository,
+                            out miner
                         );
-                        miner = new Miner(blockchain, walletPubKey, walletPrivKey, services.GetService<ILoggerFactory>());
                         accountsCmdHandler = new AccountsCommandHandler(transactionRepo, networkIdentifier);
                         skusCmdHandler = new SkusCommandHandler(blockchainRepo, timestamper, skuRepository, networkIdentifier);
                         transactionsCmdHandler = new TransactionsCommandHandler(transactionRepo, networkIdentifier);
@@ -124,16 +123,19 @@ namespace Mpb.Consensus.PoC
             }
         }
 
-        private static void GetServices(IServiceProvider services, out IBlockchainRepository blockchainRepo, out ITransactionRepository transactionRepo, out ITransactionCreator transactionCreator, out ITimestamper timestamper, out ISkuRepository skuRepository)
+        private static void GetServices(IServiceProvider services, out IBlockchainRepository blockchainRepo,
+                                        out ITransactionRepository transactionRepo, out ITransactionCreator transactionCreator,
+                                        out ITimestamper timestamper, out ISkuRepository skuRepository, out Miner miner)
         {
             blockchainRepo = services.GetService<IBlockchainRepository>();
             transactionRepo = services.GetService<ITransactionRepository>();
             transactionCreator = services.GetService<ITransactionCreator>();
             timestamper = services.GetService<ITimestamper>();
             skuRepository = services.GetService<ISkuRepository>();
+            miner = services.GetService<Miner>();
         }
 
-        private static IServiceProvider SetupDI(string networkIdentifier)
+        private static IServiceProvider SetupDI(string networkIdentifier, string walletPubKey, string walletPrivKey)
         {
             var blockchainRepo = new BlockchainLocalFileRepository();
             var services = new ServiceCollection()
@@ -153,6 +155,16 @@ namespace Mpb.Consensus.PoC
                 .AddTransient<ITransactionCreator, StateTransactionCreator>()
                 .AddTransient<ITransactionValidator, StateTransactionValidator>()
                 .AddTransient<TransactionByteConverter>()
+                
+                .AddTransient(
+                        (x) => new Miner(
+                            networkIdentifier, walletPubKey, walletPrivKey,
+                            x.GetService<IBlockchainRepository>(),
+                            x.GetService<ITransactionRepository>(), x.GetService<ITransactionCreator>(),
+                            x.GetService<ITransactionValidator>(), x.GetService<IDifficultyCalculator>(),
+                            x.GetService<IPowBlockCreator>(), x.GetService<ILoggerFactory>())
+                    )
+
                 .BuildServiceProvider();
 
             return services;
