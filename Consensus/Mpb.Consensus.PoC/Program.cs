@@ -154,7 +154,7 @@ namespace Mpb.Consensus.PoC
 
                 .AddTransient<ITransactionCreator, StateTransactionCreator>()
                 .AddTransient<ITransactionValidator, StateTransactionValidator>()
-                .AddTransient<TransactionByteConverter>()
+                .AddTransient<TransactionFinalizer>()
                 
                 .AddTransient(
                         (x) => new Miner(

@@ -26,7 +26,7 @@ namespace Mpb.Consensus.Test.Logic
         Mock<IBlockValidator> _blockValidatorMock;
         Mock<ITimestamper> _timestamperMock;
         Mock<ITransactionValidator> _transactionValidator;
-        Mock<TransactionByteConverter> _transactionByteConverter;
+        Mock<TransactionFinalizer> _transactionByteConverter;
         Mock<ITransactionRepository> _transactionRepo;
         BigDecimal _maximumTarget;
         string _netId;
@@ -40,7 +40,7 @@ namespace Mpb.Consensus.Test.Logic
             _netId = "testnet";
             _protocol = 1;
             _blockchain = new Blockchain(_netId);
-            _transactionByteConverter = new Mock<TransactionByteConverter>(MockBehavior.Strict);
+            _transactionByteConverter = new Mock<TransactionFinalizer>(MockBehavior.Strict);
             _transactionRepo = new Mock<ITransactionRepository>(MockBehavior.Strict);
             _blockHeaderHelper = new Mock<IBlockHeaderHelper>(MockBehavior.Strict);
             _timestamperMock = new Mock<ITimestamper>(MockBehavior.Strict);
@@ -94,7 +94,7 @@ namespace Mpb.Consensus.Test.Logic
             uint expectedProtocolVersion = 1;
             BigDecimal expectedMaximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var expectedBlock = new Block(expectedNetworkIdentifier, expectedProtocolVersion, "abc", 123, _transactions);
-            var selfCallingMock = new Mock<PowBlockCreator>(MockBehavior.Strict, new object[] { _timestamperMock.Object, _blockValidatorMock.Object, _blockHeaderHelper.Object }) { CallBase = true };
+            var selfCallingMock = new Mock<PowBlockCreator>(MockBehavior.Strict, new object[] { _timestamperMock.Object, _blockValidatorMock.Object, _blockHeaderHelper.Object });
             selfCallingMock.Setup(m => m.CreateValidBlock(_transactions, difficulty)).CallBase();
             selfCallingMock.Setup(m => m.CreateValidBlock(expectedNetworkIdentifier, expectedProtocolVersion, _transactions, difficulty, expectedMaximumTarget, CancellationToken.None))
                 .Returns(expectedBlock);

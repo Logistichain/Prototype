@@ -27,7 +27,7 @@ namespace Mpb.Consensus.Logic.MiscLogic
             var result = JsonConvert.DeserializeObject<StateTransaction>(jo.ToString());
 
             // Manually finalize the deserialized transaction to make it valid
-            result.FinalizeTransaction(hash, signature);
+            result.Finalize(hash, signature);
 
             return result;
         }

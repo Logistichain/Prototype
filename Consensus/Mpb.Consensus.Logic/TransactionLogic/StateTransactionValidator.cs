@@ -14,14 +14,14 @@ namespace Mpb.Consensus.Logic.TransactionLogic
 {
     public class StateTransactionValidator : ITransactionValidator
     {
-        private readonly TransactionByteConverter _transactionByteConverter;
+        private readonly TransactionFinalizer _txFinalizer;
         private readonly IBlockchainRepository _blockchainRepository;
         private readonly ITransactionRepository _transactionRepo;
         private readonly ISkuRepository _skuRepo;
 
-        public StateTransactionValidator(TransactionByteConverter transactionByteConverter, IBlockchainRepository blockchainRepository, ITransactionRepository transactionRepo, ISkuRepository skuRepo)
+        public StateTransactionValidator(TransactionFinalizer txFinalizer, IBlockchainRepository blockchainRepository, ITransactionRepository transactionRepo, ISkuRepository skuRepo)
         {
-            _transactionByteConverter = transactionByteConverter;
+            _txFinalizer = txFinalizer;
             _blockchainRepository = blockchainRepository;
             _transactionRepo = transactionRepo;
             _skuRepo = skuRepo;
@@ -51,7 +51,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
             List<byte[]> hashesList = new List<byte[]>();
             foreach (AbstractTransaction t in transactionsToLoopThrough)
             {
-                hashesList.Add(_transactionByteConverter.GetTransactionBytes(t));
+                hashesList.Add(_txFinalizer.GetTransactionBytes(t));
             }
 
             int merkleRootArraySize = 0;
@@ -105,7 +105,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 throw new TransactionRejectedException("Unsupported transaction version", tx);
             }
 
-            CheckTxSignature(stateTx);
+            CheckTxIsCorrectlyHashedAndSigned(stateTx);
 
             // Action-specific checks
             if (stateTx.Action == TransactionAction.TransferToken.ToString())
@@ -338,10 +338,25 @@ namespace Mpb.Consensus.Logic.TransactionLogic
             }
         }
 
-        // todo finish this with wallet implementation
-        private void CheckTxSignature(StateTransaction tx)
+        private void CheckTxIsCorrectlyHashedAndSigned(StateTransaction tx)
         {
+            if (!tx.IsFinalized())
+            {
+                throw new TransactionRejectedException("Transaction is not finalized", tx);
+            }
+
+            if (_txFinalizer.CalculateHash(tx) != tx.Hash)
+            {
+                throw new TransactionRejectedException(nameof(tx.Hash) + " is incorrect", tx);
+            }
+            
+            if (_txFinalizer.CalculateSignature(tx) != tx.Signature)
+            {
+                throw new TransactionRejectedException(nameof(tx.Signature) + " is incorrect", tx);
+            }
+
+            // todo finish signature check this with wallet implementation
             // if tx.action == coinbase, use the 'To' field for the signature. Otherwise, use the 'From' field.
-        }        
+        }
     }
 }

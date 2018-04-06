@@ -11,11 +11,11 @@ namespace Mpb.Consensus.Logic.TransactionLogic
 {
     public class StateTransactionCreator : ITransactionCreator
     {
-        private readonly TransactionByteConverter _byteConverter;
+        private readonly TransactionFinalizer _txFinalizer;
 
-        public StateTransactionCreator(TransactionByteConverter byteConverter)
+        public StateTransactionCreator(TransactionFinalizer txFinalizer)
         {
-            _byteConverter = byteConverter;
+            _txFinalizer = txFinalizer;
         }
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 optionalData,
                 BlockchainConstants.TransferTokenFee
                 );
-            FinalizeTransaction(tx, fromPubKey, fromPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, fromPubKey, fromPrivKey);
 
             return tx;
         }
@@ -68,7 +68,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 skuJson,
                 BlockchainConstants.CreateSkuFee
                 );
-            FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
 
             return tx;
         }
@@ -96,7 +96,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 optionalData,
                 BlockchainConstants.CreateSupplyFee
                 );
-            FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
 
             return tx;
         }
@@ -126,7 +126,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 optionalData,
                 BlockchainConstants.TransferSupplyFee
                 );
-            FinalizeTransaction(tx, fromPubKey, fromPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, fromPubKey, fromPrivKey);
 
             return tx;
         }
@@ -154,7 +154,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 optionalData,
                 BlockchainConstants.DestroySupplyFee
                 );
-            FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
 
             return tx;
         }
@@ -179,33 +179,9 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 optionalData,
                 0
                 );
-            FinalizeTransaction(tx, creatorPubKey, creatorPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, creatorPubKey, creatorPrivKey);
 
             return tx;
-        }
-
-        //! Signature is always "" until an appropriate wallet module can be utilized.
-        /// <summary>
-        /// Create a hash for the entire transaction object and sign that hash
-        /// with the private key from the sender.
-        /// </summary>
-        /// <param name="tx">The transaction to hash and sign</param>
-        /// <param name="fromPubKey">The creator of the transaction</param>
-        /// <param name="fromPrivKey">The creator's private key to sign the transaction hash</param>
-        private void FinalizeTransaction(AbstractTransaction tx, string fromPubKey, string fromPrivKey)
-        {
-            if (tx.IsFinalized()) { return; }
-            
-            var txByteArray = _byteConverter.GetTransactionBytes(tx);
-            var hashString = "";
-            var signature = ""; // Todo dependency inject wallet mechanism to sign the transaction!
-            using (var sha256 = SHA256.Create())
-            {
-                var hash = sha256.ComputeHash(txByteArray);
-                hashString = BitConverter.ToString(hash).Replace("-", "");
-            }
-
-            tx.FinalizeTransaction(hashString, signature);
         }
     }
 }

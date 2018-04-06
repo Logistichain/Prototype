@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Mpb.Consensus.Logic.BlockLogic
@@ -9,8 +10,45 @@ namespace Mpb.Consensus.Logic.BlockLogic
     /// <summary>
     /// Adapter to convert a transaction to a byte array.
     /// </summary>
-    public class TransactionByteConverter
+    public class TransactionFinalizer
     {
+        public virtual string CalculateHash(AbstractTransaction transaction)
+        {
+            var txByteArray = GetTransactionBytes(transaction);
+            var hashString = "";
+            using (var sha256 = SHA256.Create())
+            {
+                var hash = sha256.ComputeHash(txByteArray);
+                hashString = BitConverter.ToString(hash).Replace("-", "");
+            }
+            return hashString;
+        }
+        
+        public virtual string CalculateSignature(AbstractTransaction transaction)
+        {
+            // Todo dependency inject wallet mechanism to sign the transaction!
+            // if coinbase, use 'ToPubKey' field
+            return "";
+        }
+        
+        //! Signature is always "" until an appropriate wallet module can be utilized.
+        /// <summary>
+        /// Create a hash for the entire transaction object and sign that hash
+        /// with the private key from the sender. The given transaction object will be updated.
+        /// </summary>
+        /// <param name="tx">The transaction to hash and sign</param>
+        /// <param name="fromPubKey">The creator of the transaction</param>
+        /// <param name="fromPrivKey">The creator's private key to sign the transaction hash</param>
+        public void FinalizeTransaction(AbstractTransaction tx, string fromPubKey, string fromPrivKey)
+        {
+            if (tx.IsFinalized()) { return; }
+
+            var txByteArray = GetTransactionBytes(tx);
+            var hashString = CalculateHash(tx);
+            var signature = CalculateSignature(tx);
+
+            tx.Finalize(hashString, signature);
+        }
 
         public virtual byte[] GetTransactionBytes(AbstractTransaction transaction)
         {

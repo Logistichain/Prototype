@@ -37,7 +37,7 @@ namespace Mpb.Consensus.Model
 
         public bool IsFinalized() => _hash != null && _signature != null;
 
-        public void FinalizeTransaction(string hash, string signature)
+        public void Finalize(string hash, string signature)
         {
             if (!IsFinalized())
             {
