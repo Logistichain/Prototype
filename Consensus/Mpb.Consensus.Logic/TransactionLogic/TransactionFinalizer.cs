@@ -10,7 +10,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
     /// <summary>
     /// Adapter to convert a transaction to a byte array.
     /// </summary>
-    public class TransactionFinalizer
+    public class StateTransactionFinalizer : ITransactionFinalizer
     {
         public virtual string CalculateHash(AbstractTransaction transaction)
         {

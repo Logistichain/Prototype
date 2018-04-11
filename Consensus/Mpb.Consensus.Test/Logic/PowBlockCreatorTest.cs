@@ -26,7 +26,7 @@ namespace Mpb.Consensus.Test.Logic
         Mock<IBlockValidator> _blockValidatorMock;
         Mock<ITimestamper> _timestamperMock;
         Mock<ITransactionValidator> _transactionValidator;
-        Mock<TransactionFinalizer> _transactionByteConverter;
+        Mock<ITransactionFinalizer> _transactionFinalizer;
         Mock<ITransactionRepository> _transactionRepo;
         BigDecimal _maximumTarget;
         string _netId;
@@ -40,7 +40,7 @@ namespace Mpb.Consensus.Test.Logic
             _netId = "testnet";
             _protocol = 1;
             _blockchain = new Blockchain(_netId);
-            _transactionByteConverter = new Mock<TransactionFinalizer>(MockBehavior.Strict);
+            _transactionFinalizer = new Mock<ITransactionFinalizer>(MockBehavior.Strict);
             _transactionRepo = new Mock<ITransactionRepository>(MockBehavior.Strict);
             _blockHeaderHelper = new Mock<IBlockHeaderHelper>(MockBehavior.Strict);
             _timestamperMock = new Mock<ITimestamper>(MockBehavior.Strict);
@@ -178,7 +178,7 @@ namespace Mpb.Consensus.Test.Logic
         [TestCleanup]
         public void Cleanup()
         {
-            _transactionByteConverter.VerifyAll();
+            _transactionFinalizer.VerifyAll();
             _transactionRepo.VerifyAll();
             _blockHeaderHelper.VerifyAll();
             _timestamperMock.VerifyAll();

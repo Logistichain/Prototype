@@ -14,12 +14,12 @@ namespace Mpb.Consensus.Logic.TransactionLogic
 {
     public class StateTransactionValidator : ITransactionValidator
     {
-        private readonly TransactionFinalizer _txFinalizer;
+        private readonly ITransactionFinalizer _txFinalizer;
         private readonly IBlockchainRepository _blockchainRepository;
         private readonly ITransactionRepository _transactionRepo;
         private readonly ISkuRepository _skuRepo;
 
-        public StateTransactionValidator(TransactionFinalizer txFinalizer, IBlockchainRepository blockchainRepository, ITransactionRepository transactionRepo, ISkuRepository skuRepo)
+        public StateTransactionValidator(ITransactionFinalizer txFinalizer, IBlockchainRepository blockchainRepository, ITransactionRepository transactionRepo, ISkuRepository skuRepo)
         {
             _txFinalizer = txFinalizer;
             _blockchainRepository = blockchainRepository;

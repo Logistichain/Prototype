@@ -21,7 +21,7 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
         Mock<IBlockchainRepository> _blockchainRepoMock;
         Mock<ITransactionRepository> _transactionRepoMock;
         Mock<ISkuRepository> _skuRepoMock;
-        Mock<TransactionFinalizer> _transactionFinalizer;
+        Mock<ITransactionFinalizer> _transactionFinalizer;
         string _netid;
 
         [TestInitialize]
@@ -31,7 +31,7 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             _blockchainRepoMock = new Mock<IBlockchainRepository>(MockBehavior.Strict);
             _transactionRepoMock = new Mock<ITransactionRepository>(MockBehavior.Strict);
             _skuRepoMock = new Mock<ISkuRepository>(MockBehavior.Strict);
-            _transactionFinalizer = new Mock<TransactionFinalizer>(MockBehavior.Strict);
+            _transactionFinalizer = new Mock<ITransactionFinalizer>(MockBehavior.Strict);
             _netid = "testnet"; // This value is not coupled to the BlockchainConstants.cs value
 
             // Setup transactionfinalizer because it's applied for all tests

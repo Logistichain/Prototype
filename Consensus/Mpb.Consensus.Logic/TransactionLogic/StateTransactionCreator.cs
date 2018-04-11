@@ -11,9 +11,9 @@ namespace Mpb.Consensus.Logic.TransactionLogic
 {
     public class StateTransactionCreator : ITransactionCreator
     {
-        private readonly TransactionFinalizer _txFinalizer;
+        private readonly ITransactionFinalizer _txFinalizer;
 
-        public StateTransactionCreator(TransactionFinalizer txFinalizer)
+        public StateTransactionCreator(ITransactionFinalizer txFinalizer)
         {
             _txFinalizer = txFinalizer;
         }
