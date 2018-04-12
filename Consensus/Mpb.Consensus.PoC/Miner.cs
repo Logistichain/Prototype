@@ -1,13 +1,10 @@
 ﻿using Mpb.Consensus.Logic.BlockLogic;
 using Mpb.Consensus.Logic.DAL;
-using Mpb.Consensus.Logic.MiscLogic;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Mpb.Consensus.Model;
 using System.Linq;
-using System.Numerics;
-using System.Globalization;
 using System.Collections.Generic;
 using Mpb.Consensus.Logic.TransactionLogic;
 using Newtonsoft.Json;
