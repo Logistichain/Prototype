@@ -19,7 +19,7 @@ namespace Mpb.Consensus.Model
         /// <summary>
         /// Network identifier, like "mainnet" or "testnet"
         /// </summary>
-        public String NetIdentifier => _net;
+        public string NetIdentifier => _net;
 
         /// <summary>
         /// The index of the last block that was added to this chain

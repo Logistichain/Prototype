@@ -4,7 +4,6 @@ using System.Linq;
 using Mpb.Consensus.Logic.Constants;
 using Mpb.Consensus.Model;
 using Newtonsoft.Json;
-using System.Runtime.Serialization;
 
 namespace Mpb.Consensus.Logic.DAL
 {

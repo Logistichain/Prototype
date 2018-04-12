@@ -1,0 +1,350 @@
+2018-04-11 17:10:40.092 +02:00 [INF] Loaded blockchain. Current height: 57
+2018-04-11 17:10:51.716 +02:00 [INF] We want to achieve a total of 15 seconds for each 5 blocks to be created.
+2018-04-11 17:10:51.720 +02:00 [INF] Mining for blocks..
+2018-04-11 17:10:51.721 +02:00 [DBG] Current height: 57
+2018-04-11 17:10:51.728 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:51.768 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:52.737 +02:00 [INF] Created a new block!
+2018-04-11 17:10:52.738 +02:00 [DBG] Current height: 58
+2018-04-11 17:10:52.740 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:52.741 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:52.939 +02:00 [INF] Created a new block!
+2018-04-11 17:10:52.940 +02:00 [DBG] Current height: 59
+2018-04-11 17:10:52.941 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:52.942 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.138 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.194 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:10:53.195 +02:00 [INF] Total time to create blocks 55-58: 722118 sec
+2018-04-11 17:10:53.201 +02:00 [DBG] Difficulty for next block 130240387165351504662387025550374467763093751116674677645903603163042709281418247248774840827851712E-102
+2018-04-11 17:10:53.202 +02:00 [DBG] Target for next block 130240387165351504662387025550374467763093751116674677645903603163042709281418247248774840827851712E-102
+2018-04-11 17:10:53.204 +02:00 [DBG] Current height: 60
+2018-04-11 17:10:53.210 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.211 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.270 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.272 +02:00 [DBG] Current height: 61
+2018-04-11 17:10:53.273 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.274 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.331 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.333 +02:00 [DBG] Current height: 62
+2018-04-11 17:10:53.334 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.335 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.392 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.393 +02:00 [DBG] Current height: 63
+2018-04-11 17:10:53.394 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.395 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.453 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.454 +02:00 [DBG] Current height: 64
+2018-04-11 17:10:53.456 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.457 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.514 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.517 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:10:53.518 +02:00 [INF] Total time to create blocks 60-63: 1 sec
+2018-04-11 17:10:53.520 +02:00 [DBG] Difficulty for next block 195360580748027256993580538325561701644640626675012016468855404744564063922127370873162261241777568E-101
+2018-04-11 17:10:53.521 +02:00 [DBG] Target for next block 195360580748027256993580538325561701644640626675012016468855404744564063922127370873162261241777568E-101
+2018-04-11 17:10:53.523 +02:00 [DBG] Current height: 65
+2018-04-11 17:10:53.524 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.525 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.582 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.583 +02:00 [DBG] Current height: 66
+2018-04-11 17:10:53.585 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.586 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.644 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.645 +02:00 [DBG] Current height: 67
+2018-04-11 17:10:53.646 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.647 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.704 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.705 +02:00 [DBG] Current height: 68
+2018-04-11 17:10:53.706 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.707 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.764 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.765 +02:00 [DBG] Current height: 69
+2018-04-11 17:10:53.766 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.767 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.826 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.829 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:10:53.831 +02:00 [INF] Total time to create blocks 65-68: 0 sec
+2018-04-11 17:10:53.833 +02:00 [DBG] Difficulty for next block 293040871122040885490370807488342552466960940012518024703283107116846095883191056309743391862666352E-100
+2018-04-11 17:10:53.835 +02:00 [DBG] Target for next block 293040871122040885490370807488342552466960940012518024703283107116846095883191056309743391862666352E-100
+2018-04-11 17:10:53.836 +02:00 [DBG] Current height: 70
+2018-04-11 17:10:53.837 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.839 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.899 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.900 +02:00 [DBG] Current height: 71
+2018-04-11 17:10:53.902 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.903 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:53.960 +02:00 [INF] Created a new block!
+2018-04-11 17:10:53.961 +02:00 [DBG] Current height: 72
+2018-04-11 17:10:53.962 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:53.963 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:54.020 +02:00 [INF] Created a new block!
+2018-04-11 17:10:54.021 +02:00 [DBG] Current height: 73
+2018-04-11 17:10:54.022 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:54.024 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:54.082 +02:00 [INF] Created a new block!
+2018-04-11 17:10:54.083 +02:00 [DBG] Current height: 74
+2018-04-11 17:10:54.084 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:54.086 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:54.142 +02:00 [INF] Created a new block!
+2018-04-11 17:10:54.145 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:10:54.146 +02:00 [INF] Total time to create blocks 70-73: 1 sec
+2018-04-11 17:10:54.148 +02:00 [DBG] Difficulty for next block 439561306683061328235556211232513828700441410018777037054924660675269143824786584464615087793999528E-99
+2018-04-11 17:10:54.149 +02:00 [DBG] Target for next block 439561306683061328235556211232513828700441410018777037054924660675269143824786584464615087793999528E-99
+2018-04-11 17:10:54.151 +02:00 [DBG] Current height: 75
+2018-04-11 17:10:54.152 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:54.153 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:54.211 +02:00 [INF] Created a new block!
+2018-04-11 17:10:54.213 +02:00 [DBG] Current height: 76
+2018-04-11 17:10:54.214 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:54.215 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:54.280 +02:00 [INF] Created a new block!
+2018-04-11 17:10:54.281 +02:00 [DBG] Current height: 77
+2018-04-11 17:10:54.282 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:54.283 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:54.348 +02:00 [INF] Created a new block!
+2018-04-11 17:10:54.349 +02:00 [DBG] Current height: 78
+2018-04-11 17:10:54.350 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:54.351 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:54.446 +02:00 [INF] Created a new block!
+2018-04-11 17:10:54.447 +02:00 [DBG] Current height: 79
+2018-04-11 17:10:54.449 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:54.451 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:54.511 +02:00 [INF] Created a new block!
+2018-04-11 17:10:54.514 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:10:54.515 +02:00 [INF] Total time to create blocks 75-78: 0 sec
+2018-04-11 17:10:54.517 +02:00 [DBG] Difficulty for next block 659341960024591992353334316848770743050662115028165555582386991012903715737179876696922631690999292E-98
+2018-04-11 17:10:54.519 +02:00 [DBG] Target for next block 659341960024591992353334316848770743050662115028165555582386991012903715737179876696922631690999292E-98
+2018-04-11 17:10:54.521 +02:00 [DBG] Current height: 80
+2018-04-11 17:10:54.522 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:54.523 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:56.091 +02:00 [INF] Created a new block!
+2018-04-11 17:10:56.092 +02:00 [DBG] Current height: 81
+2018-04-11 17:10:56.093 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:56.094 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:57.914 +02:00 [INF] Created a new block!
+2018-04-11 17:10:57.915 +02:00 [DBG] Current height: 82
+2018-04-11 17:10:57.916 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:57.917 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:10:58.620 +02:00 [INF] Created a new block!
+2018-04-11 17:10:58.621 +02:00 [DBG] Current height: 83
+2018-04-11 17:10:58.622 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:10:58.623 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:11:00.983 +02:00 [INF] Created a new block!
+2018-04-11 17:11:00.990 +02:00 [DBG] Current height: 84
+2018-04-11 17:11:00.991 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:11:00.992 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:11:01.835 +02:00 [INF] Created a new block!
+2018-04-11 17:11:01.837 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:11:01.838 +02:00 [INF] Total time to create blocks 80-83: 4 sec
+2018-04-11 17:11:01.840 +02:00 [DBG] Difficulty for next block 2472532350092219971325003688182890286439982931355620833433951216298388934014424537613459868841247345E-98
+2018-04-11 17:11:01.841 +02:00 [DBG] Target for next block 2472532350092219971325003688182890286439982931355620833433951216298388934014424537613459868841247345E-98
+2018-04-11 17:11:01.842 +02:00 [DBG] Current height: 85
+2018-04-11 17:11:01.843 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:11:01.844 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:11:10.156 +02:00 [INF] Created a new block!
+2018-04-11 17:11:10.157 +02:00 [DBG] Current height: 86
+2018-04-11 17:11:10.158 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:11:10.159 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:11:19.191 +02:00 [INF] Created a new block!
+2018-04-11 17:11:19.197 +02:00 [DBG] Current height: 87
+2018-04-11 17:11:19.199 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:11:19.201 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:11:24.697 +02:00 [INF] Created a new block!
+2018-04-11 17:11:31.878 +02:00 [DBG] Current height: 88
+2018-04-11 17:11:31.880 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:11:31.882 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:11:35.689 +02:00 [INF] Created a new block!
+2018-04-11 17:11:35.692 +02:00 [DBG] Current height: 89
+2018-04-11 17:11:35.694 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:11:35.696 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:11:49.276 +02:00 [INF] Created a new block!
+2018-04-11 17:11:49.280 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:11:49.282 +02:00 [INF] Total time to create blocks 85-88: 31 sec
+2018-04-11 17:11:49.285 +02:00 [DBG] Difficulty for next block 11963866210123645421335880764146238696484383245735308297258301265253629266836121359160117754784186768299978845362475E-114
+2018-04-11 17:11:49.287 +02:00 [DBG] Target for next block 11963866210123645421335880764146238696484383245735308297258301265253629266836121359160117754784186768299978845362475E-114
+2018-04-11 17:11:49.290 +02:00 [DBG] Current height: 90
+2018-04-11 17:11:49.292 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:11:49.295 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:11:49.681 +02:00 [INF] Created a new block!
+2018-04-11 17:11:49.683 +02:00 [DBG] Current height: 91
+2018-04-11 17:11:49.685 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:11:49.687 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:11:50.072 +02:00 [INF] Created a new block!
+2018-04-11 17:11:50.074 +02:00 [DBG] Current height: 92
+2018-04-11 17:11:50.077 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:11:50.078 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:11:51.404 +02:00 [INF] Created a new block!
+2018-04-11 17:11:51.407 +02:00 [DBG] Current height: 93
+2018-04-11 17:11:51.409 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:11:51.411 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:01.025 +02:00 [INF] Created a new block!
+2018-04-11 17:12:01.027 +02:00 [DBG] Current height: 94
+2018-04-11 17:12:01.029 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:01.031 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:04.354 +02:00 [INF] Created a new block!
+2018-04-11 17:12:04.358 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:12:04.359 +02:00 [INF] Total time to create blocks 90-93: 16 sec
+2018-04-11 17:12:04.362 +02:00 [DBG] Difficulty for next block 112161245719909175825023882163870987779541092928768515286796574361752774376588637742126103951101750952812301675273203125E-118
+2018-04-11 17:12:04.364 +02:00 [DBG] Target for next block 112161245719909175825023882163870987779541092928768515286796574361752774376588637742126103951101750952812301675273203125E-118
+2018-04-11 17:12:04.367 +02:00 [DBG] Current height: 95
+2018-04-11 17:12:04.369 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:04.371 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:05.309 +02:00 [INF] Created a new block!
+2018-04-11 17:12:05.312 +02:00 [DBG] Current height: 96
+2018-04-11 17:12:05.314 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:05.316 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:10.122 +02:00 [INF] Created a new block!
+2018-04-11 17:12:10.124 +02:00 [DBG] Current height: 97
+2018-04-11 17:12:10.126 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:10.128 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:12.683 +02:00 [INF] Created a new block!
+2018-04-11 17:12:12.686 +02:00 [DBG] Current height: 98
+2018-04-11 17:12:12.688 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:12.690 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:12.987 +02:00 [INF] Created a new block!
+2018-04-11 17:12:12.989 +02:00 [DBG] Current height: 99
+2018-04-11 17:12:12.991 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:12.993 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:13.287 +02:00 [INF] Created a new block!
+2018-04-11 17:12:13.291 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:12:13.292 +02:00 [INF] Total time to create blocks 95-98: 11 sec
+2018-04-11 17:12:13.295 +02:00 [DBG] Difficulty for next block 15294715325442159931916908586312677151668759348937569249868285853808050008456362013007107351191556067652208588076342415909812089915625E-132
+2018-04-11 17:12:13.297 +02:00 [DBG] Target for next block 15294715325442159931916908586312677151668759348937569249868285853808050008456362013007107351191556067652208588076342415909812089915625E-132
+2018-04-11 17:12:13.300 +02:00 [DBG] Current height: 100
+2018-04-11 17:12:13.302 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:13.304 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:18.397 +02:00 [INF] Created a new block!
+2018-04-11 17:12:18.399 +02:00 [DBG] Current height: 101
+2018-04-11 17:12:18.401 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:18.403 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:26.751 +02:00 [INF] Created a new block!
+2018-04-11 17:12:26.753 +02:00 [DBG] Current height: 102
+2018-04-11 17:12:26.755 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:26.757 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:29.306 +02:00 [INF] Created a new block!
+2018-04-11 17:12:29.308 +02:00 [DBG] Current height: 103
+2018-04-11 17:12:29.310 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:29.312 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:34.396 +02:00 [INF] Created a new block!
+2018-04-11 17:12:34.397 +02:00 [DBG] Current height: 104
+2018-04-11 17:12:34.398 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:34.399 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:39.477 +02:00 [INF] Created a new block!
+2018-04-11 17:12:41.772 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:12:41.773 +02:00 [INF] Total time to create blocks 100-103: 17 sec
+2018-04-11 17:12:41.774 +02:00 [DBG] Difficulty for next block 13495337051860729531629217287242479038730182793917586416575068093802035300029564762159800703479161389188505827026844104064052880235462245997789293125E-147
+2018-04-11 17:12:41.776 +02:00 [DBG] Target for next block 13495337051860729531629217287242479038730182793917586416575068093802035300029564762159800703479161389188505827026844104064052880235462245997789293125E-147
+2018-04-11 17:12:41.777 +02:00 [DBG] Current height: 105
+2018-04-11 17:12:41.778 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:41.779 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:41.960 +02:00 [INF] Created a new block!
+2018-04-11 17:12:41.961 +02:00 [DBG] Current height: 106
+2018-04-11 17:12:41.962 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:41.964 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:42.145 +02:00 [INF] Created a new block!
+2018-04-11 17:12:42.146 +02:00 [DBG] Current height: 107
+2018-04-11 17:12:42.147 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:42.148 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:43.106 +02:00 [INF] Created a new block!
+2018-04-11 17:12:43.107 +02:00 [DBG] Current height: 108
+2018-04-11 17:12:43.108 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:43.109 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:43.110 +02:00 [INF] Created a new block!
+2018-04-11 17:12:43.111 +02:00 [DBG] Current height: 109
+2018-04-11 17:12:43.112 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:43.113 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:43.114 +02:00 [INF] Created a new block!
+2018-04-11 17:12:43.117 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:12:43.118 +02:00 [INF] Total time to create blocks 105-108: 9 sec
+2018-04-11 17:12:43.120 +02:00 [DBG] Difficulty for next block 2249222841976788435209363572683473594844594295552651585831615267868158104339168711053770784307390393662093684226625873190753173730498428520336618660329946637190575E-161
+2018-04-11 17:12:43.122 +02:00 [DBG] Target for next block 2249222841976788435209363572683473594844594295552651585831615267868158104339168711053770784307390393662093684226625873190753173730498428520336618660329946637190575E-161
+2018-04-11 17:12:43.124 +02:00 [DBG] Current height: 110
+2018-04-11 17:12:43.126 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:43.128 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:12:50.248 +02:00 [INF] Created a new block!
+2018-04-11 17:12:50.250 +02:00 [DBG] Current height: 111
+2018-04-11 17:12:50.253 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:12:50.254 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:01.912 +02:00 [INF] Created a new block!
+2018-04-11 17:13:01.914 +02:00 [DBG] Current height: 112
+2018-04-11 17:13:01.916 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:01.918 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:14.013 +02:00 [INF] Created a new block!
+2018-04-11 17:13:14.015 +02:00 [DBG] Current height: 113
+2018-04-11 17:13:14.017 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:14.019 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:14.407 +02:00 [INF] Created a new block!
+2018-04-11 17:13:14.409 +02:00 [DBG] Current height: 114
+2018-04-11 17:13:14.411 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:14.412 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:14.794 +02:00 [INF] Created a new block!
+2018-04-11 17:13:14.798 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:13:14.800 +02:00 [INF] Total time to create blocks 110-113: 31 sec
+2018-04-11 17:13:14.802 +02:00 [DBG] Difficulty for next block 10883336332145750855726411154402039202371193798395668132184315094951020800288762774156649656192003687682837876482124170615528941700133233284398756501343051524570308117733328579125E-177
+2018-04-11 17:13:14.804 +02:00 [DBG] Target for next block 10883336332145750855726411154402039202371193798395668132184315094951020800288762774156649656192003687682837876482124170615528941700133233284398756501343051524570308117733328579125E-177
+2018-04-11 17:13:14.806 +02:00 [DBG] Current height: 115
+2018-04-11 17:13:14.808 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:14.809 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:15.189 +02:00 [INF] Created a new block!
+2018-04-11 17:13:15.191 +02:00 [DBG] Current height: 116
+2018-04-11 17:13:15.193 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:15.195 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:16.273 +02:00 [INF] Created a new block!
+2018-04-11 17:13:16.275 +02:00 [DBG] Current height: 117
+2018-04-11 17:13:16.277 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:16.278 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:18.886 +02:00 [INF] Created a new block!
+2018-04-11 17:13:18.888 +02:00 [DBG] Current height: 118
+2018-04-11 17:13:18.890 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:18.891 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:19.100 +02:00 [INF] Created a new block!
+2018-04-11 17:13:19.102 +02:00 [DBG] Current height: 119
+2018-04-11 17:13:19.104 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:19.105 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:19.178 +02:00 [INF] Created a new block!
+2018-04-11 17:13:19.182 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:13:19.184 +02:00 [INF] Total time to create blocks 115-118: 4 sec
+2018-04-11 17:13:19.186 +02:00 [DBG] Difficulty for next block 4081251124554656570897404182900764700889197674398375549569118160606632800108286040308743621072001382881064203680796563980823353137549962481649533688003644321713865544149998217171875E-179
+2018-04-11 17:13:19.188 +02:00 [DBG] Target for next block 4081251124554656570897404182900764700889197674398375549569118160606632800108286040308743621072001382881064203680796563980823353137549962481649533688003644321713865544149998217171875E-179
+2018-04-11 17:13:19.189 +02:00 [DBG] Current height: 120
+2018-04-11 17:13:19.191 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:19.192 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:19.264 +02:00 [INF] Created a new block!
+2018-04-11 17:13:19.266 +02:00 [DBG] Current height: 121
+2018-04-11 17:13:19.268 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:19.270 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:19.345 +02:00 [INF] Created a new block!
+2018-04-11 17:13:19.347 +02:00 [DBG] Current height: 122
+2018-04-11 17:13:19.348 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:19.350 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:19.424 +02:00 [INF] Created a new block!
+2018-04-11 17:13:19.426 +02:00 [DBG] Current height: 123
+2018-04-11 17:13:19.427 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:19.429 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:19.502 +02:00 [INF] Created a new block!
+2018-04-11 17:13:19.504 +02:00 [DBG] Current height: 124
+2018-04-11 17:13:19.506 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:19.507 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:13:19.579 +02:00 [INF] Created a new block!
+2018-04-11 17:13:19.583 +02:00 [INF] Blockchain persisted.
+2018-04-11 17:13:19.585 +02:00 [INF] Total time to create blocks 120-123: 0 sec
+2018-04-11 17:13:19.587 +02:00 [DBG] Difficulty for next block 61218766868319848563461062743511470513337965115975633243536772409099492001624290604631154316080020743215963055211948459712350297063249437224743005320054664825707983162249973257578125E-179
+2018-04-11 17:13:19.588 +02:00 [DBG] Target for next block 61218766868319848563461062743511470513337965115975633243536772409099492001624290604631154316080020743215963055211948459712350297063249437224743005320054664825707983162249973257578125E-179
+2018-04-11 17:13:19.590 +02:00 [DBG] Current height: 125
+2018-04-11 17:13:19.592 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:13:19.593 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:14:08.935 +02:00 [INF] Created a new block!
+2018-04-11 17:14:08.937 +02:00 [DBG] Current height: 126
+2018-04-11 17:14:08.939 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:14:08.940 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:14:35.320 +02:00 [INF] Created a new block!
+2018-04-11 17:14:35.322 +02:00 [DBG] Current height: 127
+2018-04-11 17:14:35.324 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:14:35.325 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:15:13.250 +02:00 [INF] Created a new block!
+2018-04-11 17:15:13.252 +02:00 [DBG] Current height: 128
+2018-04-11 17:15:13.254 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:15:13.256 +02:00 [DBG] Inserted 0 transactions from the txpool into this block
+2018-04-11 17:15:52.341 +02:00 [INF] Created a new block!
+2018-04-11 17:15:52.344 +02:00 [DBG] Current height: 129
+2018-04-11 17:15:52.345 +02:00 [DBG] Our balance: 279960
+2018-04-11 17:15:52.347 +02:00 [DBG] Inserted 0 transactions from the txpool into this block

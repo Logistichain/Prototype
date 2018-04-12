@@ -36,7 +36,7 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
 
             // Setup transactionfinalizer because it's applied for all tests
             _transactionFinalizer.Setup(m => m.CalculateHash(It.IsAny<AbstractTransaction>())).Returns("");
-            _transactionFinalizer.Setup(m => m.CalculateSignature(It.IsAny<AbstractTransaction>())).Returns("");
+            _transactionFinalizer.Setup(m => m.CreateSignature(It.IsAny<AbstractTransaction>())).Returns("");
         }
 
         [TestMethod]

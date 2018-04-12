@@ -114,7 +114,6 @@ namespace Mpb.Consensus.PoC
 
         private void MineForBlocks(CancellationToken cancellationToken)
         {
-            BigDecimal MaximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             BigDecimal difficulty = 1;
             uint secondsPerBlockGoal = 3;
             var difficultyUpdateCycle = 5;
@@ -180,6 +179,14 @@ namespace Mpb.Consensus.PoC
                 catch (OperationCanceledException)
                 {
                     _logger.LogInformation("Mining operation canceled.");
+                }
+                catch(BlockRejectedException ex)
+                {
+                    _logger.LogWarning("Our own block does not pass validation: {0}", ex.Message);
+                }
+                catch(NonceLimitReachedException)
+                {
+                    _logger.LogWarning("Nonce limit reached.");
                 }
             }
         }

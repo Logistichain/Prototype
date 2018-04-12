@@ -202,7 +202,7 @@ namespace Mpb.Consensus.Test.Logic
                     () => sut.ValidateBlock(blockToTest, currentTarget, true)
                 );
 
-            Assert.AreEqual("Timestamp is not within the acceptable range of -120 seconds and +120 seconds", ex.Message);
+            Assert.AreEqual("Timestamp is not within the acceptable time range", ex.Message);
             Assert.AreEqual(blockToTest, ex.Block);
         }
 
@@ -223,7 +223,7 @@ namespace Mpb.Consensus.Test.Logic
                     () => sut.ValidateBlock(blockToTest, currentTarget, true)
                 );
 
-            Assert.AreNotEqual("Timestamp is not within the acceptable range of -120 seconds and +120 seconds", ex.Message);
+            Assert.AreNotEqual("Timestamp is not within the acceptable time range", ex.Message);
             Assert.AreEqual(blockToTest, ex.Block);
         }
 
@@ -241,7 +241,7 @@ namespace Mpb.Consensus.Test.Logic
                     () => sut.ValidateBlock(blockToTest, currentTarget, true)
                 );
 
-            Assert.AreEqual("Timestamp is not within the acceptable range of -120 seconds and +120 seconds", ex.Message);
+            Assert.AreEqual("Timestamp is not within the acceptable time range", ex.Message);
             Assert.AreEqual(blockToTest, ex.Block);
         }
 
@@ -263,7 +263,7 @@ namespace Mpb.Consensus.Test.Logic
                 );
 
             Assert.AreNotEqual("Hash has no leading zero", ex.Message);
-            Assert.AreNotEqual("Timestamp is not within the acceptable range of -120 seconds and +120 seconds", ex.Message);
+            Assert.AreNotEqual("Timestamp is not within the acceptable time range", ex.Message);
             Assert.AreEqual(blockToTest, ex.Block);
         }
 
@@ -281,7 +281,7 @@ namespace Mpb.Consensus.Test.Logic
                     () => sut.ValidateBlock(blockToTest, currentTarget, true)
                 );
 
-            Assert.AreNotEqual("Timestamp is not within the acceptable range of -120 seconds and +120 seconds", ex.Message);
+            Assert.AreNotEqual("Timestamp is not within the acceptable time range", ex.Message);
             Assert.AreEqual(blockToTest, ex.Block);
         }
 

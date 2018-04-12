@@ -122,7 +122,7 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             expectedTransaction.Finalize("", "invalidsignature");
             StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
             _transactionFinalizer.Setup(m => m.CalculateHash(It.IsAny<AbstractTransaction>())).Returns("");
-            _transactionFinalizer.Setup(m => m.CalculateSignature(It.IsAny<AbstractTransaction>())).Returns("");
+            _transactionFinalizer.Setup(m => m.CreateSignature(It.IsAny<AbstractTransaction>())).Returns("");
 
             var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
 

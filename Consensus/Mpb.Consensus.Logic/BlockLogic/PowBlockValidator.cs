@@ -61,7 +61,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
             // Todo refactor 120 seconds to blockchainconstant
             if (_timestamper.GetCurrentUtcTimestamp() - block.Timestamp > 120 || _timestamper.GetCurrentUtcTimestamp() - block.Timestamp < -120)
             {
-                throw new BlockRejectedException("Timestamp is not within the acceptable range of -120 seconds and +120 seconds", block);
+                throw new BlockRejectedException("Timestamp is not within the acceptable time range", block);
             }
 
             // Transaction list may not be empty

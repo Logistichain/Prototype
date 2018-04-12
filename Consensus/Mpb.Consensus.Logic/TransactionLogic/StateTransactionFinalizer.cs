@@ -24,7 +24,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
             return hashString;
         }
         
-        public virtual string CalculateSignature(AbstractTransaction transaction)
+        public virtual string CreateSignature(AbstractTransaction transaction)
         {
             // Todo dependency inject wallet mechanism to sign the transaction!
             // if coinbase, use 'ToPubKey' field
@@ -45,7 +45,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
 
             var txByteArray = GetTransactionBytes(tx);
             var hashString = CalculateHash(tx);
-            var signature = CalculateSignature(tx);
+            var signature = CreateSignature(tx);
 
             tx.Finalize(hashString, signature);
         }

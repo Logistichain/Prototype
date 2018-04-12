@@ -350,7 +350,7 @@ namespace Mpb.Consensus.Logic.TransactionLogic
                 throw new TransactionRejectedException(nameof(tx.Hash) + " is incorrect", tx);
             }
             
-            if (_txFinalizer.CalculateSignature(tx) != tx.Signature)
+            if (_txFinalizer.CreateSignature(tx) != tx.Signature)
             {
                 throw new TransactionRejectedException(nameof(tx.Signature) + " is incorrect", tx);
             }
