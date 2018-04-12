@@ -32,7 +32,7 @@ namespace Mpb.Consensus.Logic.BlockLogic
             {
                 block.SetHash(GetBlockHash(block));
             }
-            else if (block.Hash == null)
+            else if (String.IsNullOrWhiteSpace(block.Hash))
             {
                 throw new ArgumentNullException(nameof(block.Hash));
             }
