@@ -6,7 +6,7 @@
 /app/**/*.js
 /app/**/*.js.map
 
-mining_log*.txt
+log*.txt
 
 # dependencies
 /node_modules
