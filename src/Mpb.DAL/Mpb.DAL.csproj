@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.5</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Mpb.Model\Mpb.Model.csproj" />
+    <ProjectReference Include="..\Mpb.Shared\Mpb.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
