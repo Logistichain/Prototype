@@ -138,7 +138,7 @@ namespace Mpb.Node
             var blockchainRepo = new BlockchainLocalFileRepository();
             var services = new ServiceCollection()
                 .AddSingleton(CreateLoggerFactory())
-                .AddTransient<IBlockHeaderHelper, BlockHeaderHelper>()
+                .AddTransient<IBlockFinalizer, PowBlockFinalizer>()
                 .AddTransient<IBlockValidator, PowBlockValidator>()
                 .AddTransient<IDifficultyCalculator, DifficultyCalculator>()
                 .AddTransient<IPowBlockCreator, PowBlockCreator>()

@@ -2,16 +2,40 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Mpb.Consensus.BlockLogic
 {
     /// <summary>
+    /// Todo: This is not an actual finalizer (like cleaning up memory), but more of a block 'sealer'. Rename this class.
     /// Todo: Make this more efficient by only updating the nonce in the block header bytes.
     /// In order to achieve this, every field must have a predefined length so we can allocate them.
     /// </summary>
-    public class BlockHeaderHelper : IBlockHeaderHelper
+    public class PowBlockFinalizer : IBlockFinalizer
     {
+
+        public string CalculateHash(Block block)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var blockHash = sha256.ComputeHash(GetBlockHeaderBytes(block));
+                return BitConverter.ToString(blockHash).Replace("-", "");
+            }
+        }
+
+        public string CreateSignature(Block block, string privKey)
+        {
+            // Todo: sign the validhash with the privkey
+            return "";
+        }
+
+        public void FinalizeBlock(Block block, string validHash, string privKey)
+        {
+            var signature = CreateSignature(block, privKey);
+            block.Finalize(validHash, signature);
+        }
+
         public virtual byte[] GetBlockHeaderBytes(Block block)
         {
             if (block == null)

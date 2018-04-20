@@ -157,7 +157,7 @@ namespace Mpb.Node
                 try
                 {
                     if (difficulty < 1) { difficulty = 1; }
-                    var newBlock = _blockCreator.CreateValidBlock(transactions, difficulty, cancellationToken);
+                    var newBlock = _blockCreator.CreateValidBlock(_walletPrivKey, transactions, difficulty, cancellationToken);
 
                     lock (_blockchain)
                     {

@@ -21,14 +21,14 @@ namespace Mpb.Consensus.Test.Logic
     [TestClass]
     public class PowBlockValidatorTest
     {
-        Mock<BlockHeaderHelper> _blockHeaderHelper; // Using implementation because some tests require calling the base.
+        Mock<PowBlockFinalizer> _blockHeaderHelper; // Using implementation because some tests require calling the base.
         Mock<ITimestamper> _timestamper;
         Mock<ITransactionValidator> _transactionValidator;
 
         [TestInitialize]
         public void Initialize()
         {
-            _blockHeaderHelper = new Mock<BlockHeaderHelper>(MockBehavior.Strict);
+            _blockHeaderHelper = new Mock<PowBlockFinalizer>(MockBehavior.Strict);
             _timestamper = new Mock<ITimestamper>(MockBehavior.Strict);
             _transactionValidator = new Mock<ITransactionValidator>(MockBehavior.Strict);
         }
@@ -72,41 +72,10 @@ namespace Mpb.Consensus.Test.Logic
             var sut = new PowBlockValidator(_blockHeaderHelper.Object, _transactionValidator.Object, _timestamper.Object);
 
             var ex = Assert.ThrowsException<ArgumentNullException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, false)
+                    () => sut.ValidateBlock(blockToTest, currentTarget)
                 );
 
             Assert.AreEqual("Hash", ex.ParamName);
-        }
-
-
-        /// <summary>
-        /// This test checks if the validator caluclates the correct hash
-        /// from the blockheaderhelper output.
-        /// This test asserts on an exception because the block hash does not
-        /// have a leading zero, but atleast it should not give an exception
-        /// on the hash property.
-        /// </summary>
-        [TestMethod]
-        public void BlockIsValid_Calls_BlockHeaderHelper_AndCalculatesCorrectHash()
-        {
-            BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockHeaderHelper.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block("testnet", 1, "abc", 1, new List<AbstractTransaction>());
-            var blockHeaderResult = new byte[] { 0, 1 };
-            var expectedHash = "";
-            _blockHeaderHelper.Setup(m => m.GetBlockHeaderBytes(blockToTest)).Returns(blockHeaderResult);
-            using (var sha256 = SHA256.Create())
-            {
-                var hash = sha256.ComputeHash(blockHeaderResult);
-                expectedHash = BitConverter.ToString(hash).Replace("-", "");
-            }
-
-            var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, true)
-                );
-
-            Assert.AreEqual(expectedHash, ex.Block.Hash);
-            Assert.AreNotEqual("The hash property of the block is not equal to the calculated hash", ex.Message);
         }
 
         /// <summary>
@@ -122,11 +91,11 @@ namespace Mpb.Consensus.Test.Logic
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var sut = new PowBlockValidator(_blockHeaderHelper.Object, _transactionValidator.Object, _timestamper.Object);
             var blockToTest = new Block("testnet", 1, "abc", 1, new List<AbstractTransaction>());
-            blockToTest.SetHash("abc"); // Invalid block hash
+            blockToTest.Finalize("abc", ""); // Invalid block hash
             _blockHeaderHelper.Setup(m => m.GetBlockHeaderBytes(blockToTest)).Returns(new byte[] { 0, 1 });
             
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, false)
+                    () => sut.ValidateBlock(blockToTest, currentTarget)
                 );
 
             Assert.AreEqual("The hash property of the block is not equal to the calculated hash", ex.Message);

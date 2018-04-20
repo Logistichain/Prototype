@@ -13,7 +13,6 @@ namespace Mpb.Consensus.BlockLogic
         /// </summary>
         /// <param name="block">The block to validate</param>
         /// <param name="currentTarget">The current target to validate the block's hash</param>
-        /// <param name="setBlockHash">Whether this method needs to calculate and add the hash to the block</param>
-        void ValidateBlock(Block block, BigDecimal currentTarget, bool setBlockHash);
+        void ValidateBlock(Block block, BigDecimal currentTarget);
     }
 }

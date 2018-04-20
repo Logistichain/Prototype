@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using Mpb.Model;
-using System.Security.Cryptography;
 using Mpb.Consensus.Exceptions;
 using Mpb.Consensus.MiscLogic;
 using System.Threading;
 using Mpb.Shared;
 using Mpb.Shared.Constants;
+using Mpb.Consensus.TransactionLogic;
+using System.Linq;
 
 namespace Mpb.Consensus.BlockLogic
 {
@@ -14,26 +15,28 @@ namespace Mpb.Consensus.BlockLogic
     {
         private readonly ITimestamper _timestamper;
         private readonly IBlockValidator _validator;
-        private readonly IBlockHeaderHelper _blockHeaderHelper;
+        private readonly IBlockFinalizer _blockFinalizer;
+        private readonly ITransactionValidator _transactionValidator;
 
-        public PowBlockCreator(ITimestamper timestamper, IBlockValidator validator, IBlockHeaderHelper blockHeaderHelper)
+        public PowBlockCreator(ITimestamper timestamper, IBlockValidator validator, IBlockFinalizer blockHeaderHelper, ITransactionValidator transactionValidator)
         {
             _timestamper = timestamper ?? throw new ArgumentNullException(nameof(timestamper));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
-            _blockHeaderHelper = blockHeaderHelper ?? throw new ArgumentNullException(nameof(blockHeaderHelper));
+            _blockFinalizer = blockHeaderHelper ?? throw new ArgumentNullException(nameof(blockHeaderHelper));
+            _transactionValidator = transactionValidator ?? throw new ArgumentNullException(nameof(transactionValidator));
         }
 
-        public virtual Block CreateValidBlock(IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty)
+        public virtual Block CreateValidBlock(string privateKey, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty)
         {
-            return CreateValidBlock(BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget, CancellationToken.None);
+            return CreateValidBlock(privateKey, BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget, CancellationToken.None);
         }
         
-        public virtual Block CreateValidBlock(IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, CancellationToken ct)
+        public virtual Block CreateValidBlock(string privateKey, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, CancellationToken ct)
         {
-            return CreateValidBlock(BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget, ct);
+            return CreateValidBlock(privateKey, BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget, ct);
         }
 
-        public virtual Block CreateValidBlock(string netIdentifier, uint protocolVersion, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, BigDecimal maximumTarget, CancellationToken ct)
+        public virtual Block CreateValidBlock(string privateKey, string netIdentifier, uint protocolVersion, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, BigDecimal maximumTarget, CancellationToken ct)
         {
             if (difficulty < 1)
             {
@@ -42,10 +45,11 @@ namespace Mpb.Consensus.BlockLogic
 
             bool targetMet = false;
             var utcTimestamp = _timestamper.GetCurrentUtcTimestamp();
-            // todo merkle root calculation (instead of "abc")
-            Block b = new Block(netIdentifier, protocolVersion, "abc", utcTimestamp, transactions);
+            var merkleroot = _transactionValidator.CalculateMerkleRoot(transactions.ToList());
+            Block b = new Block(netIdentifier, protocolVersion, merkleroot, utcTimestamp, transactions);
             var currentTarget = maximumTarget / difficulty;
 
+            // Keep on mining
             while (targetMet == false)
             {
                 ct.ThrowIfCancellationRequested();
@@ -56,20 +60,16 @@ namespace Mpb.Consensus.BlockLogic
                 }
 
                 b.IncrementNonce();
-                using (var sha256 = SHA256.Create())
-                {
-                    var blockHash = sha256.ComputeHash(_blockHeaderHelper.GetBlockHeaderBytes(b));
-                    b.SetHash(BitConverter.ToString(blockHash).Replace("-", ""));
-                }
+                var hash = _blockFinalizer.CalculateHash(b);
+                _blockFinalizer.FinalizeBlock(b, hash, privateKey);
 
                 try
                 {
-                    _validator.ValidateBlock(b, currentTarget, false);
+                    _validator.ValidateBlock(b, currentTarget);
                     targetMet = true;
                 }
                 catch (BlockRejectedException ex)
                 {
-                    // Todo Log
                     if (ex.Message != "Hash has no leading zero" && ex.Message != "Hash value is equal or higher than the current target")
                     {
                         throw;

@@ -15,27 +15,23 @@ namespace Mpb.Consensus.BlockLogic
 {
     public class PowBlockValidator : IBlockValidator
     {
-        private readonly IBlockHeaderHelper _blockHeaderHelper;
+        private readonly IBlockFinalizer _blockFinalizer;
         private readonly ITransactionValidator _transactionValidator;
         private readonly ITimestamper _timestamper;
 
-        public PowBlockValidator(IBlockHeaderHelper blockHeaderHelper, ITransactionValidator transactionValidator, ITimestamper timestamper)
+        public PowBlockValidator(IBlockFinalizer blockHeaderHelper, ITransactionValidator transactionValidator, ITimestamper timestamper)
         {
-            _blockHeaderHelper = blockHeaderHelper ?? throw new ArgumentNullException(nameof(blockHeaderHelper));
+            _blockFinalizer = blockHeaderHelper ?? throw new ArgumentNullException(nameof(blockHeaderHelper));
             _transactionValidator = transactionValidator ?? throw new ArgumentNullException(nameof(transactionValidator));
             _timestamper = timestamper ?? throw new ArgumentNullException(nameof(timestamper));
         }
 
         //! Decorator/composite pattern could be possible here. Only check for PoW things, then call the parent for more generic checks
-        public virtual void ValidateBlock(Block block, BigDecimal currentTarget, bool setBlockHash)
+        public virtual void ValidateBlock(Block block, BigDecimal currentTarget)
         {
-            if (setBlockHash)
+            if (!block.IsFinalized())
             {
-                block.SetHash(GetBlockHash(block));
-            }
-            else if (String.IsNullOrWhiteSpace(block.Hash))
-            {
-                throw new ArgumentNullException(nameof(block.Hash));
+                throw new BlockRejectedException("Block is not hashed or signed or hashed properly", block);
             }
             else if (block.Hash != GetBlockHash(block))
             {
@@ -96,7 +92,7 @@ namespace Mpb.Consensus.BlockLogic
         {
             using (var sha256 = SHA256.Create())
             {
-                var blockHash = sha256.ComputeHash(_blockHeaderHelper.GetBlockHeaderBytes(b));
+                var blockHash = sha256.ComputeHash(_blockFinalizer.GetBlockHeaderBytes(b));
                 return BitConverter.ToString(blockHash).Replace("-", "");
             }
         }
