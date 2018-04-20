@@ -18,25 +18,25 @@ namespace Mpb.Consensus.BlockLogic
         private readonly IBlockFinalizer _blockFinalizer;
         private readonly ITransactionValidator _transactionValidator;
 
-        public PowBlockCreator(ITimestamper timestamper, IBlockValidator validator, IBlockFinalizer blockHeaderHelper, ITransactionValidator transactionValidator)
+        public PowBlockCreator(ITimestamper timestamper, IBlockValidator validator, IBlockFinalizer blockFinalizer, ITransactionValidator transactionValidator)
         {
             _timestamper = timestamper ?? throw new ArgumentNullException(nameof(timestamper));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
-            _blockFinalizer = blockHeaderHelper ?? throw new ArgumentNullException(nameof(blockHeaderHelper));
+            _blockFinalizer = blockFinalizer ?? throw new ArgumentNullException(nameof(blockFinalizer));
             _transactionValidator = transactionValidator ?? throw new ArgumentNullException(nameof(transactionValidator));
         }
 
-        public virtual Block CreateValidBlock(string privateKey, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty)
+        public virtual Block CreateValidBlockAndAddToChain(string privateKey, Blockchain blockchain, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty)
         {
-            return CreateValidBlock(privateKey, BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget, CancellationToken.None);
+            return CreateValidBlockAndAddToChain(privateKey, blockchain, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget, CancellationToken.None);
         }
         
-        public virtual Block CreateValidBlock(string privateKey, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, CancellationToken ct)
+        public virtual Block CreateValidBlockAndAddToChain(string privateKey, Blockchain blockchain, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, CancellationToken ct)
         {
-            return CreateValidBlock(privateKey, BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget, ct);
+            return CreateValidBlockAndAddToChain(privateKey, blockchain, BlockchainConstants.ProtocolVersion, transactions, difficulty, BlockchainConstants.MaximumTarget, ct);
         }
 
-        public virtual Block CreateValidBlock(string privateKey, string netIdentifier, uint protocolVersion, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, BigDecimal maximumTarget, CancellationToken ct)
+        public virtual Block CreateValidBlockAndAddToChain(string privateKey, Blockchain blockchain, uint protocolVersion, IEnumerable<AbstractTransaction> transactions, BigDecimal difficulty, BigDecimal maximumTarget, CancellationToken ct)
         {
             if (difficulty < 1)
             {
@@ -46,8 +46,9 @@ namespace Mpb.Consensus.BlockLogic
             bool targetMet = false;
             var utcTimestamp = _timestamper.GetCurrentUtcTimestamp();
             var merkleroot = _transactionValidator.CalculateMerkleRoot(transactions.ToList());
-            Block b = new Block(netIdentifier, protocolVersion, merkleroot, utcTimestamp, transactions);
             var currentTarget = maximumTarget / difficulty;
+            string previousBlockHash = blockchain.CurrentHeight > -1 ? blockchain.Blocks.Last().Hash : null;
+            Block b = new Block(blockchain.NetIdentifier, protocolVersion, merkleroot, utcTimestamp, previousBlockHash, transactions);
 
             // Keep on mining
             while (targetMet == false)
@@ -65,7 +66,7 @@ namespace Mpb.Consensus.BlockLogic
 
                 try
                 {
-                    _validator.ValidateBlock(b, currentTarget);
+                    _validator.ValidateBlock(b, currentTarget, blockchain, true);
                     targetMet = true;
                 }
                 catch (BlockRejectedException ex)

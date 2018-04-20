@@ -10,6 +10,8 @@ using System.Linq;
 using Mpb.Consensus.TransactionLogic;
 using Mpb.Consensus.MiscLogic;
 using Mpb.Shared;
+using Mpb.Shared.Constants;
+using Mpb.DAL;
 
 namespace Mpb.Consensus.BlockLogic
 {
@@ -27,13 +29,13 @@ namespace Mpb.Consensus.BlockLogic
         }
 
         //! Decorator/composite pattern could be possible here. Only check for PoW things, then call the parent for more generic checks
-        public virtual void ValidateBlock(Block block, BigDecimal currentTarget)
+        public virtual void ValidateBlock(Block block, BigDecimal currentTarget, Blockchain blockchain, bool writeToBlockchain)
         {
             if (!block.IsFinalized())
             {
                 throw new BlockRejectedException("Block is not hashed or signed or hashed properly", block);
             }
-            else if (block.Hash != GetBlockHash(block))
+            else if (block.Hash != _blockFinalizer.CalculateHash(block))
             {
                 throw new BlockRejectedException("The hash property of the block is not equal to the calculated hash", block);
             }
@@ -56,7 +58,7 @@ namespace Mpb.Consensus.BlockLogic
 
             // Timestamp must not be lower than UTC - 2 min and not higher than UTC + 2 min
             // Todo refactor 120 seconds to blockchainconstant
-            if (_timestamper.GetCurrentUtcTimestamp() - block.Timestamp > 120 || _timestamper.GetCurrentUtcTimestamp() - block.Timestamp < -120)
+            if (_timestamper.GetCurrentUtcTimestamp() - block.Timestamp > BlockchainConstants.MaximumTimestampOffset || _timestamper.GetCurrentUtcTimestamp() - block.Timestamp < (BlockchainConstants.MaximumTimestampOffset * -1))
             {
                 throw new BlockRejectedException("Timestamp is not within the acceptable time range", block);
             }
@@ -68,32 +70,84 @@ namespace Mpb.Consensus.BlockLogic
             }
 
             // Check merkleroot
-            // Todo ^
+            var calculatedMerkleRoot = _transactionValidator.CalculateMerkleRoot(block.Transactions.ToList());
+            if (block.MerkleRoot != calculatedMerkleRoot)
+            {
+                throw new BlockRejectedException("Incorrect merkleroot", block);
+            }
 
             // First transaction must be coinbase
-            // Todo ^
+            if (block.Transactions.First().Action != TransactionAction.ClaimCoinbase.ToString())
+            {
+                throw new BlockRejectedException("First transaction is not coinbase", block);
+            }
 
             // Only one coinbase transaction may exist
-            // Todo ^
+            if (block.Transactions.Where(tx => tx.Action == TransactionAction.ClaimCoinbase.ToString()).Count() > 1)
+            {
+                throw new BlockRejectedException("Multiple coinbase transactions found", block);
+            }
+
+            // The block must be in the same network as our node
+            if (block.MagicNumber != blockchain.NetIdentifier)
+            {
+                throw new BlockRejectedException("Block comes from a different network", block);
+            }
 
             // Check if the previous hash exists in our blockchain
-            // Todo ^ and throw if it doesn't exist.
             // Todo if the previous hash is unknown, let Networking retrieve the entire blockchain
+            if (blockchain.Blocks.Where(b => b.Hash == block.PreviousHash).Count() == 0 && blockchain.CurrentHeight > -1)
+            {
+                throw new BlockRejectedException("Previous blockhash does not exist in our chain", block);
+            }
 
             // Check all other transactions
-            // Todo ^
+            foreach (var tx in block.Transactions)
+            {
+                _transactionValidator.ValidateTransaction(tx);
+            }
 
             // Check if the previous hash isn't used by another block
-            // If it is used by another block, and that block is the latest
-            // Todo ^
-        }
-
-        private string GetBlockHash(Block b)
-        {
-            using (var sha256 = SHA256.Create())
+            // If it is used by another block, and that block is the latest,
+            // then check which block has the best difficulty.
+            lock (blockchain)
             {
-                var blockHash = sha256.ComputeHash(_blockFinalizer.GetBlockHeaderBytes(b));
-                return BitConverter.ToString(blockHash).Replace("-", "");
+                if (blockchain.CurrentHeight > -1)
+                {
+                    var existingBlocks = blockchain.Blocks.Where(b => b.PreviousHash == block.PreviousHash);
+                    for (int i = 0; i < existingBlocks.Count(); i++)
+                    {
+                        var existingBlock = existingBlocks.ElementAt(i);
+                        int heightInChain = blockchain.GetHeightForBlock(existingBlock.Hash);
+
+                        if (blockchain.CurrentHeight == heightInChain) 
+                        {
+                            // This is the latest block so we might replace it. Determine the difficulty.
+                            BigDecimal existingBlockHashValue = BigInteger.Parse(existingBlock.Hash, NumberStyles.HexNumber);
+                            if (hashValue < existingBlockHashValue)
+                            {
+                                if (writeToBlockchain)
+                                {
+                                    blockchain.Blocks.Remove(existingBlock);
+                                }
+                            }
+                            else
+                            {
+                                throw new BlockRejectedException("Another block with higher difficulty points to the same PreviousHash", block);
+                            }
+                        }
+                        else
+                        {
+                            throw new BlockRejectedException("Split chaining is not supported", block);
+                        }
+                    }
+                }
+                
+                // Finished
+                if (writeToBlockchain)
+                {
+                    blockchain.Blocks.Add(block);
+                }
             }
         }
     }

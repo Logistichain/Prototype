@@ -33,5 +33,20 @@ namespace Mpb.Model
         }
 
         public Blockchain(string netIdentifier) : this(new List<Block>(), netIdentifier) { }
+
+        public int GetHeightForBlock(string hash)
+        {
+            int height = -1;
+            foreach (var block in Blocks)
+            {
+                height++;
+                if (block.Hash == hash)
+                {
+                    return height;
+                }
+            }
+
+            return height;
+        }
     }
 }

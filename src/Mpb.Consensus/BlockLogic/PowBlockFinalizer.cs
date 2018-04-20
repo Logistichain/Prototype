@@ -15,7 +15,7 @@ namespace Mpb.Consensus.BlockLogic
     public class PowBlockFinalizer : IBlockFinalizer
     {
 
-        public string CalculateHash(Block block)
+        public virtual string CalculateHash(Block block)
         {
             using (var sha256 = SHA256.Create())
             {
@@ -24,13 +24,13 @@ namespace Mpb.Consensus.BlockLogic
             }
         }
 
-        public string CreateSignature(Block block, string privKey)
+        public virtual string CreateSignature(Block block, string privKey)
         {
             // Todo: sign the validhash with the privkey
             return "";
         }
 
-        public void FinalizeBlock(Block block, string validHash, string privKey)
+        public virtual void FinalizeBlock(Block block, string validHash, string privKey)
         {
             var signature = CreateSignature(block, privKey);
             block.Finalize(validHash, signature);
@@ -46,6 +46,7 @@ namespace Mpb.Consensus.BlockLogic
             // Accumulate all bytes (using BigEndian to support multiple platform architectures)
             byte[] magicNumberBytes = Encoding.BigEndianUnicode.GetBytes(block.MagicNumber);
             byte[] versionBytes = Encoding.BigEndianUnicode.GetBytes(block.Version.ToString());
+            byte[] previousBlockHash = Encoding.BigEndianUnicode.GetBytes(block.PreviousHash);
             byte[] merkleRootBytes = Encoding.BigEndianUnicode.GetBytes(block.MerkleRoot);
             byte[] timestampBytes = Encoding.BigEndianUnicode.GetBytes(block.Timestamp.ToString());
             byte[] nonceBytes = Encoding.BigEndianUnicode.GetBytes(block.Nonce.ToString());
@@ -57,9 +58,10 @@ namespace Mpb.Consensus.BlockLogic
             // Copy the bytes to array
             Buffer.BlockCopy(magicNumberBytes, 0, array, 0, magicNumberBytes.Length);
             Buffer.BlockCopy(versionBytes, 0, array, magicNumberBytes.Length, versionBytes.Length);
-            Buffer.BlockCopy(merkleRootBytes, 0, array, magicNumberBytes.Length + versionBytes.Length, merkleRootBytes.Length);
-            Buffer.BlockCopy(timestampBytes, 0, array, magicNumberBytes.Length + versionBytes.Length + merkleRootBytes.Length, timestampBytes.Length);
-            Buffer.BlockCopy(nonceBytes, 0, array, magicNumberBytes.Length + versionBytes.Length + merkleRootBytes.Length + timestampBytes.Length, nonceBytes.Length);
+            Buffer.BlockCopy(previousBlockHash, 0, array, magicNumberBytes.Length + versionBytes.Length, previousBlockHash.Length);
+            Buffer.BlockCopy(merkleRootBytes, 0, array, magicNumberBytes.Length + previousBlockHash.Length + versionBytes.Length, merkleRootBytes.Length);
+            Buffer.BlockCopy(timestampBytes, 0, array, magicNumberBytes.Length + previousBlockHash.Length + versionBytes.Length + merkleRootBytes.Length, timestampBytes.Length);
+            Buffer.BlockCopy(nonceBytes, 0, array, magicNumberBytes.Length + previousBlockHash.Length + versionBytes.Length + merkleRootBytes.Length + timestampBytes.Length, nonceBytes.Length);
             Buffer.BlockCopy(transactionCountBytes, 0, array, array.Length - transactionCountBytes.Length, transactionCountBytes.Length);
 
             return array;

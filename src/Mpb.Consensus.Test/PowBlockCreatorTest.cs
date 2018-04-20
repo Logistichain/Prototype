@@ -13,6 +13,7 @@ using Mpb.Shared;
 using Mpb.Model;
 using Mpb.Consensus.Exceptions;
 using System.Linq;
+using Mpb.Shared.Constants;
 
 namespace Mpb.Consensus.Test.Logic
 {
@@ -23,7 +24,7 @@ namespace Mpb.Consensus.Test.Logic
     public class PowBlockCreatorTest
     {
         // Todo add difficultycalculator mock and create some tests for it
-        Mock<IBlockFinalizer> _blockHeaderHelper;
+        Mock<IBlockFinalizer> _blockFinalizer;
         Mock<IBlockValidator> _blockValidatorMock;
         Mock<ITimestamper> _timestamperMock;
         Mock<ITransactionValidator> _transactionValidator;
@@ -43,7 +44,7 @@ namespace Mpb.Consensus.Test.Logic
             _blockchain = new Blockchain(_netId);
             _transactionFinalizer = new Mock<ITransactionFinalizer>(MockBehavior.Strict);
             _transactionRepo = new Mock<ITransactionRepository>(MockBehavior.Strict);
-            _blockHeaderHelper = new Mock<IBlockFinalizer>(MockBehavior.Strict);
+            _blockFinalizer = new Mock<IBlockFinalizer>(MockBehavior.Strict);
             _timestamperMock = new Mock<ITimestamper>(MockBehavior.Strict);
             _transactionValidator = new Mock<ITransactionValidator>(MockBehavior.Strict);
             _blockValidatorMock = new Mock<IBlockValidator>(MockBehavior.Strict);
@@ -55,7 +56,7 @@ namespace Mpb.Consensus.Test.Logic
         public void CreateValidBlock_ThrowsException_NullTimestamper()
         {
             var ex = Assert.ThrowsException<ArgumentNullException>(
-                    () => new PowBlockCreator(null, _blockValidatorMock.Object, _blockHeaderHelper.Object, _transactionValidator.Object)
+                    () => new PowBlockCreator(null, _blockValidatorMock.Object, _blockFinalizer.Object, _transactionValidator.Object)
                 );
 
             Assert.AreEqual(ex.ParamName, "timestamper");
@@ -65,27 +66,27 @@ namespace Mpb.Consensus.Test.Logic
         public void CreateValidBlock_ThrowsException_NullValidator()
         {
             var ex = Assert.ThrowsException<ArgumentNullException>(
-                    () => new PowBlockCreator(_timestamperMock.Object, null, _blockHeaderHelper.Object, _transactionValidator.Object)
+                    () => new PowBlockCreator(_timestamperMock.Object, null, _blockFinalizer.Object, _transactionValidator.Object)
                 );
 
             Assert.AreEqual(ex.ParamName, "validator");
         }
 
         [TestMethod]
-        public void CreateValidBlock_ThrowsException_NullBlockHeaderHelper()
+        public void CreateValidBlock_ThrowsException_NullBlockFinalizer()
         {
             var ex = Assert.ThrowsException<ArgumentNullException>(
                     () => new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, null, _transactionValidator.Object)
                 );
 
-            Assert.AreEqual(ex.ParamName, "blockHeaderHelper");
+            Assert.AreEqual(ex.ParamName, "blockFinalizer");
         }
 
         [TestMethod]
         public void CreateValidBlock_ThrowsException_NullTransactionValidator()
         {
             var ex = Assert.ThrowsException<ArgumentNullException>(
-                    () => new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, _blockHeaderHelper.Object, null)
+                    () => new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, _blockFinalizer.Object, null)
                 );
 
             Assert.AreEqual(ex.ParamName, "transactionValidator");
@@ -104,14 +105,15 @@ namespace Mpb.Consensus.Test.Logic
             string expectedNetworkIdentifier = "testnet";
             uint expectedProtocolVersion = 1;
             BigDecimal expectedMaximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var expectedBlock = new Block(expectedNetworkIdentifier, expectedProtocolVersion, "abc", 123, _transactions);
-            var selfCallingMock = new Mock<PowBlockCreator>(MockBehavior.Strict, new object[] { _timestamperMock.Object, _blockValidatorMock.Object, _blockHeaderHelper.Object });
-            selfCallingMock.Setup(m => m.CreateValidBlock("privkey", _transactions, difficulty)).CallBase();
-            selfCallingMock.Setup(m => m.CreateValidBlock("privkey", expectedNetworkIdentifier, expectedProtocolVersion, _transactions, difficulty, expectedMaximumTarget, CancellationToken.None))
+            var blockchain = new Blockchain(expectedNetworkIdentifier);
+            var expectedBlock = new Block(expectedNetworkIdentifier, expectedProtocolVersion, "abc", 123, null, _transactions);
+            var selfCallingMock = new Mock<PowBlockCreator>(MockBehavior.Strict, new object[] { _timestamperMock.Object, _blockValidatorMock.Object, _blockFinalizer.Object, _transactionValidator.Object });
+            selfCallingMock.Setup(m => m.CreateValidBlockAndAddToChain("privkey", blockchain, _transactions, difficulty)).CallBase();
+            selfCallingMock.Setup(m => m.CreateValidBlockAndAddToChain("privkey", blockchain, expectedProtocolVersion, _transactions, difficulty, expectedMaximumTarget, CancellationToken.None))
                 .Returns(expectedBlock);
             PowBlockCreator sut = selfCallingMock.Object;
 
-            var result = sut.CreateValidBlock("privkey", _transactions, difficulty);
+            var result = sut.CreateValidBlockAndAddToChain("privkey", blockchain, _transactions, difficulty);
 
             Assert.AreEqual(expectedBlock, result);
             selfCallingMock.VerifyAll();
@@ -135,10 +137,10 @@ namespace Mpb.Consensus.Test.Logic
         private void CreateValidBlockThatShouldThrowExceptionOnInvalidDifficulty(BigDecimal difficulty)
         {
             var expectedExceptionMessage = "Difficulty cannot be zero.";
-            var sut = new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, _blockHeaderHelper.Object, _transactionValidator.Object);
+            var sut = new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, _blockFinalizer.Object, _transactionValidator.Object);
 
             var ex = Assert.ThrowsException<DifficultyCalculationException>(
-                    () => sut.CreateValidBlock("privkey", _netId, _protocol, _transactions, difficulty, _maximumTarget, CancellationToken.None)
+                    () => sut.CreateValidBlockAndAddToChain("privkey", new Blockchain(_netId), _protocol, _transactions, difficulty, _maximumTarget, CancellationToken.None)
                 );
 
             Assert.AreEqual(expectedExceptionMessage, ex.Message);
@@ -152,37 +154,78 @@ namespace Mpb.Consensus.Test.Logic
         public void CreateValidBlock_ThrowsException_MiningCanceled()
         {
             CancellationTokenSource cts = new CancellationTokenSource();
-            var sut = new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, _blockHeaderHelper.Object, _transactionValidator.Object);
+            var sut = new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, _blockFinalizer.Object, _transactionValidator.Object);
             var veryHardDifficulty = BigInteger.Parse("00000000000000000000000000000000000000000000000000000000000000F", NumberStyles.HexNumber);
+            var transactionsList = _transactions.ToList();
             _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp())
                             .Returns(1);
+            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactionsList)).Returns("abc"); ;
 
             var ex = Assert.ThrowsException<OperationCanceledException>(
                     () =>
                     {
                         cts.Cancel();
-                        sut.CreateValidBlock("privkey", _netId, _protocol, _transactions, veryHardDifficulty, _maximumTarget, cts.Token);
+                        sut.CreateValidBlockAndAddToChain("privkey", new Blockchain(_netId), _protocol, transactionsList, veryHardDifficulty, _maximumTarget, cts.Token);
                     }
                 );
         }
 
         [TestMethod]
-        public void CreateValidBlock_CallsValidator_HappyFlow()
+        public void CreateValidBlock_CallsValidator_GenesisHappyFlow()
         {
+            var expectedHash = "hash";
+            var privateKey = "privkey";
             var expectedTimestamp = 1;
-            var sut = new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, _blockHeaderHelper.Object, _transactionValidator.Object);
+            var blockchain = new Blockchain(_netId);
+            var sut = new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, _blockFinalizer.Object, _transactionValidator.Object);
+            var transactionsList = _transactions.ToList();
             _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp())
                             .Returns(expectedTimestamp);
-            _blockValidatorMock.Setup(m => m.ValidateBlock(It.IsAny<Block>(), It.IsAny<BigDecimal>()));
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(_transactions.ToList())).Returns("abc");
-            _blockHeaderHelper.Setup(m => m.FinalizeBlock(It.IsAny<Block>(), It.IsAny<string>(), ""));
-            var result = sut.CreateValidBlock("privkey", _netId, _protocol, _transactions, 1, _maximumTarget, CancellationToken.None);
+            _blockFinalizer.Setup(m => m.CalculateHash(It.IsAny<Block>())).Returns(expectedHash);
+            _blockFinalizer.Setup(m => m.FinalizeBlock(It.IsAny<Block>(), expectedHash, privateKey));
+            _blockValidatorMock.Setup(m => m.ValidateBlock(It.IsAny<Block>(), It.IsAny<BigDecimal>(), blockchain, true));
+            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactionsList)).Returns("abc");
+            _blockFinalizer.Setup(m => m.FinalizeBlock(It.IsAny<Block>(), expectedHash, privateKey));
+
+            var result = sut.CreateValidBlockAndAddToChain(privateKey, blockchain, _protocol, transactionsList, 1, _maximumTarget, CancellationToken.None);
             
-            Assert.AreEqual(_netId, result.MagicNumber);
+            Assert.AreEqual(blockchain.NetIdentifier, result.MagicNumber);
+            Assert.AreEqual(null, result.PreviousHash);
             Assert.AreEqual(_protocol, result.Version);
             Assert.AreEqual(expectedTimestamp, result.Timestamp);
             Assert.AreEqual("abc", result.MerkleRoot);
-            Assert.AreEqual(_transactions, result.Transactions);
+            Assert.AreEqual(transactionsList, result.Transactions);
+            Assert.AreEqual(1UL, result.Nonce);
+        }
+
+        [TestMethod]
+        public void CreateValidBlock_CallsValidator_HappyFlow()
+        {
+            var expectedHash = "hash";
+            var privateKey = "privkey";
+            var expectedTimestamp = 1;
+            var transactions = new List<AbstractTransaction>() {
+                new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
+            };
+            var blockchain = new Blockchain(new List<Block>() { new Block(_netId, 1, "merkleroot", 1, null, transactions).Finalize("firsthash", "sig") }, _netId);
+            var sut = new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, _blockFinalizer.Object, _transactionValidator.Object);
+            var transactionsList = _transactions.ToList();
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp())
+                            .Returns(expectedTimestamp);
+            _blockFinalizer.Setup(m => m.CalculateHash(It.IsAny<Block>())).Returns(expectedHash);
+            _blockFinalizer.Setup(m => m.FinalizeBlock(It.IsAny<Block>(), expectedHash, privateKey));
+            _blockValidatorMock.Setup(m => m.ValidateBlock(It.IsAny<Block>(), It.IsAny<BigDecimal>(), blockchain, true));
+            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactionsList)).Returns("abc");
+            _blockFinalizer.Setup(m => m.FinalizeBlock(It.IsAny<Block>(), expectedHash, privateKey));
+
+            var result = sut.CreateValidBlockAndAddToChain(privateKey, blockchain, _protocol, transactionsList, 1, _maximumTarget, CancellationToken.None);
+
+            Assert.AreEqual(blockchain.NetIdentifier, result.MagicNumber);
+            Assert.AreEqual("firsthash", result.PreviousHash);
+            Assert.AreEqual(_protocol, result.Version);
+            Assert.AreEqual(expectedTimestamp, result.Timestamp);
+            Assert.AreEqual("abc", result.MerkleRoot);
+            Assert.AreEqual(transactionsList, result.Transactions);
             Assert.AreEqual(1UL, result.Nonce);
         }
 
@@ -191,7 +234,7 @@ namespace Mpb.Consensus.Test.Logic
         {
             _transactionFinalizer.VerifyAll();
             _transactionRepo.VerifyAll();
-            _blockHeaderHelper.VerifyAll();
+            _blockFinalizer.VerifyAll();
             _timestamperMock.VerifyAll();
             _transactionValidator.VerifyAll();
             _blockValidatorMock.VerifyAll();

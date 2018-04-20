@@ -110,23 +110,20 @@ namespace Mpb.DAL
         /// <returns>The height for the given block hash</returns>
         public int GetHeightForBlock(string hash, string netIdentifier)
         {
-            int height = 0;
 
             if (_trackingBlockchain == null)
             {
                 GetChainByNetId(netIdentifier);
             }
+            
+            int height = _trackingBlockchain.GetHeightForBlock(hash);
 
-            foreach (var block in _trackingBlockchain.Blocks)
+            if (height == -1)
             {
-                if (block.Hash == hash)
-                {
-                    return height;
-                }
-                height++;
+                throw new KeyNotFoundException("No block found with the given hash");
             }
 
-            throw new KeyNotFoundException("No block found with the given hash");
+            return height;
         }
 
         private Blockchain LoadBlockchainFromFileSystem(string netIdentifier)
