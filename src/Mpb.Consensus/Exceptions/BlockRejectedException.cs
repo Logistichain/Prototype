@@ -5,6 +5,9 @@ using System.Text;
 
 namespace Mpb.Consensus.Exceptions
 {
+    /// <summary>
+    /// Throw this exception when the given block doesn't pass validation.
+    /// </summary>
     public class BlockRejectedException : Exception
     {
         public BlockRejectedException()

@@ -13,7 +13,7 @@ namespace Mpb.Consensus.BlockLogic
         /// <summary>
         /// Mine a Proof-of-Work block by following the current consensus rules.
         /// </summary>
-        /// <param name="privateKey">The key to sign the block hash with. The public key must be in the coinbase transaction.</param>
+        /// <param name="privateKey">The key to sign the block hash with. The public key must be in the coinbase transaction</param>
         /// <param name="blockchain">The blockchain associated to this new block to verify the integrity</param>
         /// <param name="transactions">The transactions that will be included in the new block</param>
         /// <param name="difficulty">The difficulty to start with. Must be atleast 1</param>
@@ -24,7 +24,7 @@ namespace Mpb.Consensus.BlockLogic
         /// Mine a Proof-of-Work block by following the current consensus rules.
         /// Throws OperationCanceledException when a cancellation was requested.
         /// </summary>
-        /// <param name="privateKey">The key to sign the block hash with. The public key must be in the coinbase transaction.</param>
+        /// <param name="privateKey">The key to sign the block hash with. The public key must be in the coinbase transaction</param>
         /// <param name="blockchain">The blockchain associated to this new block to verify the integrity</param>
         /// <param name="transactions">The transactions that will be included in the new block</param>
         /// <param name="difficulty">The difficulty to start with. Must be atleast 1</param>
@@ -36,7 +36,7 @@ namespace Mpb.Consensus.BlockLogic
         /// Mine a Proof-of-Work block with custom parameters.
         /// Throws OperationCanceledException when a cancellation was requested.
         /// </summary>
-        /// <param name="privateKey">The key to sign the block hash with. The public key must be in the coinbase transaction.</param>
+        /// <param name="privateKey">The key to sign the block hash with. The public key must be in the coinbase transaction</param>
         /// <param name="blockchain">The blockchain associated to this new block to verify the integrity</param>
         /// <param name="protocolVersion">The current protocol version</param>
         /// <param name="transactions">The transactions that will be included in the new block</param>
