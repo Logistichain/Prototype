@@ -4,8 +4,6 @@ using Moq;
 using System.Numerics;
 using System.Globalization;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 using Mpb.Consensus.BlockLogic;
 using Mpb.Consensus.MiscLogic;
 using Mpb.Consensus.TransactionLogic;
@@ -13,7 +11,6 @@ using Mpb.Shared;
 using Mpb.Model;
 using Mpb.Consensus.Exceptions;
 using Mpb.Shared.Constants;
-using Mpb.DAL;
 using System.Linq;
 
 namespace Mpb.Consensus.Test.Logic
@@ -41,13 +38,13 @@ namespace Mpb.Consensus.Test.Logic
         }
         
         [TestMethod]
-        public void Constructor_ThrowsException_NullBlockHeaderHelper()
+        public void Constructor_ThrowsException_NullBlockFinalizer()
         {
             var ex = Assert.ThrowsException<ArgumentNullException>(
                     () => new PowBlockValidator(null, _transactionValidator.Object, _timestamper.Object)
                 );
 
-            Assert.AreEqual("blockHeaderHelper", ex.ParamName);
+            Assert.AreEqual("blockFinalizer", ex.ParamName);
         }
 
 

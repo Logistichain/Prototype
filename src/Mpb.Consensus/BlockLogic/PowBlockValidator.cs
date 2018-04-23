@@ -21,9 +21,9 @@ namespace Mpb.Consensus.BlockLogic
         private readonly ITransactionValidator _transactionValidator;
         private readonly ITimestamper _timestamper;
 
-        public PowBlockValidator(IBlockFinalizer blockHeaderHelper, ITransactionValidator transactionValidator, ITimestamper timestamper)
+        public PowBlockValidator(IBlockFinalizer blockFinalizer, ITransactionValidator transactionValidator, ITimestamper timestamper)
         {
-            _blockFinalizer = blockHeaderHelper ?? throw new ArgumentNullException(nameof(blockHeaderHelper));
+            _blockFinalizer = blockFinalizer ?? throw new ArgumentNullException(nameof(blockFinalizer));
             _transactionValidator = transactionValidator ?? throw new ArgumentNullException(nameof(transactionValidator));
             _timestamper = timestamper ?? throw new ArgumentNullException(nameof(timestamper));
         }

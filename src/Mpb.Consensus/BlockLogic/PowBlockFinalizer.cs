@@ -24,7 +24,7 @@ namespace Mpb.Consensus.BlockLogic
             }
         }
 
-        public virtual string CreateSignature(Block block, string privKey)
+        public virtual string CreateSignature(string hash, string privKey)
         {
             // Todo: sign the validhash with the privkey
             return "";
@@ -32,7 +32,7 @@ namespace Mpb.Consensus.BlockLogic
 
         public virtual void FinalizeBlock(Block block, string validHash, string privKey)
         {
-            var signature = CreateSignature(block, privKey);
+            var signature = CreateSignature(validHash, privKey);
             block.Finalize(validHash, signature);
         }
 

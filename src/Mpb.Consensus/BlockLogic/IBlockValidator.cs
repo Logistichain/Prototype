@@ -4,7 +4,7 @@ using Mpb.Shared;
 namespace Mpb.Consensus.BlockLogic
 {
     /// <summary>
-    /// Validate blocks before accepting them.
+    /// Validate blocks before accepting/relaying them.
     /// </summary>
     public interface IBlockValidator
     {
