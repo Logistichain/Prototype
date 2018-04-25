@@ -1,40 +1,71 @@
 ﻿using Mpb.Consensus.Exceptions;
 using Mpb.Model;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Mpb.Consensus.TransactionLogic
 {
-    public class ConcurrentTransactionPool
+    public sealed class ConcurrentTransactionPool
     {
-        private readonly ITransactionValidator _transactionValidator;
-        private List<AbstractTransaction> _txPool;
+        private ITransactionValidator _transactionValidator;
+        private ConcurrentDictionary<string, AbstractTransaction> _txPool;
+        private static volatile ConcurrentTransactionPool _instance;
+        private static object _threadLock = new Object();
 
-        public ConcurrentTransactionPool(ITransactionValidator transactionValidator)
+        private ConcurrentTransactionPool()
         {
-            _txPool = new List<AbstractTransaction>();
-            _transactionValidator = transactionValidator;
+            _txPool = new ConcurrentDictionary<string, AbstractTransaction>();
         }
 
-        public List<AbstractTransaction> Transactions => _txPool;
+        /// <summary>
+        /// Gets the singleton instance for this object.
+        /// </summary>
+        /// <returns></returns>
+        public static ConcurrentTransactionPool GetInstance()
+        {
+            if (_instance == null)
+            {
+                lock (_threadLock)
+                {
+                    if (_instance == null)
+                        _instance = new ConcurrentTransactionPool();
+                }
+            }
+
+            return _instance;
+        }
+
+        /// <summary>
+        /// Don't forget to set the transaction validator after instantiating the transactionpool.
+        /// </summary>
+        /// <param name="transactionValidator"></param>
+        /// <returns>This instance (fluent)</returns>
+        public ConcurrentTransactionPool SetTransactionValidator(ITransactionValidator transactionValidator)
+        {
+            _transactionValidator = transactionValidator;
+            return this;
+        }
 
         // todo support logging framework
-        public void AddTransaction(AbstractTransaction tx)
+        /// <summary>
+        /// Adds a transaction to the transactionpool.
+        /// </summary>
+        /// <param name="tx"></param>
+        public bool AddTransaction(AbstractTransaction tx)
         {
             //_logger.Information("Miner received transaction: {0}", JsonConvert.SerializeObject(tx));
             try
             {
-                if (_txPool.Contains(tx))
+                if (_txPool.Keys.Contains(tx.Hash))
                 {
                     throw new TransactionRejectedException("Transaction already submitted to txpool");
                 }
 
-                lock (_txPool)
-                {
-                    _transactionValidator.ValidateTransaction(tx);
-                    _txPool.Add(tx);
-                }
+                _transactionValidator.ValidateTransaction(tx);
+                return _txPool.TryAdd(tx.Hash, tx);
                 //_logger.Information("Added transaction to txpool ({0})", tx.Hash);
             }
             catch (TransactionRejectedException)
@@ -45,6 +76,41 @@ namespace Mpb.Consensus.TransactionLogic
             {
                 //_logger.Information("An {0} occurred: {1}", e.GetType().Name, e.Message);
             }
+
+            return false;
         }
+
+        /// <summary>
+        /// Tries to get the amount of transactions and return them.
+        /// </summary>
+        /// <param name="maxAmount">The maximum amount of transactions to take</param>
+        /// <returns>Array of transactions. This can contain less (or no) transactions than the maxAmount.</returns>
+        public IEnumerable<AbstractTransaction> GetTransactions(int maxAmount)
+        {
+            if (maxAmount < 1)
+            {
+                throw new ArgumentOutOfRangeException("Maximum amount must be higher than 0");
+            }
+
+            return _txPool.Values.Take(maxAmount > _txPool.Values.Count ? _txPool.Values.Count : maxAmount);
+        }
+        
+
+        /// <summary>
+        /// Tries to get the amount of transactions and return them.
+        /// </summary>
+        /// <returns>Array of transactions</returns>
+        public IEnumerable<AbstractTransaction> GetAllTransactions()
+        {
+            return _txPool.Values.Take(_txPool.Values.Count);
+        }
+
+        public bool RemoveTransaction(AbstractTransaction tx)
+        {
+            return _txPool.TryRemove(tx.Hash, out var ignored);
+        }
+
+        public int Count() => _txPool.Count;
+        public bool Contains(AbstractTransaction tx) => _txPool.Contains(new KeyValuePair<string, AbstractTransaction>(tx.Hash, tx));
     }
 }

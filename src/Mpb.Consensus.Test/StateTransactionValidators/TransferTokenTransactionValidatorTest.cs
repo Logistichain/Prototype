@@ -42,9 +42,9 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             expectedTransaction.Finalize("", "");
             StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
             _transactionFinalizer.Setup(m => m.CalculateHash(It.IsAny<AbstractTransaction>())).Returns("");
-            _transactionFinalizer.Setup(m => m.CreateSignature(It.IsAny<AbstractTransaction>())).Returns("");
+            //_transactionFinalizer.Setup(m => m.CreateSignature(It.IsAny<AbstractTransaction>())).Returns("");
 
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual(nameof(expectedTransaction.FromPubKey) + " field cannot be null", exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);
@@ -57,9 +57,9 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             expectedTransaction.Finalize("", "");
             StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
             _transactionFinalizer.Setup(m => m.CalculateHash(It.IsAny<AbstractTransaction>())).Returns("");
-            _transactionFinalizer.Setup(m => m.CreateSignature(It.IsAny<AbstractTransaction>())).Returns("");
+            //_transactionFinalizer.Setup(m => m.CreateSignature(It.IsAny<AbstractTransaction>())).Returns("");
 
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual(nameof(expectedTransaction.ToPubKey) + " field cannot be null", exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);

@@ -36,8 +36,8 @@ namespace Mpb.Model
         public uint Fee => _fee;
 
         /// <summary>
-        /// The string representation of the transaction hash.
-        /// Does not contain dashes (-).
+        /// The string representation of the transaction hash
+        /// Does not contain dashes (-)
         /// </summary>
         public string Hash => _hash;
         /// <summary>

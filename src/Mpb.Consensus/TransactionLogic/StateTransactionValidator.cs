@@ -137,6 +137,11 @@ namespace Mpb.Consensus.TransactionLogic
             }
         }
 
+        public void ValidateSignature(AbstractTransaction tx)
+        {
+            // todo
+        }
+
         private void ValidateTransferTokenTransaction(StateTransaction tx, string netIdentifier)
         {
             CheckFromAndToNotNull(tx);
@@ -342,8 +347,11 @@ namespace Mpb.Consensus.TransactionLogic
                 throw new TransactionRejectedException(nameof(tx.Hash) + " is incorrect", tx);
             }
             
-            if (_txFinalizer.CreateSignature(tx) != tx.Signature)
+            try
             {
+                ValidateSignature(tx);
+            }
+            catch (Exception) { // todo use custom exception
                 throw new TransactionRejectedException(nameof(tx.Signature) + " is incorrect", tx);
             }
 

@@ -42,13 +42,13 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             var consensusNetworkIdentifier = "testnet"; //! change this whenever the networkidentifier changes in the mpb.consensus assembly!
             var expectedTransaction = new StateTransaction("a", "b", null, 0, 1, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
             var selfCallingMock = new Mock<StateTransactionValidator>(new object[] { _transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object }) { CallBase = true };
-            selfCallingMock.Setup(m => m.ValidateTransaction(expectedTransaction, consensusNetworkIdentifier, true));
+            selfCallingMock.Setup(m => m.ValidateTransaction(expectedTransaction, consensusNetworkIdentifier));
             StateTransactionValidator sut = selfCallingMock.Object;
 
             sut.ValidateTransaction(expectedTransaction);
 
             selfCallingMock.Verify(m => m.ValidateTransaction(expectedTransaction));
-            selfCallingMock.Verify(m => m.ValidateTransaction(expectedTransaction, consensusNetworkIdentifier, true));
+            selfCallingMock.Verify(m => m.ValidateTransaction(expectedTransaction, consensusNetworkIdentifier));
             selfCallingMock.VerifyNoOtherCalls();
         }
 
@@ -58,7 +58,7 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             var expectedTransaction = new InvalidTransactionType(1, "blabla action", "Data", 0);
             StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
 
-            var exception = Assert.ThrowsException<ArgumentException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<ArgumentException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual("Transaction is not of type StateTransaction.", exception.Message);
         }
@@ -70,7 +70,7 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             var expectedTransaction = new StateTransaction(null, null, null, 0, 1, consensusTransactionVersion - 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
             StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
 
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual("Unsupported transaction version", exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);
@@ -83,7 +83,7 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             var expectedTransaction = new StateTransaction(null, null, null, 0, 1, consensusTransactionVersion + 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
             StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
 
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual("Unsupported transaction version", exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);
@@ -95,7 +95,7 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             var expectedTransaction = new StateTransaction("from", "to", null, 0, 1, 1, TransactionAction.TransferToken.ToString(), null, 0);
             StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
 
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual("Transaction is not finalized", exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);
@@ -109,7 +109,7 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
             _transactionFinalizer.Setup(m => m.CalculateHash(It.IsAny<AbstractTransaction>())).Returns("");
 
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual(nameof(expectedTransaction.Hash) + " is incorrect", exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);
@@ -118,13 +118,14 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
         [TestMethod]
         public void TokenValidateTransaction_ThrowsException_IncorrectSignature()
         {
-            var expectedTransaction = new StateTransaction("from", "to", null, 0, 1, 1, TransactionAction.TransferToken.ToString(), null, 0);
+            var expectedTransaction = new StateTransaction("from", "to", null, 0, 1, 1, TransactionAction.TransferToken.ToString(), null, 100);
             expectedTransaction.Finalize("", "invalidsignature");
             StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
             _transactionFinalizer.Setup(m => m.CalculateHash(It.IsAny<AbstractTransaction>())).Returns("");
-            _transactionFinalizer.Setup(m => m.CreateSignature(It.IsAny<AbstractTransaction>())).Returns("");
+            _transactionRepoMock.Setup(m => m.GetTokenBalanceForPubKey("from", _netid)).Returns(1000);
+            //Todo verify signature
 
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual(nameof(expectedTransaction.Signature) + " is incorrect", exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);

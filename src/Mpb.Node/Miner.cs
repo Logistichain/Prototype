@@ -29,16 +29,17 @@ namespace Mpb.Node
         CancellationTokenSource _miningCancellationToken;
         Task _miningTask;
         Blockchain _blockchain;
-        List<AbstractTransaction> _txPool;
+        ConcurrentTransactionPool _txPool;
         string _networkIdentifier;
         string _walletPubKey;
         string _walletPrivKey;
+        int maxTransactionsPerBlock = 10;
 
         public Miner(string netId, string minerWalletPubKey, string minerWalletPrivKey,
                     IBlockchainRepository blockchainRepo, ITransactionRepository transactionRepo,
                     ITransactionCreator transactionCreator, ITransactionValidator transactionValidator,
                     IDifficultyCalculator difficultyCalculator, IPowBlockCreator blockCreator,
-                    ILoggerFactory loggerFactory)
+                    ConcurrentTransactionPool txPool, ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<Miner>();
             _walletPubKey = minerWalletPubKey;
@@ -51,10 +52,10 @@ namespace Mpb.Node
             _transactionValidator = transactionValidator;
             _difficultyCalculator = difficultyCalculator;
             _blockCreator = blockCreator;
-            _txPool = new List<AbstractTransaction>();
+            _txPool = txPool;
         }
 
-        public List<AbstractTransaction> TransactionPool => _txPool;
+        public ConcurrentTransactionPool TransactionPool => _txPool;
 
         public string NetworkIdentifier => _networkIdentifier;
 
@@ -69,7 +70,7 @@ namespace Mpb.Node
                 }
 
                 _transactionValidator.ValidateTransaction(tx);
-                _txPool.Add(tx);
+                _txPool.AddTransaction(tx);
                 _logger.LogInformation("Added transaction to txpool ({0})", tx.Hash);
             }
             catch (TransactionRejectedException e)
@@ -147,7 +148,7 @@ namespace Mpb.Node
                     int transactionsIncludedInBlock = _txPool.Count();
                     for (int i = 0; i < _txPool.Count(); i++)
                     {
-                        transactions.Add(_txPool[i]);
+                        transactions.AddRange(_txPool.GetTransactions(maxTransactionsPerBlock - 1));
                     }
 
                     transactionsIncludedInBlock = transactionsIncludedInBlock - _txPool.Count();
@@ -168,7 +169,7 @@ namespace Mpb.Node
                     {
                         foreach(var transaction in newBlock.Transactions)
                         {
-                            _txPool.Remove(transaction);
+                            _txPool.RemoveTransaction(transaction);
                         }
                     }
 

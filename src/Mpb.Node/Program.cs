@@ -153,6 +153,7 @@ namespace Mpb.Node
                 .AddTransient<ITransactionCreator, StateTransactionCreator>()
                 .AddTransient<ITransactionValidator, StateTransactionValidator>()
                 .AddTransient<ITransactionFinalizer, StateTransactionFinalizer>()
+                .AddTransient(x => ConcurrentTransactionPool.GetInstance().SetTransactionValidator(x.GetService<ITransactionValidator>()))
 
                 .AddTransient(
                         (x) => new Miner(
@@ -160,7 +161,8 @@ namespace Mpb.Node
                             x.GetService<IBlockchainRepository>(),
                             x.GetService<ITransactionRepository>(), x.GetService<ITransactionCreator>(),
                             x.GetService<ITransactionValidator>(), x.GetService<IDifficultyCalculator>(),
-                            x.GetService<IPowBlockCreator>(), x.GetService<ILoggerFactory>())
+                            x.GetService<IPowBlockCreator>(), x.GetService<ConcurrentTransactionPool>(), 
+                            x.GetService<ILoggerFactory>())
                     )
 
                 .BuildServiceProvider();
