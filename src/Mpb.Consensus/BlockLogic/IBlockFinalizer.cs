@@ -27,7 +27,7 @@ namespace Mpb.Consensus.BlockLogic
 
         /// <summary>
         /// Signs (encrypts) the given hash value with the private key.
-        /// The signature can be verified by the 
+        /// The signature can be verified by using the corresponding public key.
         /// </summary>
         /// <param name="hash">The value to sign</param>
         /// <param name="privKey">The private key which will be used to sign the hash value</param>

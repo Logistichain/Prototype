@@ -80,18 +80,13 @@ namespace Mpb.Consensus.TransactionLogic
 
         // Maybe we can solve the scalability of this class with a pattern: Visitor?
         // Also take into account the multiple transaction versions that may exist.
-        /// <summary>
-        /// Validates a transaction, including balance checks, on the current network.
-        /// Throws TransactionRejectedException if the validation fails.
-        /// </summary>
-        /// <param name="tx">The transaction to validate</param>
         public virtual void ValidateTransaction(AbstractTransaction tx)
         {
-            ValidateTransaction(tx, BlockchainConstants.DefaultNetworkIdentifier, true);
+            ValidateTransaction(tx, BlockchainConstants.DefaultNetworkIdentifier);
         }
 
 
-        public virtual void ValidateTransaction(AbstractTransaction tx, string netIdentifier, bool checkBalance)
+        public virtual void ValidateTransaction(AbstractTransaction tx, string netIdentifier)
         {
             if (!(tx is StateTransaction))
             {

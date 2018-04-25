@@ -8,7 +8,7 @@ using System.Text;
 namespace Mpb.Consensus.BlockLogic
 {
     /// <summary>
-    /// Todo: This is not an actual finalizer (like cleaning up memory), but more of a block 'sealer'. Rename this class.
+    /// Todo: This is not an actual finalizer (like cleaning up memory), but more of a block 'sealer'. Rename this class?
     /// Todo: Make this more efficient by only updating the nonce in the block header bytes.
     /// In order to achieve this, every field must have a predefined length so we can allocate them.
     /// </summary>

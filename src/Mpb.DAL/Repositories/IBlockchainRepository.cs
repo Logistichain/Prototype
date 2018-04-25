@@ -2,7 +2,6 @@
 
 namespace Mpb.DAL
 {
-    // Todo update documentation
     public interface IBlockchainRepository
     {
         void Delete(string netIdentifier);

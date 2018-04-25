@@ -7,9 +7,6 @@ using System.Text;
 
 namespace Mpb.Consensus.BlockLogic
 {
-    /// <summary>
-    /// Adapter to convert a transaction to a byte array.
-    /// </summary>
     public class StateTransactionFinalizer : ITransactionFinalizer
     {
         public virtual string CalculateHash(AbstractTransaction transaction)
@@ -32,13 +29,6 @@ namespace Mpb.Consensus.BlockLogic
         }
         
         //! Signature is always "" until an appropriate wallet module can be utilized.
-        /// <summary>
-        /// Create a hash for the entire transaction object and sign that hash
-        /// with the private key from the sender. The given transaction object will be updated.
-        /// </summary>
-        /// <param name="tx">The transaction to hash and sign</param>
-        /// <param name="fromPubKey">The creator of the transaction</param>
-        /// <param name="fromPrivKey">The creator's private key to sign the transaction hash</param>
         public void FinalizeTransaction(AbstractTransaction tx, string fromPubKey, string fromPrivKey)
         {
             if (tx.IsFinalized()) { return; }
