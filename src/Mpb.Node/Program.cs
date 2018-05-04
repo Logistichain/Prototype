@@ -8,6 +8,10 @@ using Mpb.Consensus.MiscLogic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Mpb.Networking;
+using System.Net;
+using Mpb.Networking.Model;
+using Mpb.Networking.Constants;
 
 namespace Mpb.Node
 {
@@ -21,7 +25,9 @@ namespace Mpb.Node
             var walletPrivKey = "montaprivatekey";
             var networkIdentifier = "testnet";
             var services = SetupDI(networkIdentifier, walletPubKey, walletPrivKey);
-            
+            ushort listeningPort = 45678;
+            IPAddress publicIP = IPAddress.Parse("127.0.0.1"); // Our public IP so other nodes can find us
+
             GetServices(
                 services,
                 out IBlockchainRepository blockchainRepo,
@@ -29,9 +35,11 @@ namespace Mpb.Node
                 out ITransactionCreator transactionCreator,
                 out ITimestamper timestamper,
                 out ISkuRepository skuRepository,
+                out INetworkManager networkManager,
+                out ILoggerFactory loggerFactory,
                 out Miner miner
                 );
-            _logger = services.GetService<ILoggerFactory>().CreateLogger<Program>();
+            _logger = loggerFactory.CreateLogger<Program>();
             Blockchain blockchain = blockchainRepo.GetChainByNetId(networkIdentifier);
 
             // Command handlers, only large commands are handles by these separate handlers.
@@ -44,6 +52,10 @@ namespace Mpb.Node
             TransferSupplyCommandHandler transferSupplyCmdHandler = new TransferSupplyCommandHandler(skuRepository, transactionRepo, transactionCreator, networkIdentifier);
 
             _logger.LogInformation("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
+            networkManager.AcceptConnections(publicIP, listeningPort, new System.Threading.CancellationTokenSource());
+
+            networkManager.ConnectToPeer(new NetworkNode(ConnectionType.Outbound, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 12345)));
+
             PrintConsoleCommands();
 
             var input = "";
@@ -84,6 +96,8 @@ namespace Mpb.Node
                         miner.StopMining(false);
                         blockchainRepo.Delete(networkIdentifier);
                         Console.WriteLine("Blockchain deleted.");
+                        networkManager.Dispose();
+                        _logger.LogWarning("All network connections shut down.");
                         // Initialize all variables again because the heap references changed.
                         services = SetupDI(networkIdentifier, walletPubKey, walletPrivKey);
                         GetServices(
@@ -93,8 +107,11 @@ namespace Mpb.Node
                             out transactionCreator,
                             out timestamper,
                             out skuRepository,
+                            out networkManager,
+                            out var ingored,
                             out miner
                         );
+                        networkManager.AcceptConnections(publicIP, listeningPort, new System.Threading.CancellationTokenSource()); // todo port constant
                         accountsCmdHandler = new AccountsCommandHandler(transactionRepo, networkIdentifier);
                         skusCmdHandler = new SkusCommandHandler(blockchainRepo, timestamper, skuRepository, networkIdentifier);
                         transactionsCmdHandler = new TransactionsCommandHandler(transactionRepo, networkIdentifier);
@@ -123,13 +140,16 @@ namespace Mpb.Node
 
         private static void GetServices(IServiceProvider services, out IBlockchainRepository blockchainRepo,
                                         out ITransactionRepository transactionRepo, out ITransactionCreator transactionCreator,
-                                        out ITimestamper timestamper, out ISkuRepository skuRepository, out Miner miner)
+                                        out ITimestamper timestamper, out ISkuRepository skuRepository,
+                                        out INetworkManager networkManager, out ILoggerFactory loggerFactory, out Miner miner)
         {
             blockchainRepo = services.GetService<IBlockchainRepository>();
             transactionRepo = services.GetService<ITransactionRepository>();
             transactionCreator = services.GetService<ITransactionCreator>();
             timestamper = services.GetService<ITimestamper>();
             skuRepository = services.GetService<ISkuRepository>();
+            networkManager = services.GetService<INetworkManager>();
+            loggerFactory = services.GetService<ILoggerFactory>();
             miner = services.GetService<Miner>();
         }
 
@@ -153,7 +173,10 @@ namespace Mpb.Node
                 .AddTransient<ITransactionCreator, StateTransactionCreator>()
                 .AddTransient<ITransactionValidator, StateTransactionValidator>()
                 .AddTransient<ITransactionFinalizer, StateTransactionFinalizer>()
+                .AddTransient<IMessageHandler, MessageHandler>()
                 .AddTransient(x => ConcurrentTransactionPool.GetInstance().SetTransactionValidator(x.GetService<ITransactionValidator>()))
+                .AddTransient(x => NetworkNodesPool.GetInstance(x.GetService<ILoggerFactory>()))
+                .AddTransient<INetworkManager, NetworkManager>()
 
                 .AddTransient(
                         (x) => new Miner(
