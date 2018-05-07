@@ -84,8 +84,31 @@ namespace Mpb.Networking
         /// <returns></returns>
         public bool Contains(IPEndPoint endpoint)
         {
+            try
+            {
+                GetNodeByEndpoint(endpoint);
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Throws InvalidOperationException when the endpoint doesn't exist.
+        /// </summary>
+        /// <param name="endpoint"></param>
+        internal async void DisconnectConnection(IPEndPoint endpoint)
+        {
+            var node = GetNodeByEndpoint(endpoint);
+            await node.Disconnect();
+        }
+
+        private NetworkNode GetNodeByEndpoint(IPEndPoint endpoint)
+        {
             return _nodesPool
-                .Any(n =>
+                .Where(n =>
                     (
                     n.Value.DirectEndpoint.Address.MapToIPv4().ToString() == endpoint.Address.MapToIPv4().ToString()
                     && n.Value.DirectEndpoint.Port.Equals(endpoint.Port)
@@ -96,7 +119,8 @@ namespace Mpb.Networking
                     && n.Value.ListenEndpoint.Address.MapToIPv4().ToString() == endpoint.Address.MapToIPv4().ToString()
                     && n.Value.ListenEndpoint.Port.Equals(endpoint.Port)
                     )
-                );
+                )
+                .First().Value;
         }
 
         private void Node_OnListenerEndpointChanged(object sender, ListenerEndpointChangedEventArgs ev)
@@ -159,7 +183,7 @@ namespace Mpb.Networking
         /// This collection is mainly used for the 'addr' message.
         /// </summary>
         /// <returns></returns>
-        internal IEnumerable<IPEndPoint> GetAllRemoteListenEndpoints()
+        public IEnumerable<IPEndPoint> GetAllRemoteListenEndpoints()
         {
             foreach (var node in _nodesPool.Where(n => n.Value.HandshakeIsCompleted))
             {

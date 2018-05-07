@@ -89,6 +89,17 @@ namespace Mpb.Networking
             await ConnectToPeer(node);
         }
 
+        public void DisconnectPeer(IPEndPoint endpoint)
+        {
+            if (_nodePool.Contains(endpoint))
+            {
+                _nodePool.DisconnectConnection(endpoint);
+            }
+            else
+            {
+                _logger.LogDebug($"Tried to disconnect from {endpoint.Address}:{endpoint.Port} but that address does not exist in our pool.");
+            }
+        }
 
         public async Task ConnectToPeer(NetworkNode node)
         {

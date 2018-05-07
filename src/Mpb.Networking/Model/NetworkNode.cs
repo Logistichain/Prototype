@@ -30,6 +30,7 @@ namespace Mpb.Networking.Model
         internal event ListenerEndpointChangedEventHandler OnListenerEndpointChanged;
         private ConnectionType _connectionType;
         private int _handshakeStage = 0;
+        private DateTime _connectionEstablishedAt;
 
         public NetworkNode(ConnectionType direction, Socket socket)
         {
@@ -83,6 +84,12 @@ namespace Mpb.Networking.Model
         public bool IsDisposed => _isDisposed > 0;
 
         public ConnectionType ConnectionType => _connectionType;
+
+        /// <summary>
+        /// The datetime when the 'OnConnect' method in this class was called.
+        /// This value might change when the connection resets.
+        /// </summary>
+        public DateTime ConnectionEstablishedAt => _connectionEstablishedAt;
 
         internal void ProgressHandshakeStage()
         {
@@ -186,11 +193,11 @@ namespace Mpb.Networking.Model
         {
             if (_socket.Connected)
             {
-                await SendMessageAsync(new Message(NetworkCommand.CloseConnection.ToString()));
+                await SendMessageAsync(new Message(NetworkCommand.CloseConn.ToString()));
             }
+            OnDisconnected?.Invoke(this);
             _socket?.Dispose();
             _stream?.Dispose();
-            OnDisconnected?.Invoke(this);
         }
 
         private void OnConnected()
@@ -198,6 +205,7 @@ namespace Mpb.Networking.Model
             IPEndPoint directEndPoint = (IPEndPoint)_socket.RemoteEndPoint;
             _directEndpoint = new IPEndPoint(directEndPoint.Address.MapToIPv6(), directEndPoint.Port);
             _stream = new NetworkStream(_socket);
+            _connectionEstablishedAt = DateTime.Now;
         }
 
         #region Dispose        

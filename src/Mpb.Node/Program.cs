@@ -12,6 +12,7 @@ using Mpb.Networking;
 using System.Net;
 using Mpb.Networking.Model;
 using Mpb.Networking.Constants;
+using System.Threading;
 
 namespace Mpb.Node
 {
@@ -50,6 +51,7 @@ namespace Mpb.Node
             TransferTokensCommandHandler transferTokensCmdHandler = new TransferTokensCommandHandler(transactionRepo, transactionCreator);
             CreateSkuCommandHandler createSkuCmdHandler = new CreateSkuCommandHandler(transactionRepo, transactionCreator);
             TransferSupplyCommandHandler transferSupplyCmdHandler = new TransferSupplyCommandHandler(skuRepository, transactionRepo, transactionCreator, networkIdentifier);
+            NetworkingCommandHandler networkingCmdHandler = new NetworkingCommandHandler();
 
             _logger.LogInformation("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
             networkManager.AcceptConnections(publicIP, listeningPort, new System.Threading.CancellationTokenSource());
@@ -130,48 +132,31 @@ namespace Mpb.Node
                     case "transfersupply":
                         transferSupplyCmdHandler.HandleCommand(miner);
                         break;
-                    case "networking stop":
-                        networkManager.Dispose();
-                        break;
-                    case "networking port":
-                        Console.WriteLine("Specify the new listening port. Now it's " +listeningPort);
-                        Console.Write("> ");
-                        ushort newListeningPort = 0;
-                        var portInput = Console.ReadLine().ToLower();
-                        while (!ushort.TryParse(portInput, out newListeningPort) || newListeningPort > 65535)
-                        {
-                            Console.WriteLine("Invalid value. Use a positive numeric value without decimals. Maximum = 65535.");
-                            Console.Write("> ");
-                            portInput = Console.ReadLine().ToLower();
-                        }
-                        listeningPort = newListeningPort;
-                        Console.WriteLine("Done. Restart the networking module to use the new port.");
-                        Console.Write("> ");
+                    case "networking setport":
+                        listeningPort = networkingCmdHandler.HandlePortCommand(listeningPort);
                         break;
                     case "networking connect":
-                        Console.WriteLine("Specify the IP to connect to (ip:port)");
-                        Console.Write("> ");
-                        var connPortInput = Console.ReadLine().ToLower();
-                        try
-                        {
-                            string connectionIp = connPortInput.Split(':')[0];
-                            int connectPort = ushort.Parse(connPortInput.Split(':')[1]);
-                            networkManager.ConnectToPeer(new NetworkNode(ConnectionType.Outbound, new IPEndPoint(IPAddress.Parse(connectionIp), connectPort)));
-                        }
-                        catch (Exception)
-                        {
-                            Console.WriteLine("Something went wrong. Command aborted.");
-                        }
+                        networkingCmdHandler.HandleConnectCommand(networkManager);
+                        break;
+                    case "networking disconnect":
+                        networkingCmdHandler.HandleDisconnectCommand(networkManager);
+                        break;
+                    case "networking pool":
+                        networkingCmdHandler.HandlePoolCommand(NetworkNodesPool.GetInstance(loggerFactory));
+                        break;
+                    case "networking stop":
+                        networkManager.Dispose();
                         break;
                     case "networking start":
                         if (networkManager.IsDisposed)
                             networkManager = GetService<INetworkManager>(services);
-                        networkManager.AcceptConnections(publicIP, listeningPort, new System.Threading.CancellationTokenSource());
+                        networkManager.AcceptConnections(publicIP, listeningPort, new CancellationTokenSource());
                         break;
                     case "networking restart":
                         networkManager.Dispose();
+                        Thread.Sleep(1000);
                         networkManager = GetService<INetworkManager>(services);
-                        networkManager.AcceptConnections(publicIP, listeningPort, new System.Threading.CancellationTokenSource());
+                        networkManager.AcceptConnections(publicIP, listeningPort, new CancellationTokenSource());
                         break;
                     default:
                         Console.WriteLine("I don't recognize that command.");
@@ -257,7 +242,7 @@ namespace Mpb.Node
             Console.WriteLine("- stopmining");
             Console.WriteLine("- resetblockchain");
             Console.WriteLine("- transfertokens");
-            Console.WriteLine("- networking start|stop|restart|port|connect");
+            Console.WriteLine("- networking start|stop|restart|setport|connect|disconnect|pool");
             Console.WriteLine("What would you like to do:");
             Console.Write("> ");
         }

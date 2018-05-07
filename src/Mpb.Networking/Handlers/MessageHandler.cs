@@ -21,7 +21,7 @@ namespace Mpb.Networking
         {
             try
             {
-                if (msg.Command == NetworkCommand.CloseConnection.ToString())
+                if (msg.Command == NetworkCommand.CloseConn.ToString())
                 {
                     await node.Disconnect();
                 }
