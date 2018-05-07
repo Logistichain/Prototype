@@ -36,14 +36,16 @@ namespace Mpb.Networking.Model
             _id = Guid.NewGuid();
             _connectionType = direction;
             _socket = socket;
-            OnConnected();
+            if (IsConnected)
+            {
+                OnConnected();
+            }
         }
 
         public NetworkNode(ConnectionType direction, IPEndPoint nodeListenerEndpoint)
+            : this(direction, new Socket(nodeListenerEndpoint.Address.IsIPv4MappedToIPv6 ? AddressFamily.InterNetwork : nodeListenerEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
         {
-            _connectionType = direction;
             _listenEndpoint = nodeListenerEndpoint;
-            _socket = new Socket(nodeListenerEndpoint.Address.IsIPv4MappedToIPv6 ? AddressFamily.InterNetwork : nodeListenerEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
 
         /// <summary>
@@ -96,8 +98,10 @@ namespace Mpb.Networking.Model
         /// </summary>
         /// <returns>Whether connecting succeeded or not</returns>
         //todo prevent connecting to localhost
-        private async Task<bool> ConnectAsync()
+        internal async Task<bool> ConnectAsync()
         {
+            if (IsConnected) return true;
+
             try
             {
                 await _socket.ConnectAsync(_listenEndpoint.Address, _listenEndpoint.Port);
@@ -148,7 +152,13 @@ namespace Mpb.Networking.Model
         internal async Task<bool> SendMessageAsync(Message message)
         {
             if (_isDisposed > 0) throw new ObjectDisposedException("NetworkNode");
-            if (!IsConnected) await ConnectAsync();
+            if (!IsConnected)
+            {
+                if(!await ConnectAsync()) // Connect failed
+                {
+                    return false;
+                }
+            }
 
             byte[] buffer = message.ToByteArray();
             CancellationTokenSource source = new CancellationTokenSource(30000);

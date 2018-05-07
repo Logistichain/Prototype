@@ -15,7 +15,9 @@ namespace Mpb.Networking
         /// <summary>
         /// Our public IP address so we can publish our address+port to other nodes
         /// </summary>
-        IPAddress PublicIp { get;  }
+        IPAddress PublicIp { get; }
+
+        bool IsDisposed { get; }
 
         /// <summary>
         /// Start listening to incoming TCP sockets

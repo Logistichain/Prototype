@@ -167,6 +167,14 @@ namespace Mpb.Networking
             }
         }
 
+        internal void CloseAllConnections()
+        {
+            foreach (var node in _nodesPool)
+            {
+                node.Value.Dispose();
+            }
+        }
+
         #region Dispose
         void Dispose(bool disposing)
         {
@@ -174,10 +182,7 @@ namespace Mpb.Networking
             {
                 if (disposing)
                 {
-                    foreach(var node in _nodesPool)
-                    {
-                        node.Value.Dispose();
-                    }
+                    CloseAllConnections();
                 }
 
                 _isDisposed = true;

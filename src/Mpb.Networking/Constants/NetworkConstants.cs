@@ -23,5 +23,11 @@ namespace Mpb.Networking.Constants
         /// Maximum amount of peers to connect to.
         /// </summary>
         public const int MaxConcurrentConnections = 30;
+
+        /// <summary>
+        /// Every host listens on this port by default.
+        /// Can be overridden without any issues.
+        /// </summary>
+        public const ushort DefaultListeningPort = 10101;
     }
 }

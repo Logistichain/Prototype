@@ -61,10 +61,9 @@ namespace Mpb.Networking
                 ISerializableComponent versionPayload = new VersionPayload(BlockchainConstants.ProtocolVersion, 1, _networkManager.ListeningPort);
                 await SendMessageToNode(node, NetworkCommand.Version, versionPayload);
             }
-            else if (node.HandshakeStage == 1)
+            else if (node.HandshakeStage == 1 && msg.Command == NetworkCommand.VerAck.ToString())
             {
                 // And receive a version acknowledgement
-                msg = await ExpectMessageFromNode(node, NetworkCommand.VerAck);
                 _logger.LogInformation("Successfully connected to node {0} on port {1}", node.DirectEndpoint.Address.ToString(), node.DirectEndpoint.Port);
                 node.ProgressHandshakeStage();
             }

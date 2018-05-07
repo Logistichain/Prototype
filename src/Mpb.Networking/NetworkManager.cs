@@ -36,20 +36,22 @@ namespace Mpb.Networking
 
         public ushort ListeningPort => _port;
         public IPAddress PublicIp => _publicIp;
+        public bool IsDisposed => _isDisposed;
 
         public async Task AcceptConnections(IPAddress publicIp, ushort listenPort, CancellationTokenSource cts)
         {
             _publicIp = publicIp;
             _port = listenPort;
             StartTcpListener(listenPort);
-            _logger.LogInformation("Accepting incoming network connections on {0}:{1}", _publicIp, _port);
 
             while (!cts.IsCancellationRequested)
             {
                 Socket socket;
                 try
                 {
+                    _logger.LogInformation("Accepting incoming network connections on {0}:{1}", _publicIp, _port);
                     socket = await _listener.AcceptSocketAsync();
+                    _logger.LogInformation("Received new socket connection");
                 }
                 catch (ObjectDisposedException)
                 {
@@ -69,7 +71,7 @@ namespace Mpb.Networking
                     {
                         ProcessIncomingMessage(nwNode, args.Message);
                     });
-                    await Task.Run(() => ListenForNewMessagesContinuously(nwNode)); // Keep on listening for new messages
+                    Task.Run(() => ListenForNewMessagesContinuously(nwNode)); // Keep on listening for new messages
                 }
                 catch (Exception ex)
                 {
@@ -102,6 +104,13 @@ namespace Mpb.Networking
                 return;
             }
 
+            if (!await node.ConnectAsync())
+            {
+                var endpoint = node.ListenEndpoint ?? node.DirectEndpoint;
+                _logger.LogError("Could not connect to peer: {0} on port {1}. The peer is not online.", endpoint.Address, endpoint.Port);
+                return;
+            }
+
             _nodePool.AddNetworkNode(node);
             try
             {
@@ -121,7 +130,7 @@ namespace Mpb.Networking
             {
                 ProcessIncomingMessage(node, args.Message);
             });
-            await Task.Run(() => ListenForNewMessagesContinuously(node)); // Keep on listening for new messages
+            Task.Run(() => ListenForNewMessagesContinuously(node)); // Keep on listening for new messages
         }
 
         /// <summary>
@@ -190,6 +199,7 @@ namespace Mpb.Networking
                 if (disposing)
                 {
                     _listener.Stop();
+                    _nodePool.CloseAllConnections();
                 }
                 _isDisposed = true;
             }

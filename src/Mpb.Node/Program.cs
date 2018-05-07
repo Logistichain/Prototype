@@ -25,8 +25,8 @@ namespace Mpb.Node
             var walletPrivKey = "montaprivatekey";
             var networkIdentifier = "testnet";
             var services = SetupDI(networkIdentifier, walletPubKey, walletPrivKey);
-            ushort listeningPort = 45678;
-            IPAddress publicIP = IPAddress.Parse("127.0.0.1"); // Our public IP so other nodes can find us
+            ushort listeningPort = NetworkConstants.DefaultListeningPort;
+            IPAddress publicIP = IPAddress.Parse("127.0.0.1"); // Our public IP so other nodes can find us, todo
 
             GetServices(
                 services,
@@ -130,6 +130,49 @@ namespace Mpb.Node
                     case "transfersupply":
                         transferSupplyCmdHandler.HandleCommand(miner);
                         break;
+                    case "networking stop":
+                        networkManager.Dispose();
+                        break;
+                    case "networking port":
+                        Console.WriteLine("Specify the new listening port. Now it's " +listeningPort);
+                        Console.Write("> ");
+                        ushort newListeningPort = 0;
+                        var portInput = Console.ReadLine().ToLower();
+                        while (!ushort.TryParse(portInput, out newListeningPort) || newListeningPort > 65535)
+                        {
+                            Console.WriteLine("Invalid value. Use a positive numeric value without decimals. Maximum = 65535.");
+                            Console.Write("> ");
+                            portInput = Console.ReadLine().ToLower();
+                        }
+                        listeningPort = newListeningPort;
+                        Console.WriteLine("Done. Restart the networking module to use the new port.");
+                        Console.Write("> ");
+                        break;
+                    case "networking connect":
+                        Console.WriteLine("Specify the IP to connect to (ip:port)");
+                        Console.Write("> ");
+                        var connPortInput = Console.ReadLine().ToLower();
+                        try
+                        {
+                            string connectionIp = connPortInput.Split(':')[0];
+                            int connectPort = ushort.Parse(connPortInput.Split(':')[1]);
+                            networkManager.ConnectToPeer(new NetworkNode(ConnectionType.Outbound, new IPEndPoint(IPAddress.Parse(connectionIp), connectPort)));
+                        }
+                        catch (Exception)
+                        {
+                            Console.WriteLine("Something went wrong. Command aborted.");
+                        }
+                        break;
+                    case "networking start":
+                        if (networkManager.IsDisposed)
+                            networkManager = GetService<INetworkManager>(services);
+                        networkManager.AcceptConnections(publicIP, listeningPort, new System.Threading.CancellationTokenSource());
+                        break;
+                    case "networking restart":
+                        networkManager.Dispose();
+                        networkManager = GetService<INetworkManager>(services);
+                        networkManager.AcceptConnections(publicIP, listeningPort, new System.Threading.CancellationTokenSource());
+                        break;
                     default:
                         Console.WriteLine("I don't recognize that command.");
                         Console.Write("> ");
@@ -152,6 +195,12 @@ namespace Mpb.Node
             loggerFactory = services.GetService<ILoggerFactory>();
             miner = services.GetService<Miner>();
         }
+
+        private static T GetService<T>(IServiceProvider services)
+        {
+            return services.GetService<T>();
+        }
+
 
         private static IServiceProvider SetupDI(string networkIdentifier, string walletPubKey, string walletPrivKey)
         {
@@ -208,6 +257,7 @@ namespace Mpb.Node
             Console.WriteLine("- stopmining");
             Console.WriteLine("- resetblockchain");
             Console.WriteLine("- transfertokens");
+            Console.WriteLine("- networking start|stop|restart|port|connect");
             Console.WriteLine("What would you like to do:");
             Console.Write("> ");
         }
