@@ -80,7 +80,7 @@ namespace Mpb.DAL
         {
             foreach (Block b in _trackingBlockchain.Blocks)
             {
-                if (b.Version > BlockchainConstants.ProtocolVersion)
+                if (b.Header.Version > BlockchainConstants.ProtocolVersion)
                 {
                     // todo log unsupporting block version found, but continue
                 }

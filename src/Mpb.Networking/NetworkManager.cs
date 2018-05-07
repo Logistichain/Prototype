@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Mpb.DAL;
 using Mpb.Networking.Constants;
 using Mpb.Networking.Model;
 using Mpb.Networking.Model.MessagePayloads;
@@ -22,21 +23,23 @@ namespace Mpb.Networking
         private ushort _port;
         private IPAddress _publicIp;
         private bool _isDisposed = false;
+        private bool _isSyncing = true; // When this is true, we are not processing new blocks and transactions from other nodes
         private ILogger _logger;
         private IMessageHandler _messageHandler;
         private IMessageHandler _handshakeMessageHandler;
 
-        public NetworkManager(NetworkNodesPool nodePool, ILoggerFactory loggerFactory)
+        public NetworkManager(NetworkNodesPool nodePool, ILoggerFactory loggerFactory, IBlockchainRepository repo)
         {
             _logger = loggerFactory.CreateLogger<NetworkManager>();
             _nodePool = nodePool;
             _messageHandler = new MessageHandler(this, nodePool, loggerFactory);
-            _handshakeMessageHandler = new HandshakeMessageHandler(this, nodePool, loggerFactory);
+            _handshakeMessageHandler = new HandshakeMessageHandler(this, nodePool, loggerFactory, repo);
         }
 
         public ushort ListeningPort => _port;
         public IPAddress PublicIp => _publicIp;
         public bool IsDisposed => _isDisposed;
+        public bool IsSyncing => _isSyncing;
 
         public async Task AcceptConnections(IPAddress publicIp, ushort listenPort, CancellationTokenSource cts)
         {
@@ -62,6 +65,10 @@ namespace Mpb.Networking
                     continue;
                 }
 
+                // In the first phase, check every 10s if there is a node that has a longer chain than ours.
+                // After the sync completed, exit the 'syncing' state and accept new blocks and transactions.
+                StartSyncTask(cts);
+
                 var nwNode = new NetworkNode(ConnectionType.Inbound, socket);
                 _nodePool.AddNetworkNode(nwNode);
                 try
@@ -71,7 +78,7 @@ namespace Mpb.Networking
                     {
                         ProcessIncomingMessage(nwNode, args.Message);
                     });
-                    Task.Run(() => ListenForNewMessagesContinuously(nwNode)); // Keep on listening for new messages
+                    _ = Task.Run(() => ListenForNewMessagesContinuously(nwNode)); // Keep on listening for new messages, do not await.
                 }
                 catch (Exception ex)
                 {
@@ -141,7 +148,7 @@ namespace Mpb.Networking
             {
                 ProcessIncomingMessage(node, args.Message);
             });
-            Task.Run(() => ListenForNewMessagesContinuously(node)); // Keep on listening for new messages
+            _ = Task.Run(() => ListenForNewMessagesContinuously(node)); // Keep on listening for new messages, do not await.
         }
 
         /// <summary>
@@ -200,6 +207,33 @@ namespace Mpb.Networking
             {
                 var x = _messageHandler.ListenForNewMessage(node, new TimeSpan(0, 0, NetworkConstants.IdleTimeoutSeconds)).Result;
             }
+        }
+        
+        private void StartSyncTask(CancellationTokenSource cts)
+        {
+            _ = Task.Run(async () =>
+            {
+                while (!cts.IsCancellationRequested && _isSyncing)
+                {
+                    await Task.Delay(10000);
+                    try
+                    {
+                        var syncNode = _nodePool.GetAllNetworkNodes()
+                            .Where(n => n.HandshakeIsCompleted && n.IsSyncCandidate)
+                            .OrderBy(x => Guid.NewGuid()).Take(1).First();
+                        _logger.LogDebug($"Attempting to sync with node {syncNode.ListenEndpoint.Address.ToString()}:{syncNode.ListenEndpoint.Port}.");
+
+                        await _messageHandler.SendMessageToNode(syncNode, NetworkCommand.GetHeaders, null);
+
+                    }
+                    catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException)
+                    {
+                        // None found
+                    }
+                    _isSyncing = false;
+                }
+            }
+            );
         }
 
         #region Dispose

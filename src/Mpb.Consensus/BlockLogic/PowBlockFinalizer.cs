@@ -33,7 +33,7 @@ namespace Mpb.Consensus.BlockLogic
         public virtual void FinalizeBlock(Block block, string validHash, string privKey)
         {
             var signature = CreateSignature(validHash, privKey);
-            block.Finalize(validHash, signature);
+            block.Header.Finalize(validHash, signature);
         }
 
         public virtual byte[] GetBlockHeaderBytes(Block block)
@@ -44,12 +44,12 @@ namespace Mpb.Consensus.BlockLogic
             }
 
             // Accumulate all bytes (using BigEndian to support multiple platform architectures)
-            byte[] magicNumberBytes = Encoding.BigEndianUnicode.GetBytes(block.MagicNumber);
-            byte[] versionBytes = Encoding.BigEndianUnicode.GetBytes(block.Version.ToString());
-            byte[] previousBlockHash = Encoding.BigEndianUnicode.GetBytes(block.PreviousHash);
-            byte[] merkleRootBytes = Encoding.BigEndianUnicode.GetBytes(block.MerkleRoot);
-            byte[] timestampBytes = Encoding.BigEndianUnicode.GetBytes(block.Timestamp.ToString());
-            byte[] nonceBytes = Encoding.BigEndianUnicode.GetBytes(block.Nonce.ToString());
+            byte[] magicNumberBytes = Encoding.BigEndianUnicode.GetBytes(block.Header.MagicNumber);
+            byte[] versionBytes = Encoding.BigEndianUnicode.GetBytes(block.Header.Version.ToString());
+            byte[] previousBlockHash = Encoding.BigEndianUnicode.GetBytes(block.Header.PreviousHash);
+            byte[] merkleRootBytes = Encoding.BigEndianUnicode.GetBytes(block.Header.MerkleRoot);
+            byte[] timestampBytes = Encoding.BigEndianUnicode.GetBytes(block.Header.Timestamp.ToString());
+            byte[] nonceBytes = Encoding.BigEndianUnicode.GetBytes(block.Header.Nonce.ToString());
             byte[] transactionCountBytes = Encoding.BigEndianUnicode.GetBytes(block.Transactions.Count().ToString());
             var byteArrayLength = magicNumberBytes.Length + versionBytes.Length + merkleRootBytes.Length
                 + timestampBytes.Length + nonceBytes.Length + transactionCountBytes.Length;

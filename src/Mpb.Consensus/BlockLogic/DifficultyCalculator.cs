@@ -58,8 +58,8 @@ namespace Mpb.Consensus.BlockLogic
 
             // - 1 because difficultyUpdate is based on counts, as where calculateForHeight is based on index.
             //! Take care, the lastBlockStarted this is the time when the miner STARTED mining this block
-            long firstBlockStarted = chain.Blocks[calculateForHeight - difficultyUpdateCycle].Timestamp;
-            long lastBlockStarted = chain.Blocks[calculateForHeight-1].Timestamp;
+            long firstBlockStarted = chain.Blocks[calculateForHeight - difficultyUpdateCycle].Header.Timestamp;
+            long lastBlockStarted = chain.Blocks[calculateForHeight-1].Header.Timestamp;
 
             return new BlockDifficultyUpdate(chain, calculateForHeight - difficultyUpdateCycle, calculateForHeight-1);
         }

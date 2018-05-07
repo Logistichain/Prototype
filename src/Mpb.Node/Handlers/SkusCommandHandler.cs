@@ -49,9 +49,9 @@ namespace Mpb.Node.Handlers
                 var versionNumber = 0;
                 foreach (var skuversion in historyList)
                 {
-                    var blockHeight = _blockchainRepo.GetHeightForBlock(skuversion.Block.Hash, _netId);
+                    var blockHeight = _blockchainRepo.GetHeightForBlock(skuversion.Block.Header.Hash, _netId);
                     var confirmations = (currentBlockchain.CurrentHeight - blockHeight) + 1; // The block itself is a confirmation aswell.
-                    var blockTime = _timestamper.GetUtcDateTimeFromTimestamp(skuversion.Block.Timestamp);
+                    var blockTime = _timestamper.GetUtcDateTimeFromTimestamp(skuversion.Block.Header.Timestamp);
                     var transaction = (StateTransaction)skuversion.Transaction;
                     var isCreateOrChange = transaction.Action == TransactionAction.CreateSku.ToString() || transaction.Action == TransactionAction.ChangeSku.ToString();
 
@@ -63,7 +63,7 @@ namespace Mpb.Node.Handlers
                     Console.WriteLine("Action: " + transaction.Action);
                     Console.WriteLine("SKU Version: " + versionNumber);
                     Console.WriteLine("Time: " + blockTime.ToString("dd-MM-yyy HH:mm:ss") + " UTC time");
-                    Console.WriteLine("Block hash: " + skuversion.Block.Hash);
+                    Console.WriteLine("Block hash: " + skuversion.Block.Header.Hash);
                     Console.WriteLine("Block height: " + blockHeight);
                     Console.WriteLine("Confirmations: " + confirmations.ToString());
                     Console.WriteLine("Transaction hash: " + transaction.Hash);

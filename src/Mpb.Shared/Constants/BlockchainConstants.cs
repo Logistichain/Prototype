@@ -6,6 +6,10 @@ namespace Mpb.Shared.Constants
 {
     public class BlockchainConstants
     {
+        /// <summary>
+        /// Max 7 characters.
+        /// <seealso cref="Mpb.Networking.Model.MessagePayloads.HeadersPayload"/>
+        /// </summary>
         public const string DefaultNetworkIdentifier = "testnet";
         public const uint TransactionVersion = 1;
         public const uint ProtocolVersion = 1;

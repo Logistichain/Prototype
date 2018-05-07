@@ -31,21 +31,21 @@ namespace Mpb.Consensus.BlockLogic
         //! Decorator/composite pattern could be possible here. Only check for PoW things, then call the parent for more generic checks
         public virtual void ValidateBlock(Block block, BigDecimal currentTarget, Blockchain blockchain, bool writeToBlockchain)
         {
-            if (!block.IsFinalized())
+            if (!block.Header.IsFinalized())
             {
                 throw new BlockRejectedException("Block is not hashed or signed or hashed properly", block);
             }
-            else if (block.Hash != _blockFinalizer.CalculateHash(block))
+            else if (block.Header.Hash != _blockFinalizer.CalculateHash(block))
             {
                 throw new BlockRejectedException("The hash property of the block is not equal to the calculated hash", block);
             }
             
-            BigDecimal hashValue = BigInteger.Parse(block.Hash, NumberStyles.HexNumber);
+            BigDecimal hashValue = BigInteger.Parse(block.Header.Hash, NumberStyles.HexNumber);
 
             // Hash value must be lower than the target and the first byte must be zero
             // because the first byte indidates if the hashValue is a positive or negative number,
             // negative numbers are not allowed.
-            if (!block.Hash.StartsWith("0"))
+            if (!block.Header.Hash.StartsWith("0"))
             {
                 throw new BlockRejectedException("Hash has no leading zero", block);
             }
@@ -58,7 +58,7 @@ namespace Mpb.Consensus.BlockLogic
 
             // Timestamp must not be lower than UTC - 2 min and not higher than UTC + 2 min
             // Todo refactor 120 seconds to blockchainconstant
-            if (_timestamper.GetCurrentUtcTimestamp() - block.Timestamp > BlockchainConstants.MaximumTimestampOffset || _timestamper.GetCurrentUtcTimestamp() - block.Timestamp < (BlockchainConstants.MaximumTimestampOffset * -1))
+            if (_timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp > BlockchainConstants.MaximumTimestampOffset || _timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp < (BlockchainConstants.MaximumTimestampOffset * -1))
             {
                 throw new BlockRejectedException("Timestamp is not within the acceptable time range", block);
             }
@@ -71,7 +71,7 @@ namespace Mpb.Consensus.BlockLogic
 
             // Check merkleroot
             var calculatedMerkleRoot = _transactionValidator.CalculateMerkleRoot(block.Transactions.ToList());
-            if (block.MerkleRoot != calculatedMerkleRoot)
+            if (block.Header.MerkleRoot != calculatedMerkleRoot)
             {
                 throw new BlockRejectedException("Incorrect merkleroot", block);
             }
@@ -89,14 +89,14 @@ namespace Mpb.Consensus.BlockLogic
             }
 
             // The block must be in the same network as our node
-            if (block.MagicNumber != blockchain.NetIdentifier)
+            if (block.Header.MagicNumber != blockchain.NetIdentifier)
             {
                 throw new BlockRejectedException("Block comes from a different network", block);
             }
 
             // Check if the previous hash exists in our blockchain
             // Todo if the previous hash is unknown, let Networking retrieve the entire blockchain
-            if (blockchain.Blocks.Where(b => b.Hash == block.PreviousHash).Count() == 0 && blockchain.CurrentHeight > -1)
+            if (blockchain.Blocks.Where(b => b.Header.Hash == block.Header.PreviousHash).Count() == 0 && blockchain.CurrentHeight > -1)
             {
                 throw new BlockRejectedException("Previous blockhash does not exist in our chain", block);
             }
@@ -114,16 +114,16 @@ namespace Mpb.Consensus.BlockLogic
             {
                 if (blockchain.CurrentHeight > -1)
                 {
-                    var existingBlocks = blockchain.Blocks.Where(b => b.PreviousHash == block.PreviousHash);
+                    var existingBlocks = blockchain.Blocks.Where(b => b.Header.PreviousHash == block.Header.PreviousHash);
                     for (int i = 0; i < existingBlocks.Count(); i++)
                     {
                         var existingBlock = existingBlocks.ElementAt(i);
-                        int heightInChain = blockchain.GetHeightForBlock(existingBlock.Hash);
+                        int heightInChain = blockchain.GetHeightForBlock(existingBlock.Header.Hash);
 
                         if (blockchain.CurrentHeight == heightInChain) 
                         {
                             // This is the latest block so we might replace it. Determine the difficulty.
-                            BigDecimal existingBlockHashValue = BigInteger.Parse(existingBlock.Hash, NumberStyles.HexNumber);
+                            BigDecimal existingBlockHashValue = BigInteger.Parse(existingBlock.Header.Hash, NumberStyles.HexNumber);
                             if (hashValue < existingBlockHashValue)
                             {
                                 if (writeToBlockchain)

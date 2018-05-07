@@ -77,6 +77,17 @@ namespace Mpb.Networking
         }
 
         /// <summary>
+        /// Loops through the entire nodes pool and returns the ListenEndpoint
+        /// for all nodes who had a successful handshake with us.
+        /// This collection is mainly used for the 'addr' message.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<IPEndPoint> GetAllRemoteListenEndpoints()
+        {
+            return _nodesPool.Where(n => n.Value.HandshakeIsCompleted).Select(n => n.Value.ListenEndpoint);
+        }
+
+        /// <summary>
         /// Checks if this pool contains the endpoint by searching through all
         /// DirectEndpoints and ListenerEndpoints of all nodes.
         /// </summary>
@@ -96,6 +107,15 @@ namespace Mpb.Networking
         }
 
         /// <summary>
+        /// Returns all network nodes by reference.
+        /// </summary>
+        /// <returns></returns>
+        internal IEnumerable<NetworkNode> GetAllNetworkNodes()
+        {
+            return _nodesPool.Values;
+        }
+
+        /// <summary>
         /// Throws InvalidOperationException when the endpoint doesn't exist.
         /// </summary>
         /// <param name="endpoint"></param>
@@ -103,6 +123,29 @@ namespace Mpb.Networking
         {
             var node = GetNodeByEndpoint(endpoint);
             await node.Disconnect();
+        }
+
+        /// <summary>
+        /// Broadcasts a message to all verified peers
+        /// </summary>
+        /// <param name="m">The message to send</param>
+        internal void BroadcastMessage(Message m)
+        {
+            lock (_nodesPool)
+            {
+                foreach (var node in _nodesPool.Where(n => n.Value.HandshakeIsCompleted))
+                {
+                    node.Value.SendMessageAsync(m).Start();
+                }
+            }
+        }
+
+        internal void CloseAllConnections()
+        {
+            foreach (var node in _nodesPool)
+            {
+                node.Value.Dispose();
+            }
         }
 
         private NetworkNode GetNodeByEndpoint(IPEndPoint endpoint)
@@ -160,43 +203,6 @@ namespace Mpb.Networking
             }
             node.OnListenerEndpointChanged -= Node_OnListenerEndpointChanged;
             node.OnDisconnected -= Node_OnDisconnected;
-        }
-
-        /// <summary>
-        /// Broadcasts a message to all verified peers
-        /// </summary>
-        /// <param name="m">The message to send</param>
-        internal void BroadcastMessage(Message m)
-        {
-            lock (_nodesPool)
-            {
-                foreach(var node in _nodesPool.Where(n => n.Value.HandshakeIsCompleted))
-                {
-                    node.Value.SendMessageAsync(m).Start();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Loops through the entire nodes pool and returns the ListenEndpoint
-        /// for all nodes who had a successful handshake with us.
-        /// This collection is mainly used for the 'addr' message.
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<IPEndPoint> GetAllRemoteListenEndpoints()
-        {
-            foreach (var node in _nodesPool.Where(n => n.Value.HandshakeIsCompleted))
-            {
-                yield return node.Value.ListenEndpoint;
-            }
-        }
-
-        internal void CloseAllConnections()
-        {
-            foreach (var node in _nodesPool)
-            {
-                node.Value.Dispose();
-            }
         }
 
         #region Dispose

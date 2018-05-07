@@ -15,7 +15,7 @@ namespace Mpb.Networking.Constants
 
         /// <summary>
         /// Use this timeout when expecting a message,
-        /// like in the initial''version' handshake.
+        /// like in the initial 'version' handshake.
         /// </summary>
         public const int ExpectMsgTimeoutSeconds = 60;
 
@@ -23,6 +23,16 @@ namespace Mpb.Networking.Constants
         /// Maximum amount of peers to connect to.
         /// </summary>
         public const int MaxConcurrentConnections = 30;
+
+        /// <summary>
+        /// Maximum amount of headers to send in one message.
+        /// </summary>
+        public const int MaxHeadersInMessage = 5000;
+
+        /// <summary>
+        /// Maximum amount of blocks to send in one message.
+        /// </summary>
+        public const int MaxBlocksInMessage = 3000;
 
         /// <summary>
         /// Every host listens on this port by default.

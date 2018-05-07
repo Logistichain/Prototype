@@ -72,7 +72,7 @@ namespace Mpb.Consensus.Test.Logic
         public void BlockIsValid_ThrowsException_NotFinalized()
         {
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>()); // Block is not finalized
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>()); // Block is not finalized
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
@@ -87,8 +87,8 @@ namespace Mpb.Consensus.Test.Logic
         public void BlockIsValid_ThrowsException_EmptyBlockHash()
         {
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>());
-            blockToTest.Finalize("", null);
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize("", null);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
@@ -103,8 +103,8 @@ namespace Mpb.Consensus.Test.Logic
         public void BlockIsValid_ThrowsException_EmptySignature()
         {
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>());
-            blockToTest.Finalize("hash", "");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize("hash", "");
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
@@ -119,8 +119,8 @@ namespace Mpb.Consensus.Test.Logic
         public void BlockIsValid_ThrowsException_NullSignature()
         {
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>());
-            blockToTest.Finalize("hash", null);
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize("hash", null);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
@@ -143,8 +143,8 @@ namespace Mpb.Consensus.Test.Logic
         {
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>());
-            blockToTest.Finalize("abc", "signature"); // Invalid block hash
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize("abc", "signature"); // Invalid block hash
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns("otherhash");
             
             var ex = Assert.ThrowsException<BlockRejectedException>(
@@ -166,8 +166,8 @@ namespace Mpb.Consensus.Test.Logic
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var blockHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>()); // The first SHA attempt results in a value that is higher than the currentTarget
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>()); // The first SHA attempt results in a value that is higher than the currentTarget
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
@@ -184,8 +184,8 @@ namespace Mpb.Consensus.Test.Logic
             var blockHash = "0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"; // High hash value
             BigDecimal currentTarget = BigInteger.Parse("0000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>());
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
@@ -203,8 +203,8 @@ namespace Mpb.Consensus.Test.Logic
             var blockHash = "078ECE2577907E270349C3FD60F1B1B28B233BE6DC936C2415624E65C6159E1E";
             BigDecimal currentTarget = BigInteger.Parse(blockHash, NumberStyles.HexNumber);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>());
-            blockToTest.Finalize(blockHash, "signature"); // The same as target
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize(blockHash, "signature"); // The same as target
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
@@ -221,8 +221,8 @@ namespace Mpb.Consensus.Test.Logic
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>());
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(BlockchainConstants.MaximumTimestampOffset + 10);
             // The blockToTest's timestamp is too early because the current timestamp is 130 and the block is from timestamp 1
@@ -244,8 +244,8 @@ namespace Mpb.Consensus.Test.Logic
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>());
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(BlockchainConstants.MaximumTimestampOffset + 1); // The blockToTest's timestamp is exactly on the edge
 
@@ -263,8 +263,8 @@ namespace Mpb.Consensus.Test.Logic
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block(_netId, 1, "abc", BlockchainConstants.MaximumTimestampOffset+10, "", new List<AbstractTransaction>());
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", BlockchainConstants.MaximumTimestampOffset+10, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // The blockToTest's timestamp is too late
 
@@ -285,8 +285,8 @@ namespace Mpb.Consensus.Test.Logic
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block(_netId, 1, "abc", BlockchainConstants.MaximumTimestampOffset+1, "", new List<AbstractTransaction>());
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", BlockchainConstants.MaximumTimestampOffset+1, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // The blockToTest's timestamp is exactly on the edge
 
@@ -305,8 +305,8 @@ namespace Mpb.Consensus.Test.Logic
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block(_netId, 1, "abc", 15, "", new List<AbstractTransaction>());
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 15, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // Exact same timestamp as the block
 
@@ -324,8 +324,8 @@ namespace Mpb.Consensus.Test.Logic
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
-            var blockToTest = new Block(_netId, 1, "abc", 1, "", new List<AbstractTransaction>());
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             
@@ -346,8 +346,8 @@ namespace Mpb.Consensus.Test.Logic
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction("from", "tp", null, 0, 1, 1, TransactionAction.ClaimCoinbase.ToString(), null, 1)
             };
-            var blockToTest = new Block(_netId, 1, "merkleroot", 1, "", transactions);
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("otherMerklerootValue");
@@ -369,8 +369,8 @@ namespace Mpb.Consensus.Test.Logic
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction("from", "tp", null, 0, 1, 1, TransactionAction.TransferToken.ToString(), null, 1)
             };
-            var blockToTest = new Block(_netId, 1, "merkleroot", 1, "", transactions);
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
@@ -393,8 +393,8 @@ namespace Mpb.Consensus.Test.Logic
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0),
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
-            var blockToTest = new Block(_netId, 1, "merkleroot", 1, "", transactions);
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
@@ -416,8 +416,8 @@ namespace Mpb.Consensus.Test.Logic
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
-            var blockToTest = new Block("network1", 1, "merkleroot", 1, "", transactions);
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader("network1", 1, "merkleroot", 1, ""), transactions);
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
@@ -441,9 +441,9 @@ namespace Mpb.Consensus.Test.Logic
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
-            var blockchain = new Blockchain(new List<Block>() { new Block(_netId, 1, "merkleroot", 1, "", transactions) }, _netId);
-            var blockToTest = new Block(_netId, 1, "merkleroot", 1, "", transactions);
-            blockToTest.Finalize(blockHash, "signature");
+            var blockchain = new Blockchain(new List<Block>() { new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions) }, _netId);
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
@@ -466,12 +466,12 @@ namespace Mpb.Consensus.Test.Logic
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
             var blockchain = new Blockchain(new List<Block>() {
-                new Block(_netId, 1, "merkleroot", 1, "", transactions).Finalize("block1", "privkey"),
-                new Block(_netId, 1, "merkleroot", 3, "block1", transactions).Finalize("block2", "privkey"),
-                new Block(_netId, 1, "merkleroot", 10, "block2", transactions).Finalize("block3", "privkey")
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 1, "").Finalize("block1", "privkey"), transactions),
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 3, "block1").Finalize("block2", "privkey"), transactions),
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 10, "block2").Finalize("block3", "privkey"), transactions)
             }, _netId);
-            var blockToTest = new Block(_netId, 1, "merkleroot", 19, "block1", transactions);
-            blockToTest.Finalize(blockHash, "signature");
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 19, "block1"), transactions);
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
@@ -495,14 +495,14 @@ namespace Mpb.Consensus.Test.Logic
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
-            var blockToTest = new Block(_netId, 1, "merkleroot", 16, "block2", transactions); // Also point to block 2
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 16, "block2"), transactions); // Also point to block 2
 
             var blockchain = new Blockchain(new List<Block>() {
-                new Block(_netId, 1, "merkleroot", 1, "", transactions).Finalize("block1", "privkey"),
-                new Block(_netId, 1, "merkleroot", 3, "block1", transactions).Finalize("block2", "privkey"),
-                new Block(_netId, 1, "merkleroot", 10, "block2", transactions).Finalize(highBlockHash, "privkey")
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 1, "").Finalize("block1", "privkey"), transactions),
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 3, "block1").Finalize("block2", "privkey"), transactions),
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 10, "block2").Finalize(highBlockHash, "privkey"), transactions)
             }, _netId);
-            blockToTest.Finalize(lowerBlockHash, "signature");
+            blockToTest.Header.Finalize(lowerBlockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(lowerBlockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
@@ -525,9 +525,9 @@ namespace Mpb.Consensus.Test.Logic
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
-            var blockToTest = new Block(_netId, 1, "merkleroot", 1, "", transactions);
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
             var blockchain = new Blockchain(_netId);
-            blockToTest.Finalize(blockHash, "signature");
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
@@ -549,14 +549,14 @@ namespace Mpb.Consensus.Test.Logic
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
-            var blockToTest = new Block(_netId, 1, "merkleroot", 16, "block2", transactions); // Also point to block 2
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 16, "block2"), transactions); // Also point to block 2
 
             var blockchain = new Blockchain(new List<Block>() {
-                new Block(_netId, 1, "merkleroot", 1, "", transactions).Finalize("block1", "privkey"),
-                new Block(_netId, 1, "merkleroot", 3, "block1", transactions).Finalize("block2", "privkey"),
-                new Block(_netId, 1, "merkleroot", 10, "block2", transactions).Finalize(lastBlockHash, "privkey")
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 1, "").Finalize("block1", "privkey"), transactions),
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 3, "block1").Finalize("block2", "privkey"), transactions),
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 10, "block2").Finalize(lastBlockHash, "privkey"), transactions)
             }, _netId);
-            blockToTest.Finalize(betterBlockHash, "signature");
+            blockToTest.Header.Finalize(betterBlockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(betterBlockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
@@ -577,14 +577,14 @@ namespace Mpb.Consensus.Test.Logic
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
-            var blockToTest = new Block(_netId, 1, "merkleroot", 1, "block3", transactions);
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, "block3"), transactions);
 
             var blockchain = new Blockchain(new List<Block>() {
-                new Block(_netId, 1, "merkleroot", 1, "", transactions).Finalize("block1", "privkey"),
-                new Block(_netId, 1, "merkleroot", 3, "block1", transactions).Finalize("block2", "privkey"),
-                new Block(_netId, 1, "merkleroot", 10, "block2", transactions).Finalize("block3", "privkey")
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 1, "").Finalize("block1", "privkey"), transactions),
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 3, "block1").Finalize("block2", "privkey"), transactions),
+                new Block(new BlockHeader(_netId, 1, "merkleroot", 10, "block2").Finalize("block3", "privkey"), transactions)
             }, _netId);
-            blockToTest.Finalize(blockHash, "signature");
+            blockToTest.Header.Finalize(blockHash, "signature");
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");

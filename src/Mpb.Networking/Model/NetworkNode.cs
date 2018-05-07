@@ -31,6 +31,7 @@ namespace Mpb.Networking.Model
         private ConnectionType _connectionType;
         private int _handshakeStage = 0;
         private DateTime _connectionEstablishedAt;
+        private bool _isSyncCandidate = false;
 
         public NetworkNode(ConnectionType direction, Socket socket)
         {
@@ -82,6 +83,11 @@ namespace Mpb.Networking.Model
         public bool IsConnected => _socket != null ? _socket.Connected : false;
 
         public bool IsDisposed => _isDisposed > 0;
+
+        /// <summary>
+        /// Whether this node has a higher block height than our local chain.
+        /// </summary>
+        public bool IsSyncCandidate { get => _isSyncCandidate; set => _isSyncCandidate = value; }
 
         public ConnectionType ConnectionType => _connectionType;
 

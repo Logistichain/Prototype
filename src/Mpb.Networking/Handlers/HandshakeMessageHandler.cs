@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using Mpb.DAL;
+using Mpb.Model;
 using Mpb.Networking.Constants;
 using Mpb.Networking.Model;
 using Mpb.Networking.Model.MessagePayloads;
@@ -13,22 +15,29 @@ namespace Mpb.Networking
 {
     public class HandshakeMessageHandler : AbstractMessageHandler, IMessageHandler
     {
-        public HandshakeMessageHandler(INetworkManager manager, NetworkNodesPool nodePool, ILoggerFactory loggerFactory)
-            : base(manager, nodePool, loggerFactory) { }
+        IBlockchainRepository _blockchainRepo;
 
-        public async Task HandleMessage(NetworkNode node, Message msg)
+        public HandshakeMessageHandler(INetworkManager manager, NetworkNodesPool nodePool, ILoggerFactory loggerFactory, IBlockchainRepository blockchainRepo)
+            : base(manager, nodePool, loggerFactory)
+        {
+            _blockchainRepo = blockchainRepo;
+        }
+        
+        public async Task HandleMessage(NetworkNode node, Message msg, string netId)
         {
             if (node.HandshakeIsCompleted) return;
+
+            var blockchain = _blockchainRepo.GetChainByNetId(netId);
 
             try
             {
                 if (node.ConnectionType == ConnectionType.Inbound)
                 {
-                    await HandleInboundHandshakeMessage(node, msg);
+                    await HandleInboundHandshakeMessage(node, msg, blockchain);
                 }
                 else
                 {
-                    await HandleOutboundHandshakeMessage(node, msg);
+                    await HandleOutboundHandshakeMessage(node, msg, blockchain);
                 }
             }
             catch(Exception)
@@ -37,7 +46,7 @@ namespace Mpb.Networking
             }
         }
 
-        private async Task HandleInboundHandshakeMessage(NetworkNode node, Message msg)
+        private async Task HandleInboundHandshakeMessage(NetworkNode node, Message msg, Blockchain blockchain)
         {
             if (node.HandshakeStage == 0)
             {
@@ -50,6 +59,7 @@ namespace Mpb.Networking
                 }
                 _logger.LogDebug("Accepted version from node {0} on direct port {1}. Remote listen port = {2}", node.DirectEndpoint.Address.ToString(), node.DirectEndpoint.Port, payload.ListenPort);
 
+                node.IsSyncCandidate = payload.BlockHeight > blockchain.CurrentHeight;
                 node.SetListenEndpoint(new IPEndPoint(node.DirectEndpoint.Address, payload.ListenPort));
 
                 node.ProgressHandshakeStage();
@@ -69,7 +79,7 @@ namespace Mpb.Networking
             }
         }
 
-        private async Task HandleOutboundHandshakeMessage(NetworkNode node, Message msg)
+        private async Task HandleOutboundHandshakeMessage(NetworkNode node, Message msg, Blockchain blockchain)
         {
             if (node.HandshakeStage == 1 && msg.Command == NetworkCommand.VerAck.ToString())
             {
@@ -86,6 +96,7 @@ namespace Mpb.Networking
                     throw new ArgumentException("Mismatch in protocol version");
                 }
                 _logger.LogDebug("Accepted version from node {0} on port {1}", node.DirectEndpoint.Address.ToString(), node.DirectEndpoint.Port);
+                node.IsSyncCandidate = payload.BlockHeight > blockchain.CurrentHeight;
                 node.ProgressHandshakeStage();
 
                 // Send an acknowledgement

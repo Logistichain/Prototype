@@ -9,7 +9,7 @@ namespace Mpb.Networking.Model.MessagePayloads
     {
         private IEnumerable<IPEndPoint> _endpoints;
 
-        public IEnumerable<IPEndPoint> Endpoints => _endpoints;
+        internal IEnumerable<IPEndPoint> Endpoints => _endpoints;
 
         public AddrPayload() { }
 

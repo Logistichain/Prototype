@@ -40,7 +40,7 @@ namespace Mpb.Model
             foreach (var block in Blocks)
             {
                 height++;
-                if (block.Hash == hash)
+                if (block.Header.Hash == hash)
                 {
                     return height;
                 }

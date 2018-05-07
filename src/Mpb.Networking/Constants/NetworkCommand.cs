@@ -10,6 +10,8 @@ namespace Mpb.Networking.Constants
         VerAck,
         Addr,
         GetAddr,
-        CloseConn
+        CloseConn,
+        GetHeaders,
+        Headers
     }
 }

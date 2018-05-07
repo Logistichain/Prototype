@@ -67,7 +67,7 @@ namespace Mpb.DAL
                 GetChainByNetId(netIdentifier);
             }
 
-            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Hash == blockHash.ToUpper());
+            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Header.Hash == blockHash.ToUpper());
             if (searchQuery.Count() > 0)
             {
                 return searchQuery.First();

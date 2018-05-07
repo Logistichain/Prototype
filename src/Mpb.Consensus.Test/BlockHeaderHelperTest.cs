@@ -34,7 +34,8 @@ namespace Mpb.Consensus.Test.Logic
         {
             var sut = new PowBlockFinalizer();
             var expectedHash = "FF5648F9B5FEB7AA0ACECA5AF77938A811B5F18E4D1CC5A806C475E4AFED47EA";
-            var blockToTest = new Block("testnet", 1, "abc", 1, "", new List<AbstractTransaction>());
+
+            var blockToTest = new Block(new BlockHeader("testnet", 1, "abc", 1, ""), new List<AbstractTransaction>());
 
             var bytesResult = sut.GetBlockHeaderBytes(blockToTest);
             var hashString = "";

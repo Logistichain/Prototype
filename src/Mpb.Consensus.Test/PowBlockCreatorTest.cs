@@ -106,7 +106,7 @@ namespace Mpb.Consensus.Test.Logic
             uint expectedProtocolVersion = 1;
             BigDecimal expectedMaximumTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var blockchain = new Blockchain(expectedNetworkIdentifier);
-            var expectedBlock = new Block(expectedNetworkIdentifier, expectedProtocolVersion, "abc", 123, null, _transactions);
+            var expectedBlock = new Block(new BlockHeader(expectedNetworkIdentifier, expectedProtocolVersion, "abc", 123, null), _transactions);
             var selfCallingMock = new Mock<PowBlockCreator>(MockBehavior.Strict, new object[] { _timestamperMock.Object, _blockValidatorMock.Object, _blockFinalizer.Object, _transactionValidator.Object });
             selfCallingMock.Setup(m => m.CreateValidBlockAndAddToChain("privkey", blockchain, _transactions, difficulty)).CallBase();
             selfCallingMock.Setup(m => m.CreateValidBlockAndAddToChain("privkey", blockchain, expectedProtocolVersion, _transactions, difficulty, expectedMaximumTarget, CancellationToken.None))
@@ -189,13 +189,13 @@ namespace Mpb.Consensus.Test.Logic
 
             var result = sut.CreateValidBlockAndAddToChain(privateKey, blockchain, _protocol, transactionsList, 1, _maximumTarget, CancellationToken.None);
             
-            Assert.AreEqual(blockchain.NetIdentifier, result.MagicNumber);
-            Assert.AreEqual(null, result.PreviousHash);
-            Assert.AreEqual(_protocol, result.Version);
-            Assert.AreEqual(expectedTimestamp, result.Timestamp);
-            Assert.AreEqual("abc", result.MerkleRoot);
+            Assert.AreEqual(blockchain.NetIdentifier, result.Header.MagicNumber);
+            Assert.AreEqual(null, result.Header.PreviousHash);
+            Assert.AreEqual(_protocol, result.Header.Version);
+            Assert.AreEqual(expectedTimestamp, result.Header.Timestamp);
+            Assert.AreEqual("abc", result.Header.MerkleRoot);
             Assert.AreEqual(transactionsList, result.Transactions);
-            Assert.AreEqual(1UL, result.Nonce);
+            Assert.AreEqual(1UL, result.Header.Nonce);
         }
 
         [TestMethod]
@@ -207,7 +207,7 @@ namespace Mpb.Consensus.Test.Logic
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
-            var blockchain = new Blockchain(new List<Block>() { new Block(_netId, 1, "merkleroot", 1, null, transactions).Finalize("firsthash", "sig") }, _netId);
+            var blockchain = new Blockchain(new List<Block>() { new Block(new BlockHeader(_netId, 1, "merkleroot", 1, null).Finalize("firsthash", "sig"), transactions) }, _netId);
             var sut = new PowBlockCreator(_timestamperMock.Object, _blockValidatorMock.Object, _blockFinalizer.Object, _transactionValidator.Object);
             var transactionsList = _transactions.ToList();
             _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp())
@@ -220,13 +220,13 @@ namespace Mpb.Consensus.Test.Logic
 
             var result = sut.CreateValidBlockAndAddToChain(privateKey, blockchain, _protocol, transactionsList, 1, _maximumTarget, CancellationToken.None);
 
-            Assert.AreEqual(blockchain.NetIdentifier, result.MagicNumber);
-            Assert.AreEqual("firsthash", result.PreviousHash);
-            Assert.AreEqual(_protocol, result.Version);
-            Assert.AreEqual(expectedTimestamp, result.Timestamp);
-            Assert.AreEqual("abc", result.MerkleRoot);
+            Assert.AreEqual(blockchain.NetIdentifier, result.Header.MagicNumber);
+            Assert.AreEqual("firsthash", result.Header.PreviousHash);
+            Assert.AreEqual(_protocol, result.Header.Version);
+            Assert.AreEqual(expectedTimestamp, result.Header.Timestamp);
+            Assert.AreEqual("abc", result.Header.MerkleRoot);
             Assert.AreEqual(transactionsList, result.Transactions);
-            Assert.AreEqual(1UL, result.Nonce);
+            Assert.AreEqual(1UL, result.Header.Nonce);
         }
 
         [TestCleanup]

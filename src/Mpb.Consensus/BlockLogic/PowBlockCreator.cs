@@ -47,20 +47,20 @@ namespace Mpb.Consensus.BlockLogic
             var utcTimestamp = _timestamper.GetCurrentUtcTimestamp();
             var merkleroot = _transactionValidator.CalculateMerkleRoot(transactions.ToList());
             var currentTarget = maximumTarget / difficulty;
-            string previousBlockHash = blockchain.CurrentHeight > -1 ? blockchain.Blocks.Last().Hash : null;
-            Block b = new Block(blockchain.NetIdentifier, protocolVersion, merkleroot, utcTimestamp, previousBlockHash, transactions);
+            string previousBlockHash = blockchain.CurrentHeight > -1 ? blockchain.Blocks.Last().Header.Hash : null;
+            Block b = new Block(new BlockHeader(blockchain.NetIdentifier, protocolVersion, merkleroot, utcTimestamp, previousBlockHash), transactions);
 
             // Keep on mining
             while (targetMet == false)
             {
                 ct.ThrowIfCancellationRequested();
 
-                if (b.Nonce == ulong.MaxValue)
+                if (b.Header.Nonce == ulong.MaxValue)
                 {
                     throw new NonceLimitReachedException();
                 }
 
-                b.IncrementNonce();
+                b.Header.IncrementNonce();
                 var hash = _blockFinalizer.CalculateHash(b);
                 _blockFinalizer.FinalizeBlock(b, hash, privateKey);
 
