@@ -54,7 +54,7 @@ namespace Mpb.Node
             NetworkingCommandHandler networkingCmdHandler = new NetworkingCommandHandler();
 
             _logger.LogInformation("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
-            networkManager.AcceptConnections(publicIP, listeningPort, new System.Threading.CancellationTokenSource());
+            networkManager.AcceptConnections(publicIP, listeningPort, new CancellationTokenSource());
 
             networkManager.ConnectToPeer(new NetworkNode(ConnectionType.Outbound, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 12345)));
 
@@ -210,7 +210,9 @@ namespace Mpb.Node
                 .AddTransient<IMessageHandler, MessageHandler>()
                 .AddTransient(x => ConcurrentTransactionPool.GetInstance().SetTransactionValidator(x.GetService<ITransactionValidator>()))
                 .AddTransient(x => NetworkNodesPool.GetInstance(x.GetService<ILoggerFactory>()))
-                .AddTransient<INetworkManager, NetworkManager>()
+                .AddTransient<INetworkManager, NetworkManager>(
+                        (x) => new NetworkManager(x.GetService<NetworkNodesPool>(), x.GetService<ILoggerFactory>(), x.GetService<IBlockchainRepository>(), networkIdentifier)
+                    )
 
                 .AddTransient(
                         (x) => new Miner(

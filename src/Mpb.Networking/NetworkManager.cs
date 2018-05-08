@@ -28,12 +28,12 @@ namespace Mpb.Networking
         private IMessageHandler _messageHandler;
         private IMessageHandler _handshakeMessageHandler;
 
-        public NetworkManager(NetworkNodesPool nodePool, ILoggerFactory loggerFactory, IBlockchainRepository repo)
+        public NetworkManager(NetworkNodesPool nodePool, ILoggerFactory loggerFactory, IBlockchainRepository repo, string netId)
         {
             _logger = loggerFactory.CreateLogger<NetworkManager>();
             _nodePool = nodePool;
             _messageHandler = new MessageHandler(this, nodePool, loggerFactory);
-            _handshakeMessageHandler = new HandshakeMessageHandler(this, nodePool, loggerFactory, repo);
+            _handshakeMessageHandler = new HandshakeMessageHandler(this, nodePool, loggerFactory, repo, netId);
         }
 
         public ushort ListeningPort => _port;
@@ -209,7 +209,7 @@ namespace Mpb.Networking
                 var x = _messageHandler.ListenForNewMessage(node, new TimeSpan(0, 0, NetworkConstants.IdleTimeoutSeconds)).Result;
             }
         }
-
+        
         private void StartSyncTask(CancellationTokenSource cts)
         {
             _ = Task.Run(async () =>

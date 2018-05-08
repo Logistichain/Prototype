@@ -16,18 +16,20 @@ namespace Mpb.Networking
     public class HandshakeMessageHandler : AbstractMessageHandler, IMessageHandler
     {
         IBlockchainRepository _blockchainRepo;
+        private readonly string _netId;
 
-        public HandshakeMessageHandler(INetworkManager manager, NetworkNodesPool nodePool, ILoggerFactory loggerFactory, IBlockchainRepository blockchainRepo)
+        public HandshakeMessageHandler(INetworkManager manager, NetworkNodesPool nodePool, ILoggerFactory loggerFactory, IBlockchainRepository blockchainRepo, string netId)
             : base(manager, nodePool, loggerFactory)
         {
             _blockchainRepo = blockchainRepo;
+            _netId = netId;
         }
         
-        public async Task HandleMessage(NetworkNode node, Message msg, string netId)
+        public async Task HandleMessage(NetworkNode node, Message msg)
         {
             if (node.HandshakeIsCompleted) return;
 
-            var blockchain = _blockchainRepo.GetChainByNetId(netId);
+            var blockchain = _blockchainRepo.GetChainByNetId(_netId);
 
             try
             {
