@@ -118,7 +118,8 @@ namespace Mpb.Networking
 
             if (_nodePool.Contains(node.ListenEndpoint ?? node.DirectEndpoint))
             {
-                _logger.LogDebug("Tried to connect to peer: {0} on port {1}, but we are already connected.", node.DirectEndpoint.Address, node.DirectEndpoint.Port);
+                var endpoint = node.ListenEndpoint ?? node.DirectEndpoint;
+                _logger.LogDebug("Tried to connect to peer: {0} on port {1}, but we are already connected.", endpoint.Address, endpoint.Port);
                 return;
             }
 
@@ -208,7 +209,7 @@ namespace Mpb.Networking
                 var x = _messageHandler.ListenForNewMessage(node, new TimeSpan(0, 0, NetworkConstants.IdleTimeoutSeconds)).Result;
             }
         }
-        
+
         private void StartSyncTask(CancellationTokenSource cts)
         {
             _ = Task.Run(async () =>
