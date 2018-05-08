@@ -31,6 +31,7 @@ namespace Mpb.Networking
         /// <param name="payload">The payload that corresponds with the command</param>
         public async Task SendMessageToNode(NetworkNode node, NetworkCommand command, ISerializableComponent payload)
         {
+            await Task.Delay(1000);
             IPEndPoint endpoint = node.DirectEndpoint ?? node.ListenEndpoint;
             var msg = new Message(command.ToString(), payload);
             await node.SendMessageAsync(msg);
@@ -43,6 +44,7 @@ namespace Mpb.Networking
         /// <param name="node">The node to receive the message from</param>
         public async Task<Message> ExpectMessageFromNode(NetworkNode node, NetworkCommand expectedCommand)
         {
+            await Task.Delay(1000);
             var msg = await ListenForNewMessage(node, new TimeSpan(0, 0, NetworkConstants.ExpectMsgTimeoutSeconds));
             if (msg.Command != expectedCommand.ToString())
             {
