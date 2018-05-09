@@ -9,7 +9,7 @@ namespace Mpb.Model
         private BlockHeader _header;
         protected readonly IEnumerable<AbstractTransaction> _transactions;
 
-        public BlockHeader Header;
+        public BlockHeader Header => _header;
         public IEnumerable<AbstractTransaction> Transactions => _transactions;
 
         public Block(BlockHeader header, IEnumerable<AbstractTransaction> transactions)

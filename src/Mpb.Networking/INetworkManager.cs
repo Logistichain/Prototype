@@ -20,6 +20,11 @@ namespace Mpb.Networking
         bool IsDisposed { get; }
 
         /// <summary>
+        /// When this is true, we are not processing new blocks and transactions from other nodes
+        /// </summary>
+        bool IsSyncing { get; set; }
+
+        /// <summary>
         /// Start listening to incoming TCP sockets
         /// </summary>
         /// <returns>void</returns>

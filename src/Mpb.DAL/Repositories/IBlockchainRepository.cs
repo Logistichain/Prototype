@@ -10,5 +10,6 @@ namespace Mpb.DAL
         Block GetBlockByTransactionHash(string transactionHash, string netIdentifier);
         int GetHeightForBlock(string hash, string netIdentifier);
         void Update(Blockchain chain);
+        Block GetBlockByPreviousHash(string hash, string netId);
     }
 }

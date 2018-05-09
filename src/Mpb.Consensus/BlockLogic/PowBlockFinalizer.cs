@@ -27,7 +27,7 @@ namespace Mpb.Consensus.BlockLogic
         public virtual string CreateSignature(string hash, string privKey)
         {
             // Todo: sign the validhash with the privkey
-            return "";
+            return "signature";
         }
 
         public virtual void FinalizeBlock(Block block, string validHash, string privKey)
@@ -51,8 +51,8 @@ namespace Mpb.Consensus.BlockLogic
             byte[] timestampBytes = Encoding.BigEndianUnicode.GetBytes(block.Header.Timestamp.ToString());
             byte[] nonceBytes = Encoding.BigEndianUnicode.GetBytes(block.Header.Nonce.ToString());
             byte[] transactionCountBytes = Encoding.BigEndianUnicode.GetBytes(block.Transactions.Count().ToString());
-            var byteArrayLength = magicNumberBytes.Length + versionBytes.Length + merkleRootBytes.Length
-                + timestampBytes.Length + nonceBytes.Length + transactionCountBytes.Length;
+            var byteArrayLength = magicNumberBytes.Length + versionBytes.Length + previousBlockHash.Length
+                + merkleRootBytes.Length + timestampBytes.Length + nonceBytes.Length + transactionCountBytes.Length;
             var array = new byte[byteArrayLength];
 
             // Copy the bytes to array

@@ -25,7 +25,7 @@ namespace Mpb.Consensus.BlockLogic
         {
             // Todo dependency inject wallet mechanism to sign the transaction!
             // if coinbase, use 'ToPubKey' field
-            return "";
+            return "txsignature";
         }
         
         //! Signature is always "" until an appropriate wallet module can be utilized.

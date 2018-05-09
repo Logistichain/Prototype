@@ -183,7 +183,7 @@ namespace Mpb.Consensus.Test.Logic
                             .Returns(expectedTimestamp);
             _blockFinalizer.Setup(m => m.CalculateHash(It.IsAny<Block>())).Returns(expectedHash);
             _blockFinalizer.Setup(m => m.FinalizeBlock(It.IsAny<Block>(), expectedHash, privateKey));
-            _blockValidatorMock.Setup(m => m.ValidateBlock(It.IsAny<Block>(), It.IsAny<BigDecimal>(), blockchain, true));
+            _blockValidatorMock.Setup(m => m.ValidateBlock(It.IsAny<Block>(), It.IsAny<BigDecimal>(), blockchain, true, true));
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactionsList)).Returns("abc");
             _blockFinalizer.Setup(m => m.FinalizeBlock(It.IsAny<Block>(), expectedHash, privateKey));
 
@@ -214,7 +214,7 @@ namespace Mpb.Consensus.Test.Logic
                             .Returns(expectedTimestamp);
             _blockFinalizer.Setup(m => m.CalculateHash(It.IsAny<Block>())).Returns(expectedHash);
             _blockFinalizer.Setup(m => m.FinalizeBlock(It.IsAny<Block>(), expectedHash, privateKey));
-            _blockValidatorMock.Setup(m => m.ValidateBlock(It.IsAny<Block>(), It.IsAny<BigDecimal>(), blockchain, true));
+            _blockValidatorMock.Setup(m => m.ValidateBlock(It.IsAny<Block>(), It.IsAny<BigDecimal>(), blockchain, true, true));
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactionsList)).Returns("abc");
             _blockFinalizer.Setup(m => m.FinalizeBlock(It.IsAny<Block>(), expectedHash, privateKey));
 

@@ -47,7 +47,7 @@ namespace Mpb.Consensus.BlockLogic
             var utcTimestamp = _timestamper.GetCurrentUtcTimestamp();
             var merkleroot = _transactionValidator.CalculateMerkleRoot(transactions.ToList());
             var currentTarget = maximumTarget / difficulty;
-            string previousBlockHash = blockchain.CurrentHeight > -1 ? blockchain.Blocks.Last().Header.Hash : null;
+            string previousBlockHash = blockchain.Blocks.Count() > 0 ? blockchain.Blocks.Last().Header.Hash : null;
             Block b = new Block(new BlockHeader(blockchain.NetIdentifier, protocolVersion, merkleroot, utcTimestamp, previousBlockHash), transactions);
 
             // Keep on mining
@@ -66,7 +66,7 @@ namespace Mpb.Consensus.BlockLogic
 
                 try
                 {
-                    _validator.ValidateBlock(b, currentTarget, blockchain, true);
+                    _validator.ValidateBlock(b, currentTarget, blockchain, true, true);
                     targetMet = true;
                 }
                 catch (BlockRejectedException ex)

@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using Mpb.Consensus.BlockLogic;
 using Mpb.DAL;
 using Mpb.Networking.Constants;
+using Mpb.Networking.Events;
 using Mpb.Networking.Model;
 using Mpb.Networking.Model.MessagePayloads;
 using Mpb.Shared.Constants;
@@ -20,26 +22,30 @@ namespace Mpb.Networking
     {
         private TcpListener _listener;
         private NetworkNodesPool _nodePool;
+        private readonly IBlockchainRepository _repo;
+        private readonly string _netId;
         private ushort _port;
         private IPAddress _publicIp;
         private bool _isDisposed = false;
-        private bool _isSyncing = true; // When this is true, we are not processing new blocks and transactions from other nodes
+        private bool _isSyncing = true;
         private ILogger _logger;
         private IMessageHandler _messageHandler;
         private IMessageHandler _handshakeMessageHandler;
 
-        public NetworkManager(NetworkNodesPool nodePool, ILoggerFactory loggerFactory, IBlockchainRepository repo, string netId)
+        public NetworkManager(NetworkNodesPool nodePool, ILoggerFactory loggerFactory, IBlockValidator blockValidator, IDifficultyCalculator difficultyCalculator, IBlockchainRepository repo, string netId)
         {
             _logger = loggerFactory.CreateLogger<NetworkManager>();
             _nodePool = nodePool;
-            _messageHandler = new MessageHandler(this, nodePool, loggerFactory);
+            _repo = repo;
+            _netId = netId;
+            _messageHandler = new MessageHandler(this, nodePool, difficultyCalculator, blockValidator, loggerFactory, repo, netId);
             _handshakeMessageHandler = new HandshakeMessageHandler(this, nodePool, loggerFactory, repo, netId);
         }
 
         public ushort ListeningPort => _port;
         public IPAddress PublicIp => _publicIp;
         public bool IsDisposed => _isDisposed;
-        public bool IsSyncing => _isSyncing;
+        public bool IsSyncing { get => _isSyncing; set => _isSyncing = value; }
 
         public async Task AcceptConnections(IPAddress publicIp, ushort listenPort, CancellationTokenSource cts)
         {
@@ -67,14 +73,14 @@ namespace Mpb.Networking
 
                 // In the first phase, check every 10s if there is a node that has a longer chain than ours.
                 // After the sync completed, exit the 'syncing' state and accept new blocks and transactions.
-                StartSyncTask(cts);
+                StartSyncProcess(cts);
 
                 var nwNode = new NetworkNode(ConnectionType.Inbound, socket);
                 _nodePool.AddNetworkNode(nwNode);
                 try
                 {
                     // Listen for new messages with a large timeout
-                    nwNode.OnMessageReceived += new Events.MessageReceivedEventHandler((sender, args) =>
+                    nwNode.OnMessageReceived += new MessageReceivedEventHandler((sender, args) =>
                     {
                         ProcessIncomingMessage(nwNode, args.Message);
                     });
@@ -210,31 +216,55 @@ namespace Mpb.Networking
             }
         }
         
-        private void StartSyncTask(CancellationTokenSource cts)
+        internal void StartSyncProcess(CancellationTokenSource cts)
         {
-            _ = Task.Run(async () =>
+            int syncAttempts = 0;
+            while (!cts.IsCancellationRequested && _isSyncing && syncAttempts < 6)
             {
-                while (!cts.IsCancellationRequested && _isSyncing)
+                _ = Task.Run(async () =>
                 {
                     await Task.Delay(10000);
                     try
                     {
+                        syncAttempts++;
                         var syncNode = _nodePool.GetAllNetworkNodes()
                             .Where(n => n.HandshakeIsCompleted && n.IsSyncCandidate)
                             .OrderBy(x => Guid.NewGuid()).Take(1).First();
                         _logger.LogDebug($"Attempting to sync with node {syncNode.ListenEndpoint.Address.ToString()}:{syncNode.ListenEndpoint.Port}.");
 
-                        await _messageHandler.SendMessageToNode(syncNode, NetworkCommand.GetHeaders, null);
+                        syncNode.SetSyncStatus(SyncStatus.Initiated);
+                        SyncStatusChangedEventHandler syncStatusChangedEventHandler = null;
+                        syncStatusChangedEventHandler =
+                        (object sender, SyncStatusChangedEventArgs ev) =>
+                        {
+                            var node = (NetworkNode)sender;
+                            if (ev.NewStatus == SyncStatus.Succeeded)
+                            {
+                                _isSyncing = false;
+                                node.IsSyncCandidate = false;
+                                node.OnSyncStatusChanged -= syncStatusChangedEventHandler;
+                            }
+                            else if (ev.NewStatus == SyncStatus.Failed)
+                            {
+                                // Try again with another node.
+                                var endpoint = node.ListenEndpoint ?? node.DirectEndpoint;
+                                _logger.LogWarning("Failed to sync with node {0} on port {1}.", endpoint.Address.ToString(), endpoint.Port);
+                                node.IsSyncCandidate = false;
+                                node.OnSyncStatusChanged -= syncStatusChangedEventHandler;
+                            }
+                        };
+                        syncNode.OnSyncStatusChanged += syncStatusChangedEventHandler;
+                        var blockchain = _repo.GetChainByNetId(_netId);
+                        var getHeadersPayload = new GetHeadersPayload(blockchain.Blocks.Last().Header.Hash);
+                        await _messageHandler.SendMessageToNode(syncNode, NetworkCommand.GetHeaders, getHeadersPayload);
 
                     }
                     catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException)
                     {
-                        // None found
+                        // None found, try again later
                     }
-                    _isSyncing = false;
-                }
+                });
             }
-            );
         }
 
         #region Dispose

@@ -29,39 +29,10 @@ namespace Mpb.Consensus.BlockLogic
         }
 
         //! Decorator/composite pattern could be possible here. Only check for PoW things, then call the parent for more generic checks
-        public virtual void ValidateBlock(Block block, BigDecimal currentTarget, Blockchain blockchain, bool writeToBlockchain)
+        public virtual void ValidateBlock(Block block, BigDecimal currentTarget, Blockchain blockchain, bool checkTimestamp, bool writeToBlockchain)
         {
-            if (!block.Header.IsFinalized())
-            {
-                throw new BlockRejectedException("Block is not hashed or signed or hashed properly", block);
-            }
-            else if (block.Header.Hash != _blockFinalizer.CalculateHash(block))
-            {
-                throw new BlockRejectedException("The hash property of the block is not equal to the calculated hash", block);
-            }
-            
-            BigDecimal hashValue = BigInteger.Parse(block.Header.Hash, NumberStyles.HexNumber);
-
-            // Hash value must be lower than the target and the first byte must be zero
-            // because the first byte indidates if the hashValue is a positive or negative number,
-            // negative numbers are not allowed.
-            if (!block.Header.Hash.StartsWith("0"))
-            {
-                throw new BlockRejectedException("Hash has no leading zero", block);
-            }
-
-            // The hash value must be lower than the given target
-            if (hashValue >= currentTarget)
-            {
-                throw new BlockRejectedException("Hash value is equal or higher than the current target", block);
-            }
-
-            // Timestamp must not be lower than UTC - 2 min and not higher than UTC + 2 min
-            // Todo refactor 120 seconds to blockchainconstant
-            if (_timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp > BlockchainConstants.MaximumTimestampOffset || _timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp < (BlockchainConstants.MaximumTimestampOffset * -1))
-            {
-                throw new BlockRejectedException("Timestamp is not within the acceptable time range", block);
-            }
+            BigInteger.TryParse(block.Header.Hash, NumberStyles.HexNumber, new CultureInfo("en-US"), out var hashValue);
+            ValidateBlockHeader(block, hashValue, currentTarget, checkTimestamp);
 
             // Transaction list may not be empty
             if (block.Transactions.Count() == 0)
@@ -148,6 +119,41 @@ namespace Mpb.Consensus.BlockLogic
                 {
                     blockchain.Blocks.Add(block);
                 }
+            }
+        }
+
+        public virtual void ValidateBlockHeader(Block block, BigDecimal hashValue, BigDecimal currentTarget, bool checkTimestamp)
+        {
+            if (!block.Header.IsFinalized())
+            {
+                throw new BlockRejectedException("Block is not hashed or signed or hashed properly", block);
+            }
+            else if (block.Header.Hash != _blockFinalizer.CalculateHash(block))
+            {
+                throw new BlockRejectedException("The hash property of the block is not equal to the calculated hash", block);
+            }
+
+            // Hash value must be lower than the target and the first byte must be zero
+            // because the first byte indidates if the hashValue is a positive or negative number,
+            // negative numbers are not allowed.
+            if (!block.Header.Hash.StartsWith("0"))
+            {
+                throw new BlockRejectedException("Hash has no leading zero", block);
+            }
+
+            // The hash value must be lower than the given target
+            if (hashValue >= currentTarget)
+            {
+                throw new BlockRejectedException("Hash value is equal or higher than the current target", block);
+            }
+
+            if (!checkTimestamp) return;
+
+            // Timestamp must not be lower than UTC - 2 min and not higher than UTC + 2 min
+            // Todo refactor 120 seconds to blockchainconstant
+            if (_timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp > BlockchainConstants.MaximumTimestampOffset || _timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp < (BlockchainConstants.MaximumTimestampOffset * -1))
+            {
+                throw new BlockRejectedException("Timestamp is not within the acceptable time range", block);
             }
         }
     }

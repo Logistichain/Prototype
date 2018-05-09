@@ -28,10 +28,13 @@ namespace Mpb.Networking.Model
         internal event MessageReceivedEventHandler OnMessageReceived;
         public event DisconnectedEventHandler OnDisconnected;
         internal event ListenerEndpointChangedEventHandler OnListenerEndpointChanged;
+        internal event SyncStatusChangedEventHandler OnSyncStatusChanged;
         private ConnectionType _connectionType;
         private int _handshakeStage = 0;
         private DateTime _connectionEstablishedAt;
         private bool _isSyncCandidate = false;
+        private bool _isSyncingWithNode = false;
+        private SyncStatus _syncStatus = SyncStatus.NotSyncing;
 
         public NetworkNode(ConnectionType direction, Socket socket)
         {
@@ -89,6 +92,16 @@ namespace Mpb.Networking.Model
         /// </summary>
         public bool IsSyncCandidate { get => _isSyncCandidate; set => _isSyncCandidate = value; }
 
+        /// <summary>
+        /// This is true when we are synchronizing with this node, to prevent processing random 'Headers' messages.
+        /// </summary>
+        public bool IsSyncingWithNode => _syncStatus == SyncStatus.Initiated || _syncStatus == SyncStatus.InProgress;
+
+        /// <summary>
+        /// The status of how the synchronization with this node is going.
+        /// </summary>
+        public SyncStatus SyncStatus { get => _syncStatus; }
+
         public ConnectionType ConnectionType => _connectionType;
 
         /// <summary>
@@ -96,6 +109,12 @@ namespace Mpb.Networking.Model
         /// This value might change when the connection resets.
         /// </summary>
         public DateTime ConnectionEstablishedAt => _connectionEstablishedAt;
+
+        internal void SetSyncStatus(SyncStatus newStatus)
+        {
+            OnSyncStatusChanged?.Invoke(this, new SyncStatusChangedEventArgs(_syncStatus, newStatus));
+            _syncStatus = newStatus;
+        }
 
         internal void ProgressHandshakeStage()
         {

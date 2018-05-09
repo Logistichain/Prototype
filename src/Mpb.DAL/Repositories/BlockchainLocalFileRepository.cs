@@ -14,6 +14,7 @@ namespace Mpb.DAL
     {
         private string _blockchainFolderPath => Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
         private Blockchain _trackingBlockchain;
+        private object fileLock = new object();
 
         /// <summary>
         /// Serializes a Blockchain object to JSON and saves that to the given path.
@@ -21,13 +22,16 @@ namespace Mpb.DAL
         /// <param name="chain">The blockchain object that needs to be persisted</param>
         public void Update(Blockchain chain)
         {
-            var filePath = Path.Combine(_blockchainFolderPath, $"blockchain-{chain.NetIdentifier}.json");
-            var blockchainFile = File.Create(filePath);
-            JsonSerializer serializer = new JsonSerializer();
-            using (StreamWriter stream = new StreamWriter(blockchainFile))
-            using (JsonWriter writer = new JsonTextWriter(stream))
+            lock (fileLock)
             {
-                serializer.Serialize(writer, chain);
+                var filePath = Path.Combine(_blockchainFolderPath, $"blockchain-{chain.NetIdentifier}.json");
+                var blockchainFile = File.Create(filePath);
+                JsonSerializer serializer = new JsonSerializer();
+                using (StreamWriter stream = new StreamWriter(blockchainFile))
+                using (JsonWriter writer = new JsonTextWriter(stream))
+                {
+                    serializer.Serialize(writer, chain);
+                }
             }
         }
 
@@ -76,6 +80,22 @@ namespace Mpb.DAL
             throw new KeyNotFoundException("Block not found in blockchain");
         }
 
+        public Block GetBlockByPreviousHash(string previousBlockHash, string netIdentifier)
+        {
+            if (_trackingBlockchain == null)
+            {
+                GetChainByNetId(netIdentifier);
+            }
+
+            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Header.PreviousHash == previousBlockHash.ToUpper());
+            if (searchQuery.Count() > 0)
+            {
+                return searchQuery.First();
+            }
+
+            throw new KeyNotFoundException("Previous hash not found in blockchain");
+        }
+
         /// <summary>
         /// Returns a block which contains the transactionHash.
         /// Throws KeyNotFoundException when no block was found.
@@ -110,7 +130,6 @@ namespace Mpb.DAL
         /// <returns>The height for the given block hash</returns>
         public int GetHeightForBlock(string hash, string netIdentifier)
         {
-
             if (_trackingBlockchain == null)
             {
                 GetChainByNetId(netIdentifier);
@@ -144,7 +163,7 @@ namespace Mpb.DAL
             catch (Exception ex) when (ex is DirectoryNotFoundException || ex is FileNotFoundException)
             {
                 // File does not exist, return a new blockchain.
-                var loadedBlockchain = new Blockchain(netIdentifier);
+                var loadedBlockchain = new Blockchain(new List<Block>() { new GenesisBlock() }, netIdentifier);
                 return loadedBlockchain;
             }
         }

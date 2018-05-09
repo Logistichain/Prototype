@@ -17,6 +17,7 @@ namespace Mpb.Consensus.Test.Logic
 {
     /// <summary>
     /// These testmethods are structured by using the AAA method (Arrange, Act, Assert).
+    /// Todo: Cover the scenario where the timestamp isn't checked.
     /// </summary>
     [TestClass]
     public class PowBlockValidatorTest
@@ -76,7 +77,7 @@ namespace Mpb.Consensus.Test.Logic
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Block is not hashed or signed or hashed properly", ex.Message);
@@ -92,7 +93,7 @@ namespace Mpb.Consensus.Test.Logic
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Block is not hashed or signed or hashed properly", ex.Message);
@@ -108,7 +109,7 @@ namespace Mpb.Consensus.Test.Logic
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Block is not hashed or signed or hashed properly", ex.Message);
@@ -124,7 +125,7 @@ namespace Mpb.Consensus.Test.Logic
             var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Block is not hashed or signed or hashed properly", ex.Message);
@@ -148,7 +149,7 @@ namespace Mpb.Consensus.Test.Logic
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns("otherhash");
             
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("The hash property of the block is not equal to the calculated hash", ex.Message);
@@ -171,7 +172,7 @@ namespace Mpb.Consensus.Test.Logic
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Hash has no leading zero", ex.Message);
@@ -189,7 +190,7 @@ namespace Mpb.Consensus.Test.Logic
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Hash value is equal or higher than the current target", ex.Message);
@@ -208,7 +209,7 @@ namespace Mpb.Consensus.Test.Logic
             _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Hash value is equal or higher than the current target", ex.Message);
@@ -228,7 +229,7 @@ namespace Mpb.Consensus.Test.Logic
             // The blockToTest's timestamp is too early because the current timestamp is 130 and the block is from timestamp 1
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Timestamp is not within the acceptable time range", ex.Message);
@@ -250,7 +251,7 @@ namespace Mpb.Consensus.Test.Logic
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(BlockchainConstants.MaximumTimestampOffset + 1); // The blockToTest's timestamp is exactly on the edge
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreNotEqual("Timestamp is not within the acceptable time range", ex.Message);
@@ -269,7 +270,7 @@ namespace Mpb.Consensus.Test.Logic
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // The blockToTest's timestamp is too late
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Timestamp is not within the acceptable time range", ex.Message);
@@ -291,7 +292,7 @@ namespace Mpb.Consensus.Test.Logic
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // The blockToTest's timestamp is exactly on the edge
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreNotEqual("Hash has no leading zero", ex.Message);
@@ -311,7 +312,7 @@ namespace Mpb.Consensus.Test.Logic
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // Exact same timestamp as the block
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreNotEqual("Timestamp is not within the acceptable time range", ex.Message);
@@ -330,7 +331,7 @@ namespace Mpb.Consensus.Test.Logic
             _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
             
             Assert.AreEqual("Transaction list cannot be empty", ex.Message);
@@ -353,7 +354,7 @@ namespace Mpb.Consensus.Test.Logic
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("otherMerklerootValue");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Incorrect merkleroot", ex.Message);
@@ -376,7 +377,7 @@ namespace Mpb.Consensus.Test.Logic
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("First transaction is not coinbase", ex.Message);
@@ -400,7 +401,7 @@ namespace Mpb.Consensus.Test.Logic
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
                 );
 
             Assert.AreEqual("Multiple coinbase transactions found", ex.Message);
@@ -423,7 +424,7 @@ namespace Mpb.Consensus.Test.Logic
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain("network2"), true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain("network2"), true, true)
                 );
 
             Assert.AreEqual("Block comes from a different network", ex.Message);
@@ -449,7 +450,7 @@ namespace Mpb.Consensus.Test.Logic
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true)
                 );
 
             Assert.AreEqual("Previous blockhash does not exist in our chain", ex.Message);
@@ -478,7 +479,7 @@ namespace Mpb.Consensus.Test.Logic
             _transactionValidator.Setup(m => m.ValidateTransaction(transactions.First()));
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true)
                 );
 
             Assert.AreEqual("Split chaining is not supported", ex.Message);
@@ -509,7 +510,7 @@ namespace Mpb.Consensus.Test.Logic
             _transactionValidator.Setup(m => m.ValidateTransaction(transactions.First()));
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
-                    () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true)
+                    () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true)
                 );
 
             Assert.AreEqual("Another block with higher difficulty points to the same PreviousHash", ex.Message);
@@ -533,7 +534,7 @@ namespace Mpb.Consensus.Test.Logic
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
             _transactionValidator.Setup(m => m.ValidateTransaction(transactions.First()));
 
-            sut.ValidateBlock(blockToTest, currentTarget, blockchain, true);
+            sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true);
             
             Assert.AreEqual(blockToTest, blockchain.Blocks.First());
             Assert.AreEqual(1, blockchain.Blocks.Count());
@@ -562,7 +563,7 @@ namespace Mpb.Consensus.Test.Logic
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
             _transactionValidator.Setup(m => m.ValidateTransaction(transactions.First()));
 
-            sut.ValidateBlock(blockToTest, currentTarget, blockchain, true);
+            sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true);
 
             Assert.AreEqual(blockToTest, blockchain.Blocks.Last());
             Assert.AreEqual(3, blockchain.Blocks.Count());
@@ -590,7 +591,7 @@ namespace Mpb.Consensus.Test.Logic
             _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
             _transactionValidator.Setup(m => m.ValidateTransaction(transactions.First()));
 
-            sut.ValidateBlock(blockToTest, currentTarget, blockchain, true);
+            sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true);
 
             Assert.AreEqual(blockToTest, blockchain.Blocks.Last());
             Assert.AreEqual(4, blockchain.Blocks.Count());

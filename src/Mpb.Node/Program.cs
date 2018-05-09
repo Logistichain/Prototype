@@ -211,7 +211,13 @@ namespace Mpb.Node
                 .AddTransient(x => ConcurrentTransactionPool.GetInstance().SetTransactionValidator(x.GetService<ITransactionValidator>()))
                 .AddTransient(x => NetworkNodesPool.GetInstance(x.GetService<ILoggerFactory>()))
                 .AddTransient<INetworkManager, NetworkManager>(
-                        (x) => new NetworkManager(x.GetService<NetworkNodesPool>(), x.GetService<ILoggerFactory>(), x.GetService<IBlockchainRepository>(), networkIdentifier)
+                        (x) => new NetworkManager(
+                            x.GetService<NetworkNodesPool>(),
+                            x.GetService<ILoggerFactory>(),
+                            x.GetService<IBlockValidator>(),
+                            x.GetService<IDifficultyCalculator>(),
+                            x.GetService<IBlockchainRepository>(),
+                            networkIdentifier)
                     )
 
                 .AddTransient(

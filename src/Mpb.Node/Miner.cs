@@ -159,12 +159,7 @@ namespace Mpb.Node
                 {
                     if (difficulty < 1) { difficulty = 1; }
                     var newBlock = _blockCreator.CreateValidBlockAndAddToChain(_walletPrivKey, _blockchain, transactions, difficulty, cancellationToken);
-
-                    lock (_blockchain)
-                    {
-                        _blockchain.Blocks.Add(newBlock);
-                    }
-
+                    
                     lock (_txPool)
                     {
                         foreach(var transaction in newBlock.Transactions)

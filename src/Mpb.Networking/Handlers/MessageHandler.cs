@@ -1,9 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
+using Mpb.Consensus.BlockLogic;
+using Mpb.DAL;
+using Mpb.Model;
 using Mpb.Networking.Constants;
 using Mpb.Networking.Model;
 using Mpb.Networking.Model.MessagePayloads;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,8 +16,18 @@ namespace Mpb.Networking
 {
     public class MessageHandler : AbstractMessageHandler, IMessageHandler
     {
-        public MessageHandler(INetworkManager manager, NetworkNodesPool nodePool, ILoggerFactory loggerFactory)
-            : base(manager, nodePool, loggerFactory) { }
+        private readonly IDifficultyCalculator _difficultyCalculator;
+        private readonly IBlockValidator _blockValidator;
+        private readonly IBlockchainRepository _blockchainRepo;
+        private readonly string _netId;
+
+        public MessageHandler(INetworkManager manager, NetworkNodesPool nodePool, IDifficultyCalculator difficultyCalculator, IBlockValidator blockValidator, ILoggerFactory loggerFactory, IBlockchainRepository blockchainRepo, string netId)
+            : base(manager, nodePool, loggerFactory) {
+            _difficultyCalculator = difficultyCalculator;
+            _blockValidator = blockValidator;
+            _blockchainRepo = blockchainRepo;
+            _netId = netId;
+        }
 
         // todo Chain of Responsibility pattern, make XXMessageHandler class for each command type
         // and refactor abstractmessagehandler to a regular MessageHandlerHelper
@@ -33,18 +47,124 @@ namespace Mpb.Networking
                 }
                 else if (msg.Command == NetworkCommand.Addr.ToString())
                 {
-                    // Connect to all peers the other peer knows
+                    // Connect to all neighbors that the other node knows
                     var payload = (AddrPayload)msg.Payload;
                     foreach(IPEndPoint endpoint in payload.Endpoints)
                     {
                         await _networkManager.ConnectToPeer(endpoint);
                     }
                 }
+                else if (msg.Command == NetworkCommand.GetHeaders.ToString())
+                {
+                    // Send our headers
+                    var payload = (GetHeadersPayload)msg.Payload;
+                    try
+                    {
+                        var headers = GetBlocksFromHash(payload.HighestHeightHash, payload.StoppingHash).Select(b => b.Header);
+                        var headersPayload = new HeadersPayload(headers);
+                        await SendMessageToNode(node, NetworkCommand.Headers, headersPayload);
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        // Send empty payload
+                        await SendMessageToNode(node, NetworkCommand.NotFound, null);
+                    }
+                }
+                else if (msg.Command == NetworkCommand.GetBlocks.ToString())
+                {
+                    var payload = (GetBlocksPayload)msg.Payload;
+                    var blocksPayload = new StateBlocksPayload();
+                    if (payload.Headers.Count() > 0)
+                    {
+                        blocksPayload = new StateBlocksPayload(GetBlocksFromHash(payload.Headers.First(), payload.Headers.Last()));
+                    }
+
+                    await SendMessageToNode(node, NetworkCommand.Blocks, blocksPayload);
+                }
+                else if (msg.Command == NetworkCommand.Headers.ToString() && node.IsSyncingWithNode)
+                {
+                    node.SetSyncStatus(SyncStatus.InProgress);
+                    var headersPayload = (HeadersPayload)msg.Payload;
+
+                    // Request these blocks
+                    var getBlocksPayload = new GetBlocksPayload(headersPayload.Headers.Select(h => h.Hash));
+                    await SendMessageToNode(node, NetworkCommand.GetBlocks, getBlocksPayload);
+                }
+                else if (msg.Command == NetworkCommand.NotFound.ToString() && node.IsSyncingWithNode)
+                {
+                    node.SetSyncStatus(SyncStatus.Failed); // Restart the syncing process with another node.
+                }
+                else if (msg.Command == NetworkCommand.Blocks.ToString() && node.IsSyncingWithNode)
+                {
+                    var blocksPayload = (StateBlocksPayload)msg.Payload;
+                    if (blocksPayload.Blocks.Count() == 0)
+                    {
+                        node.SetSyncStatus(SyncStatus.Succeeded);
+                        return;
+                    }
+                    
+                    // Todo rewrite this code to support multithreaded 'Blocks' messages. Combine all gathered blocks
+                    // until the process has completed and all blocks are downloaded. Then, grab a block that points to the
+                    // end of our chain and add it to our chain. Repeat that process until all blocks have been added.
+
+                    var blockchain = _blockchainRepo.GetChainByNetId(_netId);
+                    var blocksProcessed = 0;
+
+                    while (blocksPayload.Blocks.Where(b => b.Header.PreviousHash == blockchain.Blocks.Last().Header.Hash).Any())
+                    {
+                        var blockToProcess = blocksPayload.Blocks.Where(b => b.Header.PreviousHash == blockchain.Blocks.Last().Header.Hash).First();
+                        var difficulty = _difficultyCalculator.CalculateCurrentDifficulty(blockchain);
+                        _blockValidator.ValidateBlock(blockToProcess, difficulty, blockchain, true, true); // Rethrow when we have a BlockRejectedException. We don't want to keep a connection with bad nodes.
+                        blocksProcessed++;
+                    }
+
+                    if (blocksProcessed != blocksPayload.Blocks.Count())
+                    {
+                        node.SetSyncStatus(SyncStatus.Failed);
+                        return;
+                    }
+
+                    _blockchainRepo.Update(blockchain);
+
+                    // Block batch processed. Keep on ask for more headers.
+                    var getHeadersPayload = new GetHeadersPayload(blockchain.Blocks.Last().Header.Hash);
+                    await SendMessageToNode(node, NetworkCommand.GetHeaders, getHeadersPayload);
+                }
             }
             catch(Exception)
             {
                 node?.Disconnect();
             }
+        }
+
+        private IEnumerable<Block> GetBlocksFromHash(string beginHash, string stopHash)
+        {
+            var blocks = new List<Block>();
+            bool stopSearching = false;
+            var previousBlock = _blockchainRepo.GetBlockByHash(beginHash, _netId);
+            var i = 0;
+
+            while(i < NetworkConstants.MaxHeadersInMessage && !stopSearching)
+            {
+                // Stale blocks / side chains are not supported here
+                try
+                {
+                    previousBlock = _blockchainRepo.GetBlockByPreviousHash(previousBlock.Header.Hash, _netId);
+                    blocks.Add(previousBlock);
+
+                    if (previousBlock.Header.Hash == stopHash)
+                    {
+                        stopSearching = true;
+                    }
+                }
+                catch (KeyNotFoundException)
+                {
+                    stopSearching = true; // No more blocks found
+                }
+                i++;
+            }
+
+            return blocks;
         }
     }
 }

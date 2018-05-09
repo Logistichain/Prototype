@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Mpb.Consensus\Mpb.Consensus.csproj" />
     <ProjectReference Include="..\Mpb.DAL\Mpb.DAL.csproj" />
     <ProjectReference Include="..\Mpb.Model\Mpb.Model.csproj" />
     <ProjectReference Include="..\Mpb.Shared\Mpb.Shared.csproj" />

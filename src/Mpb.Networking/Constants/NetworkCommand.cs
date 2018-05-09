@@ -12,6 +12,9 @@ namespace Mpb.Networking.Constants
         GetAddr,
         CloseConn,
         GetHeaders,
-        Headers
+        Headers,
+        GetBlocks,
+        Blocks,
+        NotFound
     }
 }

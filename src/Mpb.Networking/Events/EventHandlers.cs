@@ -7,4 +7,5 @@ namespace Mpb.Networking.Events
     internal delegate void MessageReceivedEventHandler(object sender, MessageEventArgs eventHandler);
     public delegate void DisconnectedEventHandler(object sender);
     internal delegate void ListenerEndpointChangedEventHandler(object sender, ListenerEndpointChangedEventArgs eventHandler);
+    internal delegate void SyncStatusChangedEventHandler(object sender, SyncStatusChangedEventArgs eventHandler);
 }

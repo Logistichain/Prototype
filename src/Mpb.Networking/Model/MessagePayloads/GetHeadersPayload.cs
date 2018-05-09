@@ -8,7 +8,6 @@ namespace Mpb.Networking.Model.MessagePayloads
 {
     public class GetHeadersPayload : ISerializableComponent
     {
-        private uint _protocolVersion;
         private string _highestHeightHash;
         private string _stoppingHash;
 
@@ -25,14 +24,10 @@ namespace Mpb.Networking.Model.MessagePayloads
         /// </summary>
         internal string HighestHeightHash => _highestHeightHash;
 
-        /// <summary>
-        /// Our consensus protocol version.
-        /// </summary>
-        internal uint ProtocolVersion => _protocolVersion;
+        public GetHeadersPayload(string highestHeightHash) : this(highestHeightHash, "00000000000000000000000000000000") { }
         
-        public GetHeadersPayload(uint protocolVersion, string highestHeightHash, string stoppingHash)
+        public GetHeadersPayload(string highestHeightHash, string stoppingHash)
         {
-            _protocolVersion = protocolVersion;
             _highestHeightHash = highestHeightHash;
             _stoppingHash = stoppingHash;
         }
@@ -40,7 +35,6 @@ namespace Mpb.Networking.Model.MessagePayloads
         #region Serialization
         public void Deserialize(BinaryReader reader)
         {
-            _protocolVersion = reader.ReadUInt32();
             _highestHeightHash = reader.ReadFixedString(32);
             _stoppingHash = reader.ReadFixedString(32);
         }
@@ -58,7 +52,6 @@ namespace Mpb.Networking.Model.MessagePayloads
         
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(_protocolVersion);
             writer.WriteFixedString(_highestHeightHash, 32);
             writer.WriteFixedString(_stoppingHash, 32);
         }
