@@ -74,8 +74,28 @@ namespace Mpb.Networking.Model
                     Payload = new AddrPayload();
                     Payload.Deserialize(br);
                 }
+                else if (Command == NetworkCommand.GetHeaders.ToString())
+                {
+                    Payload = new GetHeadersPayload();
+                    Payload.Deserialize(br);
+                }
+                else if (Command == NetworkCommand.Headers.ToString())
+                {
+                    Payload = new HeadersPayload();
+                    Payload.Deserialize(br);
+                }
+                else if (Command == NetworkCommand.GetBlocks.ToString())
+                {
+                    Payload = new GetBlocksPayload();
+                    Payload.Deserialize(br);
+                }
+                else if (Command == NetworkCommand.Blocks.ToString())
+                {
+                    Payload = new StateBlocksPayload();
+                    Payload.Deserialize(br);
+                }
                 else if (Command != NetworkCommand.VerAck.ToString() && Command != NetworkCommand.GetAddr.ToString()
-                    && Command != NetworkCommand.CloseConn.ToString()) // No payloads for these ones
+                    && Command != NetworkCommand.CloseConn.ToString() && Command != NetworkCommand.NotFound.ToString()) // No payloads for these ones
                 {
                     throw new ArgumentException("Unknown command, cannot deserialize Payload");
                 }

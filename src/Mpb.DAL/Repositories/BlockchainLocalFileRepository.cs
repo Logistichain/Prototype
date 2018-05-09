@@ -71,7 +71,7 @@ namespace Mpb.DAL
                 GetChainByNetId(netIdentifier);
             }
 
-            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Header.Hash == blockHash.ToUpper());
+            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Header.Hash.ToUpper() == blockHash.ToUpper());
             if (searchQuery.Count() > 0)
             {
                 return searchQuery.First();
@@ -87,7 +87,7 @@ namespace Mpb.DAL
                 GetChainByNetId(netIdentifier);
             }
 
-            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Header.PreviousHash == previousBlockHash.ToUpper());
+            var searchQuery = _trackingBlockchain.Blocks.Where(b => b.Header.PreviousHash != null && b.Header.PreviousHash.ToUpper() == previousBlockHash.ToUpper());
             if (searchQuery.Count() > 0)
             {
                 return searchQuery.First();
@@ -150,14 +150,18 @@ namespace Mpb.DAL
             var filePath = Path.Combine(_blockchainFolderPath, $"blockchain-{netIdentifier}.json");
             try
             {
-                var blockchainFile = File.OpenRead(filePath);
-                JsonSerializer serializer = new JsonSerializer();
-                using (StreamReader stream = new StreamReader(blockchainFile))
+                lock (fileLock)
                 {
-                    JsonSerializerSettings settings = new JsonSerializerSettings();
-                    settings.Converters.Add(new BlockchainJsonConverter());
-                    settings.Converters.Add(new StateTransactionJsonConverter());
-                    return JsonConvert.DeserializeObject<Blockchain>(stream.ReadToEnd(), settings);
+                    var blockchainFile = File.OpenRead(filePath);
+                    JsonSerializer serializer = new JsonSerializer();
+                    using (StreamReader stream = new StreamReader(blockchainFile))
+                    {
+                        JsonSerializerSettings settings = new JsonSerializerSettings();
+                        settings.Converters.Add(new BlockHeaderJsonConverter());
+                        settings.Converters.Add(new BlockchainJsonConverter());
+                        settings.Converters.Add(new StateTransactionJsonConverter());
+                        return JsonConvert.DeserializeObject<Blockchain>(stream.ReadToEnd(), settings);
+                    }
                 }
             }
             catch (Exception ex) when (ex is DirectoryNotFoundException || ex is FileNotFoundException)

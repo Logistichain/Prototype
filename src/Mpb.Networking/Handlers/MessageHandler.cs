@@ -5,6 +5,7 @@ using Mpb.Model;
 using Mpb.Networking.Constants;
 using Mpb.Networking.Model;
 using Mpb.Networking.Model.MessagePayloads;
+using Mpb.Shared.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +23,8 @@ namespace Mpb.Networking
         private readonly string _netId;
 
         public MessageHandler(INetworkManager manager, NetworkNodesPool nodePool, IDifficultyCalculator difficultyCalculator, IBlockValidator blockValidator, ILoggerFactory loggerFactory, IBlockchainRepository blockchainRepo, string netId)
-            : base(manager, nodePool, loggerFactory) {
+            : base(manager, nodePool, loggerFactory)
+        {
             _difficultyCalculator = difficultyCalculator;
             _blockValidator = blockValidator;
             _blockchainRepo = blockchainRepo;
@@ -49,7 +51,7 @@ namespace Mpb.Networking
                 {
                     // Connect to all neighbors that the other node knows
                     var payload = (AddrPayload)msg.Payload;
-                    foreach(IPEndPoint endpoint in payload.Endpoints)
+                    foreach (IPEndPoint endpoint in payload.Endpoints)
                     {
                         await _networkManager.ConnectToPeer(endpoint);
                     }
@@ -60,7 +62,7 @@ namespace Mpb.Networking
                     var payload = (GetHeadersPayload)msg.Payload;
                     try
                     {
-                        var headers = GetBlocksFromHash(payload.HighestHeightHash, payload.StoppingHash).Select(b => b.Header);
+                        var headers = GetBlocksFromHash(payload.HighestHeightHash, payload.StoppingHash, false).Select(b => b.Header);
                         var headersPayload = new HeadersPayload(headers);
                         await SendMessageToNode(node, NetworkCommand.Headers, headersPayload);
                     }
@@ -76,7 +78,7 @@ namespace Mpb.Networking
                     var blocksPayload = new StateBlocksPayload();
                     if (payload.Headers.Count() > 0)
                     {
-                        blocksPayload = new StateBlocksPayload(GetBlocksFromHash(payload.Headers.First(), payload.Headers.Last()));
+                        blocksPayload = new StateBlocksPayload(GetBlocksFromHash(payload.Headers.First(), payload.Headers.Last(), true));
                     }
 
                     await SendMessageToNode(node, NetworkCommand.Blocks, blocksPayload);
@@ -102,7 +104,7 @@ namespace Mpb.Networking
                         node.SetSyncStatus(SyncStatus.Succeeded);
                         return;
                     }
-                    
+
                     // Todo rewrite this code to support multithreaded 'Blocks' messages. Combine all gathered blocks
                     // until the process has completed and all blocks are downloaded. Then, grab a block that points to the
                     // end of our chain and add it to our chain. Repeat that process until all blocks have been added.
@@ -113,8 +115,10 @@ namespace Mpb.Networking
                     while (blocksPayload.Blocks.Where(b => b.Header.PreviousHash == blockchain.Blocks.Last().Header.Hash).Any())
                     {
                         var blockToProcess = blocksPayload.Blocks.Where(b => b.Header.PreviousHash == blockchain.Blocks.Last().Header.Hash).First();
-                        var difficulty = _difficultyCalculator.CalculateCurrentDifficulty(blockchain);
-                        _blockValidator.ValidateBlock(blockToProcess, difficulty, blockchain, true, true); // Rethrow when we have a BlockRejectedException. We don't want to keep a connection with bad nodes.
+                        var difficulty = _difficultyCalculator.CalculateDifficulty(blockchain, blockchain.CurrentHeight, 1, 3, 5); // todo use CalculateCurrentDifficulty when testing is done
+                        if (difficulty < 1) { difficulty = 1; }
+                        var currentTarget = BlockchainConstants.MaximumTarget / difficulty; // todo do something with these 3 lines. They come from the miner.
+                        _blockValidator.ValidateBlock(blockToProcess, currentTarget, blockchain, false, true); // Rethrow when we have a BlockRejectedException. We don't want to keep a connection with bad nodes.
                         blocksProcessed++;
                     }
 
@@ -131,20 +135,26 @@ namespace Mpb.Networking
                     await SendMessageToNode(node, NetworkCommand.GetHeaders, getHeadersPayload);
                 }
             }
-            catch(Exception)
+            catch (Exception ex)
             {
+                // todo log
                 node?.Disconnect();
             }
         }
 
-        private IEnumerable<Block> GetBlocksFromHash(string beginHash, string stopHash)
+        private IEnumerable<Block> GetBlocksFromHash(string beginHash, string stopHash, bool includeBeginBlock)
         {
             var blocks = new List<Block>();
             bool stopSearching = false;
             var previousBlock = _blockchainRepo.GetBlockByHash(beginHash, _netId);
             var i = 0;
 
-            while(i < NetworkConstants.MaxHeadersInMessage && !stopSearching)
+            if (includeBeginBlock)
+            {
+                blocks.Add(previousBlock);
+            }
+
+            while (i < NetworkConstants.MaxHeadersInMessage && !stopSearching)
             {
                 // Stale blocks / side chains are not supported here
                 try

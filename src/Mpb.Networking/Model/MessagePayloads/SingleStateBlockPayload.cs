@@ -24,30 +24,53 @@ namespace Mpb.Networking.Model.MessagePayloads
         #region Serialization
         public void Deserialize(BinaryReader reader)
         {
-            var hash = reader.ReadFixedString(32);
-            var previoushHash = reader.ReadFixedString(32);
+            var blockHash = reader.ReadFixedString(64);
+            var blockSignature = reader.ReadFixedString(64); // todo signature
+            var previoushHash = reader.ReadFixedString(64);
             var magicNumber = reader.ReadFixedString(7);
             var blockVersion = reader.ReadUInt32();
-            var merkleRoot = reader.ReadFixedString(32);
+            var merkleRoot = reader.ReadFixedString(64);
             long timestamp = reader.ReadInt64();
             ulong nonce = reader.ReadUInt64();
             // todo signature
             var txCount = reader.ReadInt32();
             var transactions = new List<AbstractTransaction>();
-            for(int txi = 0; txi < txCount; txi++)
+            for (int txi = 0; txi < txCount; txi++)
             {
-                var fromPubKey = reader.ReadFixedString(32); // Todo wallet implementation
-                var toPubKey = reader.ReadFixedString(32); // Todo wallet implementation
-                var skuBlockHash = reader.ReadFixedString(32);
+                var txHash = reader.ReadFixedString(64);
+                var txSignature = reader.ReadFixedString(64); // todo signature
+                var fromPubKey = reader.ReadFixedString(64); // Todo wallet implementation
+                var toPubKey = reader.ReadFixedString(64); // Todo wallet implementation
+                var skuBlockHash = reader.ReadFixedString(64);
                 var skuTxIndex = reader.ReadInt32();
                 var amount = reader.ReadUInt32();
                 var txVersion = reader.ReadUInt32();
                 var action = reader.ReadFixedString(16);
                 var fee = reader.ReadUInt32();
                 var dataSize = reader.ReadInt32();
-                var data = reader.ReadFixedString(dataSize);
+                var data = "";
+                if (dataSize > 0)
+                {
+                    data = reader.ReadFixedString(dataSize+1);
+                    data = data.Base64Decode();
+                }
+
+                var tx = new StateTransaction(
+                        string.IsNullOrEmpty(fromPubKey) ? null : fromPubKey,
+                        string.IsNullOrEmpty(toPubKey) ? null : toPubKey,
+                        string.IsNullOrEmpty(skuBlockHash) ? null : skuBlockHash,
+                        skuTxIndex,
+                        amount,
+                        txVersion,
+                        action,
+                        data,
+                        fee);
+                tx.Finalize(txHash, txSignature);
+                transactions.Add(tx);
             }
-            var header = new BlockHeader(magicNumber, blockVersion, merkleRoot, timestamp, previoushHash).Finalize(hash, "");
+            var header = new BlockHeader(magicNumber, blockVersion, merkleRoot, timestamp, previoushHash).Finalize(blockHash, "");
+            header.Finalize(blockHash, blockSignature);
+            header.IncrementNonce(nonce);
             _block = new Block(header, transactions);
         }
 
@@ -64,27 +87,34 @@ namespace Mpb.Networking.Model.MessagePayloads
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteFixedString(_block.Header.Hash, 32);
-            writer.WriteFixedString(_block.Header.PreviousHash, 32);
+            writer.WriteFixedString(_block.Header.Hash, 64);
+            writer.WriteFixedString(_block.Header.Signature, 64);
+            writer.WriteFixedString(_block.Header.PreviousHash, 64);
             writer.WriteFixedString(_block.Header.MagicNumber, 7);
             writer.Write(_block.Header.Version);
-            writer.WriteFixedString(_block.Header.MerkleRoot, 32);
+            writer.WriteFixedString(_block.Header.MerkleRoot, 64);
             writer.Write(_block.Header.Timestamp);
             writer.Write(_block.Header.Nonce);
             // todo signature
             writer.Write(_block.Transactions.Count());
             foreach (var tx in _block.Transactions.ToList().OfType<StateTransaction>())
             {
-                writer.WriteFixedString(tx.FromPubKey, 32); // Todo wallet implementation
-                writer.WriteFixedString(tx.ToPubKey, 32); // Todo wallet implementation
-                writer.WriteFixedString(tx.SkuBlockHash, 32);
+                var encodedData = tx.Data?.Base64Encode();
+                writer.WriteFixedString(tx.Hash, 64);
+                writer.WriteFixedString(tx.Signature, 64); // Todo signature
+                writer.WriteFixedString(tx.FromPubKey ?? "", 64); // Todo wallet implementation
+                writer.WriteFixedString(tx.ToPubKey ?? "", 64); // Todo wallet implementation
+                writer.WriteFixedString(tx.SkuBlockHash ?? "", 64);
                 writer.Write(tx.SkuTxIndex);
                 writer.Write(tx.Amount);
                 writer.Write(tx.Version);
                 writer.WriteFixedString(tx.Action, 16);
                 writer.Write(tx.Fee);
-                writer.Write(tx.Data.Length);
-                writer.Write(tx.Data);
+                writer.Write(encodedData != null ? encodedData.Length : 0);
+                if (encodedData != null)
+                {
+                    writer.Write(encodedData);
+                }
             }
         }
         #endregion

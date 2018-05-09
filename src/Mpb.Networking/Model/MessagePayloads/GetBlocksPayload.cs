@@ -28,7 +28,7 @@ namespace Mpb.Networking.Model.MessagePayloads
             var count = reader.ReadInt32();
             for(int i = 0; i < count; i++)
             {
-                var hash = reader.ReadFixedString(32);
+                var hash = reader.ReadFixedString(64);
                 deserializedHashes.Add(hash);
             }
             _hashes = deserializedHashes;
@@ -50,7 +50,7 @@ namespace Mpb.Networking.Model.MessagePayloads
             writer.Write(_hashes.Count());
             foreach(var hash in _hashes)
             {
-                writer.WriteFixedString(hash, 32);
+                writer.WriteFixedString(hash, 64);
             }
         }
         #endregion

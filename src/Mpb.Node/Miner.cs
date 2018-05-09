@@ -125,7 +125,7 @@ namespace Mpb.Node
                 // Every 10 blocks, recalculate the difficulty and save the blockchain.
                 if (_blockchain.CurrentHeight % difficultyUpdateCycle == 0 && _blockchain.CurrentHeight > 0)
                 {
-                    difficulty = _difficultyCalculator.CalculateDifficulty(_blockchain, _blockchain.CurrentHeight, 1, secondsPerBlockGoal, difficultyUpdateCycle);
+                    difficulty = _difficultyCalculator.CalculateDifficulty(_blockchain, _blockchain.CurrentHeight, 1, secondsPerBlockGoal, difficultyUpdateCycle); // todo use CalculateCurrentDifficulty when testing is done
                     _blockchainRepo.Update(_blockchain);
                     _logger.LogInformation("Blockchain persisted.");
                     var difficultyInfo = _difficultyCalculator.GetPreviousDifficultyUpdateInformation(_blockchain, difficultyUpdateCycle);

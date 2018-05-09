@@ -40,6 +40,10 @@ namespace Mpb.Networking
             _netId = netId;
             _messageHandler = new MessageHandler(this, nodePool, difficultyCalculator, blockValidator, loggerFactory, repo, netId);
             _handshakeMessageHandler = new HandshakeMessageHandler(this, nodePool, loggerFactory, repo, netId);
+
+            // In the first phase, check every 10s if there is a node that has a longer chain than ours.
+            // After the sync completed, exit the 'syncing' state and accept new blocks and transactions.
+            StartSyncProcess(new CancellationTokenSource()); // todo cts
         }
 
         public ushort ListeningPort => _port;
@@ -70,10 +74,6 @@ namespace Mpb.Networking
                 {
                     continue;
                 }
-
-                // In the first phase, check every 10s if there is a node that has a longer chain than ours.
-                // After the sync completed, exit the 'syncing' state and accept new blocks and transactions.
-                StartSyncProcess(cts);
 
                 var nwNode = new NetworkNode(ConnectionType.Inbound, socket);
                 _nodePool.AddNetworkNode(nwNode);
@@ -140,7 +140,8 @@ namespace Mpb.Networking
             try
             {
                 // Send a version message
-                ISerializableComponent versionPayload = new VersionPayload(BlockchainConstants.ProtocolVersion, 1, _port);
+                int currentHeight = _repo.GetChainByNetId(_netId).CurrentHeight;
+                ISerializableComponent versionPayload = new VersionPayload(BlockchainConstants.ProtocolVersion, currentHeight, _port);
                 await _handshakeMessageHandler.SendMessageToNode(node, NetworkCommand.Version, versionPayload);
                 node.ProgressHandshakeStage(); // Then the handshakeMessageHandler takes care of the rest of the process
             }
@@ -151,7 +152,7 @@ namespace Mpb.Networking
             }
 
             // Listen for new messages with a large timeout
-            node.OnMessageReceived += new Events.MessageReceivedEventHandler((sender, args) =>
+            node.OnMessageReceived += new MessageReceivedEventHandler((sender, args) =>
             {
                 ProcessIncomingMessage(node, args.Message);
             });
@@ -215,56 +216,55 @@ namespace Mpb.Networking
                 var x = _messageHandler.ListenForNewMessage(node, new TimeSpan(0, 0, NetworkConstants.IdleTimeoutSeconds)).Result;
             }
         }
-        
+
         internal void StartSyncProcess(CancellationTokenSource cts)
         {
-            int syncAttempts = 0;
-            while (!cts.IsCancellationRequested && _isSyncing && syncAttempts < 6)
+            _ = Task.Run(async () =>
             {
-                _ = Task.Run(async () =>
+                while (!cts.IsCancellationRequested && _isSyncing)
                 {
                     await Task.Delay(10000);
+                    var isSyncingAlready = _nodePool.GetAllNetworkNodes().Where(n => n.IsSyncingWithNode).Any();
+                    if (isSyncingAlready) { continue; } // One syncnode at a time.
                     try
                     {
-                        syncAttempts++;
                         var syncNode = _nodePool.GetAllNetworkNodes()
-                            .Where(n => n.HandshakeIsCompleted && n.IsSyncCandidate)
-                            .OrderBy(x => Guid.NewGuid()).Take(1).First();
+                                .Where(n => n.HandshakeIsCompleted && n.IsSyncCandidate && !n.IsSyncingWithNode)
+                                .OrderBy(x => Guid.NewGuid()).Take(1).First();
                         _logger.LogDebug($"Attempting to sync with node {syncNode.ListenEndpoint.Address.ToString()}:{syncNode.ListenEndpoint.Port}.");
 
                         syncNode.SetSyncStatus(SyncStatus.Initiated);
                         SyncStatusChangedEventHandler syncStatusChangedEventHandler = null;
                         syncStatusChangedEventHandler =
-                        (object sender, SyncStatusChangedEventArgs ev) =>
-                        {
-                            var node = (NetworkNode)sender;
-                            if (ev.NewStatus == SyncStatus.Succeeded)
+                            (object sender, SyncStatusChangedEventArgs ev) =>
                             {
-                                _isSyncing = false;
-                                node.IsSyncCandidate = false;
-                                node.OnSyncStatusChanged -= syncStatusChangedEventHandler;
-                            }
-                            else if (ev.NewStatus == SyncStatus.Failed)
-                            {
-                                // Try again with another node.
-                                var endpoint = node.ListenEndpoint ?? node.DirectEndpoint;
-                                _logger.LogWarning("Failed to sync with node {0} on port {1}.", endpoint.Address.ToString(), endpoint.Port);
-                                node.IsSyncCandidate = false;
-                                node.OnSyncStatusChanged -= syncStatusChangedEventHandler;
-                            }
-                        };
+                                var node = (NetworkNode)sender;
+                                if (ev.NewStatus == SyncStatus.Succeeded)
+                                {
+                                    _isSyncing = false;
+                                    node.IsSyncCandidate = false;
+                                    node.OnSyncStatusChanged -= syncStatusChangedEventHandler;
+                                }
+                                else if (ev.NewStatus == SyncStatus.Failed)
+                                {
+                                    // Try again with another node.
+                                    var endpoint = node.ListenEndpoint ?? node.DirectEndpoint;
+                                    _logger.LogWarning("Failed to sync with node {0} on port {1}.", endpoint.Address.ToString(), endpoint.Port);
+                                    node.IsSyncCandidate = false;
+                                    node.OnSyncStatusChanged -= syncStatusChangedEventHandler;
+                                }
+                            };
                         syncNode.OnSyncStatusChanged += syncStatusChangedEventHandler;
                         var blockchain = _repo.GetChainByNetId(_netId);
                         var getHeadersPayload = new GetHeadersPayload(blockchain.Blocks.Last().Header.Hash);
                         await _messageHandler.SendMessageToNode(syncNode, NetworkCommand.GetHeaders, getHeadersPayload);
-
                     }
                     catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException)
                     {
                         // None found, try again later
                     }
-                });
-            }
+                }
+            });
         }
 
         #region Dispose

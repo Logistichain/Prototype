@@ -8,7 +8,7 @@ namespace Mpb.Networking.Model.MessagePayloads
     public class VersionPayload : ISerializableComponent
     {
         private uint _protocolVersion;
-        private uint _blockHeight;
+        private int _blockHeight;
         private int _listenPort;
 
         /// <summary>
@@ -19,7 +19,7 @@ namespace Mpb.Networking.Model.MessagePayloads
         /// <summary>
         /// The current block height
         /// </summary>
-        internal uint BlockHeight => _blockHeight;
+        internal int BlockHeight => _blockHeight;
 
         /// <summary>
         /// The consensus protocol version
@@ -28,7 +28,7 @@ namespace Mpb.Networking.Model.MessagePayloads
 
         internal VersionPayload() { }
 
-        public VersionPayload(uint protocolVersion, uint blockHeight, int port)
+        public VersionPayload(uint protocolVersion, int blockHeight, int port)
         {
             _protocolVersion = protocolVersion;
             _blockHeight = blockHeight;
@@ -39,7 +39,7 @@ namespace Mpb.Networking.Model.MessagePayloads
         public void Deserialize(BinaryReader reader)
         {
             _protocolVersion = reader.ReadUInt32();
-            _blockHeight = reader.ReadUInt32();
+            _blockHeight = reader.ReadInt32();
             _listenPort = reader.ReadInt32();
         }
 

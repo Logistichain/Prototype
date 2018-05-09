@@ -24,7 +24,9 @@ namespace Mpb.Networking.Model.MessagePayloads
         /// </summary>
         internal string HighestHeightHash => _highestHeightHash;
 
-        public GetHeadersPayload(string highestHeightHash) : this(highestHeightHash, "00000000000000000000000000000000") { }
+        public GetHeadersPayload() { }
+
+        public GetHeadersPayload(string highestHeightHash) : this(highestHeightHash, "0000000000000000000000000000000000000000000000000000000000000000") { }
         
         public GetHeadersPayload(string highestHeightHash, string stoppingHash)
         {
@@ -35,8 +37,8 @@ namespace Mpb.Networking.Model.MessagePayloads
         #region Serialization
         public void Deserialize(BinaryReader reader)
         {
-            _highestHeightHash = reader.ReadFixedString(32);
-            _stoppingHash = reader.ReadFixedString(32);
+            _highestHeightHash = reader.ReadFixedString(64);
+            _stoppingHash = reader.ReadFixedString(64);
         }
 
         public byte[] ToByteArray()
@@ -52,8 +54,8 @@ namespace Mpb.Networking.Model.MessagePayloads
         
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteFixedString(_highestHeightHash, 32);
-            writer.WriteFixedString(_stoppingHash, 32);
+            writer.WriteFixedString(_highestHeightHash, 64);
+            writer.WriteFixedString(_stoppingHash, 64);
         }
         #endregion
     }

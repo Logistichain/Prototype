@@ -24,13 +24,13 @@ namespace Mpb.Model
         public long Timestamp => _timestamp;
         public ulong Nonce => _nonce;
 
-        public BlockHeader(string magicNumber, uint version, string merkleRoot, long timestamp, string previousBlockHash)
+        public BlockHeader(string magicNumber, uint version, string merkleRoot, long timestamp, string previousHash)
         {
             _magicNumber = magicNumber;
             _version = version;
             _merkleRoot = merkleRoot;
             _timestamp = timestamp;
-            _previousHash = previousBlockHash;
+            _previousHash = previousHash;
         }
 
         public ulong IncrementNonce() => ++_nonce;

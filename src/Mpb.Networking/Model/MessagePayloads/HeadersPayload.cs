@@ -28,11 +28,11 @@ namespace Mpb.Networking.Model.MessagePayloads
             var count = reader.ReadInt32();
             for(int i = 0; i < count; i++)
             {
-                var hash = reader.ReadFixedString(32);
-                var previoushHash = reader.ReadFixedString(32);
+                var hash = reader.ReadFixedString(64);
+                var previoushHash = reader.ReadFixedString(64);
                 var magicNumber = reader.ReadFixedString(7);
                 var version = reader.ReadUInt32();
-                var merkleRoot = reader.ReadFixedString(32);
+                var merkleRoot = reader.ReadFixedString(64);
                 long timestamp = reader.ReadInt64();
                 ulong nonce = reader.ReadUInt64();
                 // todo signature
@@ -57,11 +57,11 @@ namespace Mpb.Networking.Model.MessagePayloads
             writer.Write(_headers.Count());
             foreach(var header in _headers)
             {
-                writer.WriteFixedString(header.Hash, 32);
-                writer.WriteFixedString(header.PreviousHash, 32);
+                writer.WriteFixedString(header.Hash, 64);
+                writer.WriteFixedString(header.PreviousHash, 64);
                 writer.WriteFixedString(header.MagicNumber, 7);
                 writer.Write(header.Version);
-                writer.WriteFixedString(header.MerkleRoot, 32);
+                writer.WriteFixedString(header.MerkleRoot, 64);
                 writer.Write(header.Timestamp);
                 writer.Write(header.Nonce);
                 // todo signature

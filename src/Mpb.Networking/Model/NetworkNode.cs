@@ -33,7 +33,6 @@ namespace Mpb.Networking.Model
         private int _handshakeStage = 0;
         private DateTime _connectionEstablishedAt;
         private bool _isSyncCandidate = false;
-        private bool _isSyncingWithNode = false;
         private SyncStatus _syncStatus = SyncStatus.NotSyncing;
 
         public NetworkNode(ConnectionType direction, Socket socket)
@@ -162,7 +161,10 @@ namespace Mpb.Networking.Model
                 OnMessageReceived?.Invoke(this, new MessageEventArgs(receivedMessage));
                 return receivedMessage;
             }
-            catch (ArgumentException) { }
+            catch (ArgumentException ex) {
+                // todo logging
+                Console.Write("Failed to read message: "+ex.Message);
+            }
             catch (ObjectDisposedException) { }
             catch (Exception ex) when (ex is FormatException || ex is IOException || ex is OperationCanceledException)
             {

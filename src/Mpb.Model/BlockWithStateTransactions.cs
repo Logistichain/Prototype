@@ -16,8 +16,6 @@ namespace Mpb.Model
         public BlockWithStateTransactions(BlockHeader header, IEnumerable<StateTransaction> transactions)
             : base(header, transactions)
         {
-            Header.IncrementNonce(header.Nonce);
-            Header.Finalize(header.Hash, header.Signature);
         }
     }
 }

@@ -29,6 +29,11 @@ namespace Mpb.Node
             ushort listeningPort = NetworkConstants.DefaultListeningPort;
             IPAddress publicIP = IPAddress.Parse("127.0.0.1"); // Our public IP so other nodes can find us, todo
 
+            if (args.Length > 1 && args[0] == "-port")
+            {
+                listeningPort = ushort.Parse(args[1]);
+            }
+
             GetServices(
                 services,
                 out IBlockchainRepository blockchainRepo,
@@ -91,7 +96,6 @@ namespace Mpb.Node
                         break;
                     case "stopmining":
                         miner.StopMining(true);
-                        blockchainRepo.Update(blockchain);
                         PrintConsoleCommands();
                         break;
                     case "resetblockchain":
