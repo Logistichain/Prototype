@@ -27,12 +27,12 @@ namespace Mpb.Networking.Constants
         /// <summary>
         /// Maximum amount of headers to send in one message.
         /// </summary>
-        public const int MaxHeadersInMessage = 5000;
+        public const int MaxHeadersInMessage = 5; // 5000 in production, 5 for message testing
 
         /// <summary>
         /// Maximum amount of blocks to send in one message.
         /// </summary>
-        public const int MaxBlocksInMessage = 3000;
+        public const int MaxBlocksInMessage = 3; // 3000 in production, 3 for message testing
 
         /// <summary>
         /// Every host listens on this port by default.

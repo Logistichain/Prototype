@@ -111,6 +111,7 @@ namespace Mpb.Networking.Model
 
         internal void SetSyncStatus(SyncStatus newStatus)
         {
+            // The OnSyncStatusChanged listener sets the IsSyncCandidate to false
             OnSyncStatusChanged?.Invoke(this, new SyncStatusChangedEventArgs(_syncStatus, newStatus));
             _syncStatus = newStatus;
         }

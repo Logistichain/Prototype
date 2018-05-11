@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Mpb.Consensus.BlockLogic;
+using Mpb.Consensus.Exceptions;
 using Mpb.DAL;
 using Mpb.Model;
 using Mpb.Networking.Constants;
@@ -88,6 +89,13 @@ namespace Mpb.Networking
                     node.SetSyncStatus(SyncStatus.InProgress);
                     var headersPayload = (HeadersPayload)msg.Payload;
 
+                    if (headersPayload.Headers.Count() == 0)
+                    {
+                        _logger.LogInformation("Successfully synced with remote node.");
+                        node.SetSyncStatus(SyncStatus.Succeeded);
+                        return;
+                    }
+
                     // Request these blocks
                     var getBlocksPayload = new GetBlocksPayload(headersPayload.Headers.Select(h => h.Hash));
                     await SendMessageToNode(node, NetworkCommand.GetBlocks, getBlocksPayload);
@@ -99,11 +107,6 @@ namespace Mpb.Networking
                 else if (msg.Command == NetworkCommand.Blocks.ToString() && node.IsSyncingWithNode)
                 {
                     var blocksPayload = (StateBlocksPayload)msg.Payload;
-                    if (blocksPayload.Blocks.Count() == 0)
-                    {
-                        node.SetSyncStatus(SyncStatus.Succeeded);
-                        return;
-                    }
 
                     // Todo rewrite this code to support multithreaded 'Blocks' messages. Combine all gathered blocks
                     // until the process has completed and all blocks are downloaded. Then, grab a block that points to the
@@ -118,12 +121,16 @@ namespace Mpb.Networking
                         var difficulty = _difficultyCalculator.CalculateDifficulty(blockchain, blockchain.CurrentHeight, 1, 3, 5); // todo use CalculateCurrentDifficulty when testing is done
                         if (difficulty < 1) { difficulty = 1; }
                         var currentTarget = BlockchainConstants.MaximumTarget / difficulty; // todo do something with these 3 lines. They come from the miner.
-                        _blockValidator.ValidateBlock(blockToProcess, currentTarget, blockchain, false, true); // Rethrow when we have a BlockRejectedException. We don't want to keep a connection with bad nodes.
+                        _blockValidator.ValidateBlock(blockToProcess, currentTarget, blockchain, false, true); // Rethrow when we have a Block- / TransactionRejectedException. We don't want to keep a connection with bad nodes.
                         blocksProcessed++;
                     }
 
+                    _logger.LogDebug("Downloaded and added {0} new blocks from remote node", blocksProcessed);
+                    _logger.LogDebug("Current height: {0}", blockchain.CurrentHeight);
+
                     if (blocksProcessed != blocksPayload.Blocks.Count())
                     {
+                        _logger.LogError("Added {0} new blocks from remote node, but expected {1}. Sync failed.", blocksProcessed, blocksPayload.Blocks.Count());
                         node.SetSyncStatus(SyncStatus.Failed);
                         return;
                     }
@@ -137,7 +144,7 @@ namespace Mpb.Networking
             }
             catch (Exception ex)
             {
-                // todo log
+                _logger.LogError("An {0} occurred during the process of handling a {1} message: {2}. Node will be disconnected.", ex.GetType().Name, msg.Command.ToString(), ex.Message);
                 node?.Disconnect();
             }
         }

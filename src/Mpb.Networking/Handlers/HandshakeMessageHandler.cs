@@ -70,7 +70,7 @@ namespace Mpb.Networking
                 await SendMessageToNode(node, NetworkCommand.VerAck, null);
 
                 // Send a version 
-                ISerializableComponent versionPayload = new VersionPayload(BlockchainConstants.ProtocolVersion, 1, _networkManager.ListeningPort);
+                ISerializableComponent versionPayload = new VersionPayload(BlockchainConstants.ProtocolVersion, blockchain.CurrentHeight, _networkManager.ListeningPort);
                 await SendMessageToNode(node, NetworkCommand.Version, versionPayload);
             }
             else if (node.HandshakeStage == 1 && msg.Command == NetworkCommand.VerAck.ToString())

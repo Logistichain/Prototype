@@ -7,6 +7,7 @@ using System.IO;
 using System.Reflection;
 using System.Linq;
 using Mpb.DAL.Converters;
+using Mpb.Shared.Constants;
 
 namespace Mpb.DAL
 {
@@ -167,7 +168,10 @@ namespace Mpb.DAL
             catch (Exception ex) when (ex is DirectoryNotFoundException || ex is FileNotFoundException)
             {
                 // File does not exist, return a new blockchain.
-                var loadedBlockchain = new Blockchain(new List<Block>() { new GenesisBlock() }, netIdentifier);
+                var loadedBlockchain = new Blockchain(
+                    new List<Block>() {
+                        new GenesisBlock(BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.TransactionVersion)
+                    }, netIdentifier);
                 return loadedBlockchain;
             }
         }
