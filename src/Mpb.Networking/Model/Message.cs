@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+// Serialization inspired by NEO.
 namespace Mpb.Networking.Model
 {
     public class Message : ISerializableComponent
@@ -161,6 +162,7 @@ namespace Mpb.Networking.Model
             }
         }
 
+        // © NEO
         unsafe private static uint GetUInt32(byte[] value)
         {
             fixed (byte* pbyte = &value[0])

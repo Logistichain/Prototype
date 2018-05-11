@@ -6,6 +6,7 @@ using System.Text;
 
 namespace Mpb.Networking.Extensions
 {
+    // © NEO
     public static class BinaryReaderExtensionMethods
     {
         public static string ReadFixedString(this BinaryReader reader, int length)
