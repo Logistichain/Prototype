@@ -1,2 +1,2 @@
-# Todo: Design rationale
-- AbstractTransaction & StateTransaction & UTXO
+# Oops..
+This piece of documentation isn't ready yet. Please bear with us.

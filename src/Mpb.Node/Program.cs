@@ -193,7 +193,6 @@ namespace Mpb.Node
 
         private static IServiceProvider SetupDI(string networkIdentifier, string walletPubKey, string walletPrivKey)
         {
-            var blockchainRepo = new BlockchainLocalFileRepository();
             var services = new ServiceCollection()
                 .AddSingleton(CreateLoggerFactory())
                 .AddTransient<IBlockFinalizer, PowBlockFinalizer>()
@@ -201,11 +200,9 @@ namespace Mpb.Node
                 .AddTransient<IDifficultyCalculator, DifficultyCalculator>()
                 .AddTransient<IPowBlockCreator, PowBlockCreator>()
 
-                .AddTransient<IBlockchainRepository, BlockchainLocalFileRepository>()
+                .AddSingleton<IBlockchainRepository, BlockchainLocalFileRepository>()
                 .AddTransient<ISkuRepository, SkuStateTxLocalFileRepository>()
-                .AddTransient<ITransactionRepository>(
-                        (x) => new StateTransactionLocalFileRepository(x.GetService<IBlockchainRepository>().GetChainByNetId(networkIdentifier))
-                    )
+                .AddTransient<ITransactionRepository, StateTransactionLocalFileRepository>()
                 .AddTransient<ITimestamper, UnixTimestamper>()
 
                 .AddTransient<ITransactionCreator, StateTransactionCreator>()
