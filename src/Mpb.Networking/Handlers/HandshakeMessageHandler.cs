@@ -105,12 +105,12 @@ namespace Mpb.Networking
                 await SendMessageToNode(node, NetworkCommand.VerAck, null);
                 _logger.LogInformation("Successfully connected to node {0} on port {1}", node.DirectEndpoint.Address.ToString(), node.DirectEndpoint.Port);
 
+                // Request all peers that the remote node knows
+                await SendMessageToNode(node, NetworkCommand.GetAddr, null);
+
                 // Send our known peers
                 var addresses = new AddrPayload(_nodePool.GetAllRemoteListenEndpoints());
                 await SendMessageToNode(node, NetworkCommand.Addr, addresses);
-
-                // Request all peers that the remote node knows
-                await SendMessageToNode(node, NetworkCommand.GetAddr, null);
             }
         }
     }
