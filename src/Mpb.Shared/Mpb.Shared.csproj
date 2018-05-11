@@ -4,4 +4,8 @@
     <TargetFramework>netstandard1.5</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Mpb.Model\Mpb.Model.csproj" />
+  </ItemGroup>
+
 </Project>
