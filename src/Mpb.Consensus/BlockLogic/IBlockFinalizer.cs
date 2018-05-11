@@ -15,7 +15,7 @@ namespace Mpb.Consensus.BlockLogic
         /// <returns>Byte array of the the mentioned fields (concatenated)</returns>
         byte[] GetBlockHeaderBytes(Block block);
 
-        // Todo Move to wallet class
+        // Todo Move to - or use - wallet/signing class
         /// <summary>
         /// Seals the block by setting the hash and signing the hash with the given private key.
         /// This method uses the CreateSignature method to sign the block.

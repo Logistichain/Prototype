@@ -23,7 +23,7 @@ namespace Mpb.Consensus.BlockLogic
         
         public virtual string CreateSignature(AbstractTransaction transaction, string privKey)
         {
-            // Todo dependency inject wallet mechanism to sign the transaction!
+            // Todo inject wallet mechanism to sign the transaction
             // if coinbase, use 'ToPubKey' field
             return "txsignature";
         }

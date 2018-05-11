@@ -20,8 +20,8 @@ namespace Mpb.Networking.Model
     public class NetworkNode : IDisposable
     {
         private Guid _id;
-        private IPEndPoint _directEndpoint; // todo remove?
-        private IPEndPoint _listenEndpoint; // todo remove?
+        private IPEndPoint _directEndpoint;
+        private IPEndPoint _listenEndpoint;
         private Socket _socket;
         private NetworkStream _stream;
         private int _isDisposed = 0;

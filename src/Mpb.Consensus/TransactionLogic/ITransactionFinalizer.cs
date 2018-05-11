@@ -12,7 +12,7 @@ namespace Mpb.Consensus.BlockLogic
         /// </summary>
         string CalculateHash(AbstractTransaction transaction);
 
-        // Todo Move to wallet class
+        // Todo Move to wallet/signing class
         /// <summary>
         /// Signs (encrypts) the given hash value with the private key.
         /// The signature can be verified by using the corresponding public key.

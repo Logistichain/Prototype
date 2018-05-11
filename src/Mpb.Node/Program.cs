@@ -117,7 +117,7 @@ namespace Mpb.Node
                             out var ingored,
                             out miner
                         );
-                        networkManager.AcceptConnections(publicIP, listeningPort, new System.Threading.CancellationTokenSource()); // todo port constant
+                        networkManager.AcceptConnections(publicIP, listeningPort, new CancellationTokenSource());
                         accountsCmdHandler = new AccountsCommandHandler(transactionRepo, networkIdentifier);
                         skusCmdHandler = new SkusCommandHandler(blockchainRepo, timestamper, skuRepository, networkIdentifier);
                         transactionsCmdHandler = new TransactionsCommandHandler(transactionRepo, networkIdentifier);

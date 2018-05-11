@@ -66,7 +66,7 @@ namespace Mpb.Consensus.BlockLogic
             }
 
             // Check if the previous hash exists in our blockchain
-            // Todo if the previous hash is unknown, let Networking retrieve the entire blockchain
+            // Todo if the previous hash is unknown, let Networking retrieve the entire blockchain (don't do that here, but the caller must catch the exception and do it there)
             if (blockchain.Blocks.Where(b => b.Header.Hash == block.Header.PreviousHash).Count() == 0 && blockchain.CurrentHeight > -1)
             {
                 throw new BlockRejectedException("Previous blockhash does not exist in our chain", block);
@@ -150,7 +150,6 @@ namespace Mpb.Consensus.BlockLogic
             if (!checkTimestamp) return;
 
             // Timestamp must not be lower than UTC - 2 min and not higher than UTC + 2 min
-            // Todo refactor 120 seconds to blockchainconstant
             if (_timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp > BlockchainConstants.MaximumTimestampOffset || _timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp < (BlockchainConstants.MaximumTimestampOffset * -1))
             {
                 throw new BlockRejectedException("Timestamp is not within the acceptable time range", block);

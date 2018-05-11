@@ -120,7 +120,7 @@ namespace Mpb.Networking
                         var blockToProcess = blocksPayload.Blocks.Where(b => b.Header.PreviousHash == blockchain.Blocks.Last().Header.Hash).First();
                         var difficulty = _difficultyCalculator.CalculateDifficulty(blockchain, blockchain.CurrentHeight, 1, 3, 5); // todo use CalculateCurrentDifficulty when testing is done
                         if (difficulty < 1) { difficulty = 1; }
-                        var currentTarget = BlockchainConstants.MaximumTarget / difficulty; // todo do something with these 3 lines. They come from the miner.
+                        var currentTarget = BlockchainConstants.MaximumTarget / difficulty; // todo refactor these 3 lines. They are copy-pasted from the miner.
                         _blockValidator.ValidateBlock(blockToProcess, currentTarget, blockchain, false, true); // Rethrow when we have a Block- / TransactionRejectedException. We don't want to keep a connection with bad nodes.
                         blocksProcessed++;
                     }
