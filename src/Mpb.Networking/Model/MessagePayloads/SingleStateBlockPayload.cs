@@ -37,38 +37,9 @@ namespace Mpb.Networking.Model.MessagePayloads
             var transactions = new List<AbstractTransaction>();
             for (int txi = 0; txi < txCount; txi++)
             {
-                var txHash = reader.ReadFixedString(64);
-                var txSignature = reader.ReadFixedString(64); // todo signature
-                var fromPubKey = reader.ReadFixedString(64); // Todo wallet implementation
-                var toPubKey = reader.ReadFixedString(64); // Todo wallet implementation
-                var skuBlockHash = reader.ReadFixedString(64);
-                var skuTxIndex = reader.ReadInt32();
-                var amount = reader.ReadUInt32();
-                var txVersion = reader.ReadUInt32();
-                var action = reader.ReadFixedString(16);
-                var fee = reader.ReadUInt32();
-                var dataSize = reader.ReadInt32();
-                var data = "";
-                if (dataSize > 0)
-                {
-                    // Slide the reading window +1 because it moved one byte somehow.. I don't know why.
-                    data = reader.ReadFixedString(dataSize+1);
-                    data = data.Substring(1);
-                    data = data.Base64Decode();
-                }
-
-                var tx = new StateTransaction(
-                        string.IsNullOrEmpty(fromPubKey) ? null : fromPubKey,
-                        string.IsNullOrEmpty(toPubKey) ? null : toPubKey,
-                        string.IsNullOrEmpty(skuBlockHash) ? null : skuBlockHash,
-                        skuTxIndex,
-                        amount,
-                        txVersion,
-                        action,
-                        data,
-                        fee);
-                tx.Finalize(txHash, txSignature);
-                transactions.Add(tx);
+                var transactionPayload = new SingleStateTransactionPayload();
+                transactionPayload.Deserialize(reader);
+                transactions.Add(transactionPayload.Transaction);
             }
             var header = new BlockHeader(magicNumber, blockVersion, merkleRoot, timestamp, previoushHash).Finalize(blockHash, "");
             header.Finalize(blockHash, blockSignature);
@@ -102,21 +73,8 @@ namespace Mpb.Networking.Model.MessagePayloads
             foreach (var tx in _block.Transactions.ToList().OfType<StateTransaction>())
             {
                 var encodedData = tx.Data?.Base64Encode();
-                writer.WriteFixedString(tx.Hash, 64);
-                writer.WriteFixedString(tx.Signature, 64); // Todo signature
-                writer.WriteFixedString(tx.FromPubKey ?? "", 64); // Todo wallet implementation
-                writer.WriteFixedString(tx.ToPubKey ?? "", 64); // Todo wallet implementation
-                writer.WriteFixedString(tx.SkuBlockHash ?? "", 64);
-                writer.Write(tx.SkuTxIndex);
-                writer.Write(tx.Amount);
-                writer.Write(tx.Version);
-                writer.WriteFixedString(tx.Action, 16);
-                writer.Write(tx.Fee);
-                writer.Write(encodedData != null ? encodedData.Length : 0);
-                if (encodedData != null)
-                {
-                    writer.Write(encodedData);
-                }
+                var transactionPayload = new SingleStateTransactionPayload(tx);
+                transactionPayload.Serialize(writer);
             }
         }
         #endregion

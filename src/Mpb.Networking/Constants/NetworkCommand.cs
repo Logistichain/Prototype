@@ -15,6 +15,8 @@ namespace Mpb.Networking.Constants
         Headers,
         GetBlocks,
         Blocks,
-        NotFound
+        NotFound,
+        NewBlock,
+        NewTransaction
     }
 }

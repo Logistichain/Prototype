@@ -95,6 +95,16 @@ namespace Mpb.Networking.Model
                     Payload = new StateBlocksPayload();
                     Payload.Deserialize(br);
                 }
+                else if (Command == NetworkCommand.NewBlock.ToString())
+                {
+                    Payload = new SingleStateBlockPayload();
+                    Payload.Deserialize(br);
+                }
+                else if (Command == NetworkCommand.NewTransaction.ToString())
+                {
+                    Payload = new SingleStateTransactionPayload();
+                    Payload.Deserialize(br);
+                }
                 else if (Command != NetworkCommand.VerAck.ToString() && Command != NetworkCommand.GetAddr.ToString()
                     && Command != NetworkCommand.CloseConn.ToString() && Command != NetworkCommand.NotFound.ToString()) // No payloads for these ones
                 {
