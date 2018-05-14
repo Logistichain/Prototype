@@ -151,18 +151,17 @@ namespace Mpb.Node
                         transactions.AddRange(_txPool.GetTransactions(maxTransactionsPerBlock - 1));
                     }
 
-                    transactionsIncludedInBlock = transactionsIncludedInBlock - _txPool.Count();
-                    _logger.LogDebug("Inserted {0} transactions from the txpool into this block", transactionsIncludedInBlock);
+                    _logger.LogDebug("Inserted {0} transactions from the txpool into this block", transactions.Count - 1);
                 }
 
                 try
                 {
                     if (difficulty < 1) { difficulty = 1; }
                     var newBlock = _blockCreator.CreateValidBlockAndAddToChain(_walletPrivKey, _blockchain, transactions, difficulty, cancellationToken);
-                    
+
                     lock (_txPool)
                     {
-                        foreach(var transaction in newBlock.Transactions)
+                        foreach (var transaction in newBlock.Transactions)
                         {
                             _txPool.RemoveTransaction(transaction);
                         }
@@ -174,11 +173,11 @@ namespace Mpb.Node
                 {
                     _logger.LogInformation("Mining operation canceled.");
                 }
-                catch(BlockRejectedException ex)
+                catch (BlockRejectedException ex)
                 {
                     _logger.LogWarning("Our own block does not pass validation: {0}", ex.Message);
                 }
-                catch(NonceLimitReachedException)
+                catch (NonceLimitReachedException)
                 {
                     _logger.LogWarning("Nonce limit reached.");
                 }
