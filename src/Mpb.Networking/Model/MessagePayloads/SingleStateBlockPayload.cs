@@ -51,7 +51,9 @@ namespace Mpb.Networking.Model.MessagePayloads
                 var data = "";
                 if (dataSize > 0)
                 {
+                    // Slide the reading window +1 because it moved one byte somehow.. I don't know why.
                     data = reader.ReadFixedString(dataSize+1);
+                    data = data.Substring(1);
                     data = data.Base64Decode();
                 }
 
