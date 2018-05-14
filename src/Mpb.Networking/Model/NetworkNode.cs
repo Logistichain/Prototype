@@ -242,7 +242,7 @@ namespace Mpb.Networking.Model
         {
             if (_isDisposed != 1)
             {
-                Disconnect();
+                _ = Disconnect();
                 _isDisposed = 1;
             }
         }

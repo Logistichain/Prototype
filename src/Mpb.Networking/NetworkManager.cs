@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Mpb.Consensus.BlockLogic;
+using Mpb.Consensus.TransactionLogic;
 using Mpb.DAL;
 using Mpb.Networking.Constants;
 using Mpb.Networking.Events;
@@ -43,7 +44,7 @@ namespace Mpb.Networking
             _netId = netId;
             _relayedTransactionHashes = new List<string>();
             _relayedBlockHashes = new List<string>();
-            _messageHandler = new MessageHandler(this, nodePool, difficultyCalculator, blockValidator, loggerFactory, repo, netId);
+            _messageHandler = new MessageHandler(this, ConcurrentTransactionPool.GetInstance(), nodePool, difficultyCalculator, blockValidator, loggerFactory, repo, netId);
             _handshakeMessageHandler = new HandshakeMessageHandler(this, nodePool, loggerFactory, repo, netId);
 
             EventPublisher.GetInstance().OnValidatedBlockCreated += OnValidatedBlockCreated;

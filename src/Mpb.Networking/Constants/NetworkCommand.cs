@@ -17,6 +17,8 @@ namespace Mpb.Networking.Constants
         Blocks,
         NotFound,
         NewBlock,
-        NewTransaction
+        NewTransaction,
+        TxPool,
+        GetTxPool
     }
 }

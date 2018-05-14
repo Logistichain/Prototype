@@ -24,7 +24,7 @@ namespace Mpb.Networking
             _blockchainRepo = blockchainRepo;
             _netId = netId;
         }
-        
+
         public async Task HandleMessage(NetworkNode node, Message msg)
         {
             if (node.HandshakeIsCompleted) return;
@@ -42,7 +42,7 @@ namespace Mpb.Networking
                     await HandleOutboundHandshakeMessage(node, msg, blockchain);
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 node?.Disconnect();
             }
@@ -78,6 +78,9 @@ namespace Mpb.Networking
                 // And receive a version acknowledgement
                 _logger.LogInformation("Successfully connected to node {0} on port {1}", node.DirectEndpoint.Address.ToString(), node.DirectEndpoint.Port);
                 node.ProgressHandshakeStage();
+
+                // Download their transaction pool
+                await SendMessageToNode(node, NetworkCommand.GetTxPool, null);
             }
         }
 
@@ -111,6 +114,9 @@ namespace Mpb.Networking
                 // Send our known peers
                 var addresses = new AddrPayload(_nodePool.GetAllRemoteListenEndpoints());
                 await SendMessageToNode(node, NetworkCommand.Addr, addresses);
+
+                // Download their transaction pool
+                await SendMessageToNode(node, NetworkCommand.GetTxPool, null);
             }
         }
     }

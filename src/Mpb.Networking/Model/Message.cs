@@ -61,6 +61,7 @@ namespace Mpb.Networking.Model
         /// </summary>
         private void DeserializePayloadObject()
         {
+            // todo map the commands to the types somehow..
             using (MemoryStream ms = new MemoryStream(_payloadByteArray, false))
             using (BinaryReader br = new BinaryReader(ms, Encoding.UTF8))
             {
@@ -105,8 +106,14 @@ namespace Mpb.Networking.Model
                     Payload = new SingleStateTransactionPayload();
                     Payload.Deserialize(br);
                 }
+                else if (Command == NetworkCommand.TxPool.ToString())
+                {
+                    Payload = new StateTransactionsPayload();
+                    Payload.Deserialize(br);
+                }
                 else if (Command != NetworkCommand.VerAck.ToString() && Command != NetworkCommand.GetAddr.ToString()
-                    && Command != NetworkCommand.CloseConn.ToString() && Command != NetworkCommand.NotFound.ToString()) // No payloads for these ones
+                    && Command != NetworkCommand.CloseConn.ToString() && Command != NetworkCommand.NotFound.ToString()
+                    && Command != NetworkCommand.GetTxPool.ToString()) // No payloads for these ones
                 {
                     throw new ArgumentException("Unknown command, cannot deserialize Payload");
                 }

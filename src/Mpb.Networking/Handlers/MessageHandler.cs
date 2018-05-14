@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Mpb.Consensus.BlockLogic;
 using Mpb.Consensus.Exceptions;
+using Mpb.Consensus.TransactionLogic;
 using Mpb.DAL;
 using Mpb.Model;
 using Mpb.Networking.Constants;
@@ -23,14 +24,16 @@ namespace Mpb.Networking
         private readonly IBlockValidator _blockValidator;
         private readonly IBlockchainRepository _blockchainRepo;
         private readonly string _netId;
+        private readonly ConcurrentTransactionPool _txPool;
 
-        public MessageHandler(INetworkManager manager, NetworkNodesPool nodePool, IDifficultyCalculator difficultyCalculator, IBlockValidator blockValidator, ILoggerFactory loggerFactory, IBlockchainRepository blockchainRepo, string netId)
+        public MessageHandler(INetworkManager manager, ConcurrentTransactionPool txPool, NetworkNodesPool nodePool, IDifficultyCalculator difficultyCalculator, IBlockValidator blockValidator, ILoggerFactory loggerFactory, IBlockchainRepository blockchainRepo, string netId)
             : base(manager, nodePool, loggerFactory)
         {
             _difficultyCalculator = difficultyCalculator;
             _blockValidator = blockValidator;
             _blockchainRepo = blockchainRepo;
             _netId = netId;
+            _txPool = txPool;
         }
 
         // todo Chain of Responsibility pattern, make XXMessageHandler class for each command type
@@ -141,6 +144,19 @@ namespace Mpb.Networking
                     // Block batch processed. Keep on ask for more headers.
                     var getHeadersPayload = new GetHeadersPayload(blockchain.Blocks.Last().Header.Hash);
                     await SendMessageToNode(node, NetworkCommand.GetHeaders, getHeadersPayload);
+                }
+                else if (msg.Command == NetworkCommand.GetTxPool.ToString())
+                {                    
+                    var txPoolPayload = new StateTransactionsPayload(_txPool.GetAllTransactions());
+                    await SendMessageToNode(node, NetworkCommand.TxPool, txPoolPayload);
+                }
+                else if (msg.Command == NetworkCommand.TxPool.ToString())
+                {
+                    var txPoolPayload = (StateTransactionsPayload)msg.Payload;
+                    foreach(var tx in txPoolPayload.Transactions)
+                    {
+                        _txPool.AddTransaction(tx);
+                    }
                 }
                 else if (msg.Command == NetworkCommand.NewTransaction.ToString())
                 {
