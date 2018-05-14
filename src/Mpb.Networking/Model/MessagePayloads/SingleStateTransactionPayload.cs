@@ -17,9 +17,9 @@ namespace Mpb.Networking.Model.MessagePayloads
 
         public SingleStateTransactionPayload() { }
 
-        public SingleStateTransactionPayload(AbstractTransaction block)
+        public SingleStateTransactionPayload(AbstractTransaction transaction)
         {
-            _transaction = block;
+            _transaction = transaction;
         }
 
         #region Serialization

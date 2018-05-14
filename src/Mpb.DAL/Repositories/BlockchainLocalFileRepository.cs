@@ -23,7 +23,7 @@ namespace Mpb.DAL
         /// <param name="chain">The blockchain object that needs to be persisted</param>
         public void Update(Blockchain chain)
         {
-            lock (fileLock)
+            lock (chain)
             {
                 var filePath = Path.Combine(_blockchainFolderPath, $"blockchain-{chain.NetIdentifier}.json");
                 var blockchainFile = File.Create(filePath);

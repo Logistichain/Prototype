@@ -4,6 +4,7 @@ using Mpb.Model;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Mpb.Shared.Events;
 
 namespace Mpb.Node.Handlers
 {
@@ -23,7 +24,7 @@ namespace Mpb.Node.Handlers
             _netId = netId;
         }
 
-        internal void HandleCommand(Miner miner)
+        internal void HandleCommand()
         {
             ulong transferFee = TransferSupplyFee; // From BlockchainConstants.cs
             IEnumerable<Sku> skuWithHistory = null;
@@ -129,7 +130,7 @@ namespace Mpb.Node.Handlers
             var optionalData = Console.ReadLine();
             
             AbstractTransaction transactionToSend = _transactionCreator.CreateSupplyTransferTransaction(fromPub, fromPriv, toPub, amount, blockHash, txIndex, optionalData);
-            miner.AddTransactionToPool(transactionToSend);
+            EventPublisher.GetInstance().PublishUnvalidatedTransactionReceived(this, new TransactionReceivedEventArgs(transactionToSend));
             Console.Write("> ");
         }
 

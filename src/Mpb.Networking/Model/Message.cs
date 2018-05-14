@@ -20,7 +20,7 @@ namespace Mpb.Networking.Model
         internal string Command { get; private set; }
         internal uint Checksum { get; private set; }
         internal ISerializableComponent Payload { get; private set; }
-        internal int Size => sizeof(uint) + 12 + sizeof(int) + sizeof(uint) + _payloadByteArray.Length;
+        internal int Size => sizeof(uint) + 16 + sizeof(int) + sizeof(uint) + _payloadByteArray.Length;
         internal Message() { }
 
         internal Message(string command) : this(command, null) { }
@@ -44,7 +44,7 @@ namespace Mpb.Networking.Model
         {
             if (reader.ReadUInt32() != MagicNumber)
                 throw new FormatException();
-            Command = reader.ReadFixedString(12);
+            Command = reader.ReadFixedString(16);
             uint length = reader.ReadUInt32();
             if (length > PayloadMaxSize)
                 throw new FormatException();
@@ -116,14 +116,14 @@ namespace Mpb.Networking.Model
         public static async Task<Message> DeserializeFromAsync(Stream stream, CancellationToken cancellationToken)
         {
             uint payload_length;
-            byte[] buffer = await FillBufferAsync(stream, 24, cancellationToken);
+            byte[] buffer = await FillBufferAsync(stream, 28, cancellationToken);
             Message message = new Message();
             using (MemoryStream ms = new MemoryStream(buffer, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
                 if (reader.ReadUInt32() != MagicNumber)
                     throw new FormatException();
-                message.Command = reader.ReadFixedString(12);
+                message.Command = reader.ReadFixedString(16);
                 payload_length = reader.ReadUInt32();
                 if (payload_length > PayloadMaxSize)
                     throw new FormatException();
@@ -195,7 +195,7 @@ namespace Mpb.Networking.Model
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(MagicNumber);
-            writer.WriteFixedString(Command, 12);
+            writer.WriteFixedString(Command, 16);
             writer.Write(_payloadByteArray.Length);
             writer.Write(Checksum);
             writer.Write(_payloadByteArray);

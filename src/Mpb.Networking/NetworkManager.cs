@@ -6,6 +6,7 @@ using Mpb.Networking.Events;
 using Mpb.Networking.Model;
 using Mpb.Networking.Model.MessagePayloads;
 using Mpb.Shared.Constants;
+using Mpb.Shared.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,10 +28,12 @@ namespace Mpb.Networking
         private ushort _port;
         private IPAddress _publicIp;
         private bool _isDisposed = false;
-        private bool _isSyncing = true;
+        private bool _isSyncing = false;
         private ILogger _logger;
         private IMessageHandler _messageHandler;
         private IMessageHandler _handshakeMessageHandler;
+        private List<string> _relayedTransactionHashes; // To prevent endless relays
+        private List<string> _relayedBlockHashes;
 
         public NetworkManager(NetworkNodesPool nodePool, ILoggerFactory loggerFactory, IBlockValidator blockValidator, IDifficultyCalculator difficultyCalculator, IBlockchainRepository repo, string netId)
         {
@@ -38,9 +41,13 @@ namespace Mpb.Networking
             _nodePool = nodePool;
             _repo = repo;
             _netId = netId;
+            _relayedTransactionHashes = new List<string>();
+            _relayedBlockHashes = new List<string>();
             _messageHandler = new MessageHandler(this, nodePool, difficultyCalculator, blockValidator, loggerFactory, repo, netId);
             _handshakeMessageHandler = new HandshakeMessageHandler(this, nodePool, loggerFactory, repo, netId);
 
+            EventPublisher.GetInstance().OnValidatedBlockCreated += OnValidatedBlockCreated;
+            EventPublisher.GetInstance().OnValidTransactionReceived += OnValidTransactionReceived;
             // In the first phase, check every 10s if there is a node that has a longer chain than ours.
             // After the sync completed, exit the 'syncing' state and accept new blocks and transactions.
             StartSyncProcess(new CancellationTokenSource()); // todo cts
@@ -159,6 +166,32 @@ namespace Mpb.Networking
             _ = Task.Run(() => ListenForNewMessagesContinuously(node)); // Keep on listening for new messages, do not await.
         }
 
+        private void OnValidTransactionReceived(object sender, TransactionReceivedEventArgs eventArgs)
+        {
+            lock (_relayedTransactionHashes)
+            {
+                if (!_relayedTransactionHashes.Contains(eventArgs.Transaction.Hash))
+                {
+                    var txMessage = new Message(NetworkCommand.NewTransaction.ToString(), new SingleStateTransactionPayload(eventArgs.Transaction));
+                    _nodePool.BroadcastMessage(txMessage);
+                    _relayedTransactionHashes.Add(eventArgs.Transaction.Hash);
+                }
+            }
+        }
+
+        private void OnValidatedBlockCreated(object sender, BlockCreatedEventArgs eventArgs)
+        {
+            lock (_relayedBlockHashes)
+            {
+                if (!_relayedBlockHashes.Contains(eventArgs.Block.Header.Hash))
+                {
+                    var blockMessage = new Message(NetworkCommand.NewBlock.ToString(), new SingleStateBlockPayload(eventArgs.Block));
+                    _nodePool.BroadcastMessage(blockMessage);
+                    _relayedBlockHashes.Add(eventArgs.Block.Header.Hash);
+                }
+            }
+        }
+
         /// <summary>
         /// Start the TCP listener so the AcceptConnections method can accept new sockets.
         /// </summary>
@@ -217,11 +250,12 @@ namespace Mpb.Networking
             }
         }
 
+        // todo stop this task after x time / attempts.
         internal void StartSyncProcess(CancellationTokenSource cts)
         {
             _ = Task.Run(async () =>
             {
-                while (!cts.IsCancellationRequested && _isSyncing)
+                while (!cts.IsCancellationRequested)
                 {
                     await Task.Delay(10000);
                     var isSyncingAlready = _nodePool.GetAllNetworkNodes().Where(n => n.IsSyncingWithNode).Any();
@@ -232,6 +266,7 @@ namespace Mpb.Networking
                                 .Where(n => n.HandshakeIsCompleted && n.IsSyncCandidate && !n.IsSyncingWithNode)
                                 .OrderBy(x => Guid.NewGuid()).Take(1).First();
                         _logger.LogDebug($"Attempting to sync with node {syncNode.ListenEndpoint.Address.ToString()}:{syncNode.ListenEndpoint.Port}.");
+                        _isSyncing = true;
 
                         syncNode.SetSyncStatus(SyncStatus.Initiated);
                         SyncStatusChangedEventHandler syncStatusChangedEventHandler = null;

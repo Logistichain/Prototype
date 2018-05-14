@@ -67,9 +67,12 @@ namespace Mpb.Consensus.BlockLogic
 
             // Check if the previous hash exists in our blockchain
             // Todo if the previous hash is unknown, let Networking retrieve the entire blockchain (don't do that here, but the caller must catch the exception and do it there)
-            if (blockchain.Blocks.Where(b => b.Header.Hash == block.Header.PreviousHash).Count() == 0 && blockchain.CurrentHeight > -1)
+            lock (blockchain)
             {
-                throw new BlockRejectedException("Previous blockhash does not exist in our chain", block);
+                if (blockchain.Blocks.Where(b => b.Header.Hash == block.Header.PreviousHash).Count() == 0 && blockchain.CurrentHeight > -1)
+                {
+                    throw new BlockRejectedException("Previous blockhash does not exist in our chain", block);
+                }
             }
 
             // Check all other transactions
@@ -109,7 +112,7 @@ namespace Mpb.Consensus.BlockLogic
                         }
                         else
                         {
-                            throw new BlockRejectedException("Split chaining is not supported", block);
+                            throw new BlockRejectedException("Chain splitting is not supported", block);
                         }
                     }
                 }

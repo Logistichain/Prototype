@@ -135,7 +135,7 @@ namespace Mpb.Networking
             {
                 foreach (var node in _nodesPool.Where(n => n.Value.HandshakeIsCompleted))
                 {
-                    node.Value.SendMessageAsync(m).Start();
+                    _ = node.Value.SendMessageAsync(m);
                 }
             }
         }

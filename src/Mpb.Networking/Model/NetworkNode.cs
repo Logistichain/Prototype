@@ -162,9 +162,10 @@ namespace Mpb.Networking.Model
                 OnMessageReceived?.Invoke(this, new MessageEventArgs(receivedMessage));
                 return receivedMessage;
             }
-            catch (ArgumentException ex) {
+            catch (ArgumentException ex)
+            {
                 // todo logging
-                Console.Write("Failed to read message: "+ex.Message);
+                Console.Write("Failed to read message: " + ex.Message);
             }
             catch (ObjectDisposedException) { }
             catch (Exception ex) when (ex is FormatException || ex is IOException || ex is OperationCanceledException)
@@ -189,7 +190,7 @@ namespace Mpb.Networking.Model
             if (_isDisposed > 0) throw new ObjectDisposedException("NetworkNode");
             if (!IsConnected)
             {
-                if(!await ConnectAsync()) // Connect failed
+                if (!await ConnectAsync()) // Connect failed
                 {
                     return false;
                 }
@@ -239,9 +240,9 @@ namespace Mpb.Networking.Model
         #region Dispose        
         protected virtual void Dispose(bool disposing)
         {
-            if (_isDisposed != 0)
+            if (_isDisposed != 1)
             {
-                Disconnect().Wait();
+                Disconnect();
                 _isDisposed = 1;
             }
         }

@@ -27,12 +27,15 @@ namespace Mpb.Consensus.BlockLogic
                 return 1;
             }
 
-            var previousDifficultyInfo = GetPreviousDifficultyUpdateInformation(height, chain, difficultyUpdateCycle);            
-            var totalSeconds = previousDifficultyInfo.TotalSecondsForBlocks == 0 ? 1 : previousDifficultyInfo.TotalSecondsForBlocks;
-            BigDecimal difficultyMultiplier = (double)(secondsPerBlockGoal * difficultyUpdateCycle) / totalSeconds;
-            var previousDifficulty = CalculateDifficulty(chain, previousDifficultyInfo.BeginHeight, protocolVersion, secondsPerBlockGoal, difficultyUpdateCycle); // This is highly inefficient, better to keep a record
-
-            return previousDifficulty * difficultyMultiplier;
+            lock (chain)
+            {
+                var previousDifficultyInfo = GetPreviousDifficultyUpdateInformation(height, chain, difficultyUpdateCycle);            
+                var totalSeconds = previousDifficultyInfo.TotalSecondsForBlocks == 0 ? 1 : previousDifficultyInfo.TotalSecondsForBlocks;
+                BigDecimal difficultyMultiplier = (double)(secondsPerBlockGoal * difficultyUpdateCycle) / totalSeconds;
+                var previousDifficulty = CalculateDifficulty(chain, previousDifficultyInfo.BeginHeight, protocolVersion, secondsPerBlockGoal, difficultyUpdateCycle); // This is highly inefficient, better to keep a record
+                // todo round the number somehow as it gets larger every time.
+                return previousDifficulty * difficultyMultiplier;
+            }
         }
 
         public virtual BlockDifficultyUpdate GetPreviousDifficultyUpdateInformation(Blockchain chain) {
@@ -58,10 +61,13 @@ namespace Mpb.Consensus.BlockLogic
 
             // - 1 because difficultyUpdate is based on counts, as where calculateForHeight is based on index.
             //! Take care, the lastBlockStarted this is the time when the miner STARTED mining this block
-            long firstBlockStarted = chain.Blocks[calculateForHeight - difficultyUpdateCycle].Header.Timestamp;
-            long lastBlockStarted = chain.Blocks[calculateForHeight-1].Header.Timestamp;
+            lock (chain)
+            {
+                long firstBlockStarted = chain.Blocks[calculateForHeight - difficultyUpdateCycle].Header.Timestamp;
+                long lastBlockStarted = chain.Blocks[calculateForHeight - 1].Header.Timestamp;
 
-            return new BlockDifficultyUpdate(chain, calculateForHeight - difficultyUpdateCycle, calculateForHeight-1);
+                return new BlockDifficultyUpdate(chain, calculateForHeight - difficultyUpdateCycle, calculateForHeight - 1);
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ using Mpb.Networking.Constants;
 using Mpb.Networking.Model;
 using Mpb.Networking.Model.MessagePayloads;
 using Mpb.Shared.Constants;
+using Mpb.Shared.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -140,6 +141,28 @@ namespace Mpb.Networking
                     // Block batch processed. Keep on ask for more headers.
                     var getHeadersPayload = new GetHeadersPayload(blockchain.Blocks.Last().Header.Hash);
                     await SendMessageToNode(node, NetworkCommand.GetHeaders, getHeadersPayload);
+                }
+                else if (msg.Command == NetworkCommand.NewTransaction.ToString())
+                {
+                    var txPayload = (SingleStateTransactionPayload)msg.Payload;
+                    if (_networkManager.IsSyncing) return;
+
+                    var validationResult = EventPublisher.GetInstance().PublishUnvalidatedTransactionReceived(node, new TransactionReceivedEventArgs(txPayload.Transaction));
+                    if (validationResult == false)
+                    {
+                       //await node.Disconnect(); // Dishonest node, buuh!
+                    }
+                }
+                else if (msg.Command == NetworkCommand.NewBlock.ToString())
+                {
+                    var blockPayload = (SingleStateBlockPayload)msg.Payload;
+                    if (_networkManager.IsSyncing) return;
+
+                    var validationResult = EventPublisher.GetInstance().PublishUnvalidatedBlockCreated(node, new BlockCreatedEventArgs(blockPayload.Block));
+                    if (validationResult == false)
+                    {
+                        //await node.Disconnect(); // Dishonest node, buuh!
+                    }
                 }
             }
             catch (Exception ex)

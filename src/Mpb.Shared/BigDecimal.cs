@@ -23,13 +23,13 @@ namespace Mpb.Shared
         /// <summary>
         /// Specifies whether the significant digits should be truncated to the given precision after each operation.
         /// </summary>
-        public static bool AlwaysTruncate = false;
+        public static bool AlwaysTruncate = true;
 
         /// <summary>
         /// Sets the maximum precision of division operations.
         /// If AlwaysTruncate is set to true all operations are affected.
         /// </summary>
-        public static int Precision = 50;
+        public static int Precision = 10;
 
         public BigInteger Mantissa { get; set; }
         public int Exponent { get; set; }

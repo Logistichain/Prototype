@@ -102,6 +102,7 @@ namespace Mpb.Node
                         miner.StopMining(false);
                         blockchainRepo.Delete(networkIdentifier);
                         Console.WriteLine("Blockchain deleted.");
+                        blockchain = blockchainRepo.GetChainByNetId(networkIdentifier);
                         networkManager.Dispose();
                         _logger.LogWarning("All network connections shut down.");
                         // Initialize all variables again because the heap references changed.
@@ -128,13 +129,13 @@ namespace Mpb.Node
                         Console.Write("> ");
                         break;
                     case "transfertokens":
-                        transferTokensCmdHandler.HandleCommand(miner);
+                        transferTokensCmdHandler.HandleCommand(networkIdentifier);
                         break;
                     case "createsku":
-                        createSkuCmdHandler.HandleCommand(miner);
+                        createSkuCmdHandler.HandleCommand(networkIdentifier);
                         break;
                     case "transfersupply":
-                        transferSupplyCmdHandler.HandleCommand(miner);
+                        transferSupplyCmdHandler.HandleCommand();
                         break;
                     case "networking setport":
                         listeningPort = networkingCmdHandler.HandlePortCommand(listeningPort);
@@ -227,8 +228,8 @@ namespace Mpb.Node
                             x.GetService<IBlockchainRepository>(),
                             x.GetService<ITransactionRepository>(), x.GetService<ITransactionCreator>(),
                             x.GetService<ITransactionValidator>(), x.GetService<IDifficultyCalculator>(),
-                            x.GetService<IPowBlockCreator>(), x.GetService<ConcurrentTransactionPool>(), 
-                            x.GetService<ILoggerFactory>())
+                            x.GetService<IPowBlockCreator>(), x.GetService<IBlockValidator>(),
+                            x.GetService<ConcurrentTransactionPool>(), x.GetService<ILoggerFactory>())
                     )
 
                 .BuildServiceProvider();

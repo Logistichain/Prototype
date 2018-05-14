@@ -482,7 +482,7 @@ namespace Mpb.Consensus.Test.Logic
                     () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true)
                 );
 
-            Assert.AreEqual("Split chaining is not supported", ex.Message);
+            Assert.AreEqual("Chain splitting is not supported", ex.Message);
             Assert.AreEqual(blockToTest, ex.Block);
         }
 
