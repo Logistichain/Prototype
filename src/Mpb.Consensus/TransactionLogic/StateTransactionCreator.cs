@@ -37,7 +37,7 @@ namespace Mpb.Consensus.TransactionLogic
                 optionalData,
                 BlockchainConstants.TransferTokenFee
                 );
-            _txFinalizer.FinalizeTransaction(tx, fromPubKey, fromPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, fromPrivKey);
 
             return tx;
         }
@@ -65,7 +65,7 @@ namespace Mpb.Consensus.TransactionLogic
                 skuJson,
                 BlockchainConstants.CreateSkuFee
                 );
-            _txFinalizer.FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, ownerPrivKey);
 
             return tx;
         }
@@ -93,7 +93,7 @@ namespace Mpb.Consensus.TransactionLogic
                 optionalData,
                 BlockchainConstants.CreateSupplyFee
                 );
-            _txFinalizer.FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, ownerPrivKey);
 
             return tx;
         }
@@ -123,7 +123,7 @@ namespace Mpb.Consensus.TransactionLogic
                 optionalData,
                 BlockchainConstants.TransferSupplyFee
                 );
-            _txFinalizer.FinalizeTransaction(tx, fromPubKey, fromPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, fromPrivKey);
 
             return tx;
         }
@@ -151,7 +151,7 @@ namespace Mpb.Consensus.TransactionLogic
                 optionalData,
                 BlockchainConstants.DestroySupplyFee
                 );
-            _txFinalizer.FinalizeTransaction(tx, ownerPubKey, ownerPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, ownerPrivKey);
 
             return tx;
         }
@@ -176,7 +176,7 @@ namespace Mpb.Consensus.TransactionLogic
                 optionalData,
                 0
                 );
-            _txFinalizer.FinalizeTransaction(tx, creatorPubKey, creatorPrivKey);
+            _txFinalizer.FinalizeTransaction(tx, creatorPrivKey);
 
             return tx;
         }

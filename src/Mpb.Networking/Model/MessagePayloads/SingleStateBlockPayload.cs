@@ -1,5 +1,7 @@
 ﻿using Mpb.Model;
 using Mpb.Networking.Extensions;
+using Mpb.Shared.Extensions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -25,26 +27,25 @@ namespace Mpb.Networking.Model.MessagePayloads
         public void Deserialize(BinaryReader reader)
         {
             var blockHash = reader.ReadFixedString(64);
-            var blockSignature = reader.ReadFixedString(64); // todo signature
+            var blockSignatureLength = reader.ReadInt16();
+            reader.ReadByte(); // Move the reader by one byte (I don't know why, but else it's not reading the signature properly.
+            var blockSignature = reader.ReadFixedString(blockSignatureLength);
             var previoushHash = reader.ReadFixedString(64);
             var magicNumber = reader.ReadFixedString(7);
             var blockVersion = reader.ReadUInt32();
             var merkleRoot = reader.ReadFixedString(64);
             long timestamp = reader.ReadInt64();
             ulong nonce = reader.ReadUInt64();
-            // todo signature
-            var txCount = reader.ReadInt32();
-            var transactions = new List<AbstractTransaction>();
-            for (int txi = 0; txi < txCount; txi++)
-            {
-                var transactionPayload = new SingleStateTransactionPayload();
-                transactionPayload.Deserialize(reader);
-                transactions.Add(transactionPayload.Transaction);
-            }
-            var header = new BlockHeader(magicNumber, blockVersion, merkleRoot, timestamp, previoushHash).Finalize(blockHash, "");
+            var signatureLength = reader.ReadInt16();
+            reader.ReadByte(); // Move the reader by one byte (I don't know why, but else it's not reading the signature properly.
+            var signature = reader.ReadFixedString(signatureLength);
+
+            var transactionsPayload = new StateTransactionsPayload();
+            transactionsPayload.Deserialize(reader);
+            var header = new BlockHeader(magicNumber, blockVersion, merkleRoot, timestamp, previoushHash).Finalize(blockHash, signature);
             header.Finalize(blockHash, blockSignature);
             header.IncrementNonce(nonce);
-            _block = new Block(header, transactions);
+            _block = new Block(header, transactionsPayload.Transactions);
         }
 
         public byte[] ToByteArray()
@@ -60,22 +61,25 @@ namespace Mpb.Networking.Model.MessagePayloads
 
         public void Serialize(BinaryWriter writer)
         {
+            if (_block.Transactions.Count() > Int16.MaxValue)
+            {
+                throw new InvalidDataException("Too many transactions");
+            }
+
             writer.WriteFixedString(_block.Header.Hash, 64);
-            writer.WriteFixedString(_block.Header.Signature, 64);
+            writer.Write((Int16)_block.Header.Signature.Length);
+            writer.Write(_block.Header.Signature);
             writer.WriteFixedString(_block.Header.PreviousHash, 64);
             writer.WriteFixedString(_block.Header.MagicNumber, 7);
             writer.Write(_block.Header.Version);
             writer.WriteFixedString(_block.Header.MerkleRoot, 64);
             writer.Write(_block.Header.Timestamp);
             writer.Write(_block.Header.Nonce);
-            // todo signature
-            writer.Write(_block.Transactions.Count());
-            foreach (var tx in _block.Transactions.ToList().OfType<StateTransaction>())
-            {
-                var encodedData = tx.Data?.Base64Encode();
-                var transactionPayload = new SingleStateTransactionPayload(tx);
-                transactionPayload.Serialize(writer);
-            }
+            writer.Write((Int16)_block.Header.Signature.Length);
+            writer.Write(_block.Header.Signature);
+
+            var transactionsPayload = new StateTransactionsPayload(_block.Transactions);
+            transactionsPayload.Serialize(writer);
         }
         #endregion
     }

@@ -12,6 +12,7 @@ using Mpb.Model;
 using Mpb.Consensus.Exceptions;
 using Mpb.Shared.Constants;
 using System.Linq;
+using Mpb.Consensus.Cryptography;
 
 namespace Mpb.Consensus.Test.Logic
 {
@@ -22,19 +23,21 @@ namespace Mpb.Consensus.Test.Logic
     [TestClass]
     public class PowBlockValidatorTest
     {
-        Mock<PowBlockFinalizer> _blockFinalizer; // Using implementation because some tests require calling the base.
-        Mock<ITimestamper> _timestamper;
-        Mock<ITransactionValidator> _transactionValidator;
-        Mock<IDifficultyCalculator> _difficultyCalculator;
+        Mock<IBlockFinalizer> _blockFinalizerMock; // Using implementation because some tests require calling the base.
+        Mock<ITimestamper> _timestamperMock;
+        Mock<ITransactionValidator> _transactionValidatorMock;
+        Mock<IDifficultyCalculator> _difficultyCalculatorMock;
+        Mock<ISigner> _signerMock;
         string _netId;
 
         [TestInitialize]
         public void Initialize()
         {
-            _blockFinalizer = new Mock<PowBlockFinalizer>(MockBehavior.Strict);
-            _timestamper = new Mock<ITimestamper>(MockBehavior.Strict);
-            _transactionValidator = new Mock<ITransactionValidator>(MockBehavior.Strict);
-            _difficultyCalculator = new Mock<IDifficultyCalculator>(MockBehavior.Strict);
+            _blockFinalizerMock = new Mock<IBlockFinalizer>(MockBehavior.Strict);
+            _timestamperMock = new Mock<ITimestamper>(MockBehavior.Strict);
+            _transactionValidatorMock = new Mock<ITransactionValidator>(MockBehavior.Strict);
+            _difficultyCalculatorMock = new Mock<IDifficultyCalculator>(MockBehavior.Strict);
+            _signerMock = new Mock<ISigner>(MockBehavior.Strict);
             _netId = "testnet";
         }
         
@@ -42,7 +45,7 @@ namespace Mpb.Consensus.Test.Logic
         public void Constructor_ThrowsException_NullBlockFinalizer()
         {
             var ex = Assert.ThrowsException<ArgumentNullException>(
-                    () => new PowBlockValidator(null, _transactionValidator.Object, _timestamper.Object)
+                    () => new PowBlockValidator(null, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object)
                 );
 
             Assert.AreEqual("blockFinalizer", ex.ParamName);
@@ -53,7 +56,7 @@ namespace Mpb.Consensus.Test.Logic
         public void Constructor_ThrowsException_NullTransactionValidator()
         {
             var ex = Assert.ThrowsException<ArgumentNullException>(
-                    () => new PowBlockValidator(_blockFinalizer.Object, null, _timestamper.Object)
+                    () => new PowBlockValidator(_blockFinalizerMock.Object, null, _timestamperMock.Object, _signerMock.Object)
                 );
 
             Assert.AreEqual("transactionValidator", ex.ParamName);
@@ -63,10 +66,20 @@ namespace Mpb.Consensus.Test.Logic
         public void Constructor_ThrowsException_NullTimestamper()
         {
             var ex = Assert.ThrowsException<ArgumentNullException>(
-                    () => new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, null)
+                    () => new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, null, _signerMock.Object)
                 );
 
             Assert.AreEqual("timestamper", ex.ParamName);
+        }
+
+        [TestMethod]
+        public void Constructor_ThrowsException_NullSigner()
+        {
+            var ex = Assert.ThrowsException<ArgumentNullException>(
+                    () => new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, null)
+                );
+
+            Assert.AreEqual("signer", ex.ParamName);
         }
 
         [TestMethod]
@@ -74,7 +87,7 @@ namespace Mpb.Consensus.Test.Logic
         {
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>()); // Block is not finalized
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -90,7 +103,7 @@ namespace Mpb.Consensus.Test.Logic
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize("", null);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -106,7 +119,7 @@ namespace Mpb.Consensus.Test.Logic
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize("hash", "");
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -122,7 +135,7 @@ namespace Mpb.Consensus.Test.Logic
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize("hash", null);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -143,10 +156,10 @@ namespace Mpb.Consensus.Test.Logic
         public void BlockIsValid_ThrowsException_HashDoesNotEqual()
         {
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize("abc", "signature"); // Invalid block hash
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns("otherhash");
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns("otherhash");
             
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -166,10 +179,10 @@ namespace Mpb.Consensus.Test.Logic
         {
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
             var blockHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>()); // The first SHA attempt results in a value that is higher than the currentTarget
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -184,10 +197,10 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"; // High hash value
             BigDecimal currentTarget = BigInteger.Parse("0000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -203,10 +216,10 @@ namespace Mpb.Consensus.Test.Logic
             // The currentTarget is the exact same hash value as the blockToTest header.
             var blockHash = "078ECE2577907E270349C3FD60F1B1B28B233BE6DC936C2415624E65C6159E1E";
             BigDecimal currentTarget = BigInteger.Parse(blockHash, NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize(blockHash, "signature"); // The same as target
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -221,11 +234,11 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(BlockchainConstants.MaximumTimestampOffset + 10);
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(BlockchainConstants.MaximumTimestampOffset + 10);
             // The blockToTest's timestamp is too early because the current timestamp is 130 and the block is from timestamp 1
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
@@ -244,11 +257,11 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(BlockchainConstants.MaximumTimestampOffset + 1); // The blockToTest's timestamp is exactly on the edge
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(BlockchainConstants.MaximumTimestampOffset + 1); // The blockToTest's timestamp is exactly on the edge
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -263,11 +276,11 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", BlockchainConstants.MaximumTimestampOffset+10, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // The blockToTest's timestamp is too late
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // The blockToTest's timestamp is too late
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -285,11 +298,11 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", BlockchainConstants.MaximumTimestampOffset+1, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // The blockToTest's timestamp is exactly on the edge
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // The blockToTest's timestamp is exactly on the edge
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -305,11 +318,11 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 15, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // Exact same timestamp as the block
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1); // Exact same timestamp as the block
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -324,11 +337,11 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "abc", 1, ""), new List<AbstractTransaction>());
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
             
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -343,15 +356,15 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction("from", "tp", null, 0, 1, 1, TransactionAction.ClaimCoinbase.ToString(), null, 1)
             };
             var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("otherMerklerootValue");
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("otherMerklerootValue");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -366,15 +379,15 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction("from", "tp", null, 0, 1, 1, TransactionAction.TransferToken.ToString(), null, 1)
             };
             var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -389,16 +402,16 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0),
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
             var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain(_netId), true, true)
@@ -413,15 +426,15 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
             var blockToTest = new Block(new BlockHeader("network1", 1, "merkleroot", 1, ""), transactions);
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain("network2"), true, true)
@@ -430,24 +443,48 @@ namespace Mpb.Consensus.Test.Logic
             Assert.AreEqual("Block comes from a different network", ex.Message);
             Assert.AreEqual(blockToTest, ex.Block);
         }
-
-        // Todo transaction validation
-
+        
         [TestMethod]
-        public void BlockIsValid_ThrowsException_PreviousHashDoesNotExist()
+        public void BlockIsValid_ThrowsException_InvalidSignature()
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
             var blockchain = new Blockchain(new List<Block>() { new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions) }, _netId);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _signerMock.Setup(m => m.SignatureIsValid("signature", blockHash, "to")).Returns(false); // validation returns false
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+
+            var ex = Assert.ThrowsException<BlockRejectedException>(
+                    () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true)
+                );
+
+            Assert.AreEqual("Block's signature is invalid", ex.Message);
+            Assert.AreEqual(blockToTest, ex.Block);
+        }
+
+        [TestMethod]
+        public void BlockIsValid_ThrowsException_PreviousHashDoesNotExist()
+        {
+            var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+            BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
+            var transactions = new List<AbstractTransaction>() {
+                new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
+            };
+            var blockchain = new Blockchain(new List<Block>() { new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions) }, _netId);
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
+            blockToTest.Header.Finalize(blockHash, "signature");
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _signerMock.Setup(m => m.SignatureIsValid("signature", blockHash, "to")).Returns(true);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true)
@@ -458,11 +495,37 @@ namespace Mpb.Consensus.Test.Logic
         }
 
         [TestMethod]
+        public void BlockIsValid_RethrowsTransactionRejected()
+        {
+            var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+            BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
+            var transactions = new List<AbstractTransaction>() {
+                new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
+            };
+            var expectedException = new TransactionRejectedException("Transaction rejected test", transactions.First());
+            var blockchain = new Blockchain(new List<Block>() { new Block(new BlockHeader(_netId, 1, "merkleroot", 1, "").Finalize("block1", "privkey"), transactions) }, _netId);
+            var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, "block1"), transactions);
+            blockToTest.Header.Finalize(blockHash, "signature");
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _signerMock.Setup(m => m.SignatureIsValid("signature", blockHash, "to")).Returns(true);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+            _transactionValidatorMock.Setup(m => m.ValidateTransaction(transactions.First())).Throws(expectedException);
+
+            var ex = Assert.ThrowsException<TransactionRejectedException>(
+                    () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true)
+                );
+
+            Assert.AreEqual(expectedException, ex);
+        }
+
+        [TestMethod]
         public void BlockIsValid_ThrowsException_ChainSplitting()
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
@@ -473,10 +536,11 @@ namespace Mpb.Consensus.Test.Logic
             }, _netId);
             var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 19, "block1"), transactions);
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
-            _transactionValidator.Setup(m => m.ValidateTransaction(transactions.First()));
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _signerMock.Setup(m => m.SignatureIsValid("signature", blockHash, "to")).Returns(true);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+            _transactionValidatorMock.Setup(m => m.ValidateTransaction(transactions.First()));
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true)
@@ -492,7 +556,7 @@ namespace Mpb.Consensus.Test.Logic
             var lowerBlockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             var highBlockHash = "00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
@@ -504,10 +568,11 @@ namespace Mpb.Consensus.Test.Logic
                 new Block(new BlockHeader(_netId, 1, "merkleroot", 10, "block2").Finalize(highBlockHash, "privkey"), transactions)
             }, _netId);
             blockToTest.Header.Finalize(lowerBlockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(lowerBlockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
-            _transactionValidator.Setup(m => m.ValidateTransaction(transactions.First()));
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(lowerBlockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _signerMock.Setup(m => m.SignatureIsValid("signature", lowerBlockHash, "to")).Returns(true);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+            _transactionValidatorMock.Setup(m => m.ValidateTransaction(transactions.First()));
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true)
@@ -522,17 +587,18 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
             var blockToTest = new Block(new BlockHeader(_netId, 1, "merkleroot", 1, ""), transactions);
             var blockchain = new Blockchain(_netId);
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
-            _transactionValidator.Setup(m => m.ValidateTransaction(transactions.First()));
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _signerMock.Setup(m => m.SignatureIsValid("signature", blockHash, "to")).Returns(true);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+            _transactionValidatorMock.Setup(m => m.ValidateTransaction(transactions.First()));
 
             sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true);
             
@@ -546,7 +612,7 @@ namespace Mpb.Consensus.Test.Logic
             var lastBlockHash =     "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             var betterBlockHash =   "00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
@@ -558,10 +624,11 @@ namespace Mpb.Consensus.Test.Logic
                 new Block(new BlockHeader(_netId, 1, "merkleroot", 10, "block2").Finalize(lastBlockHash, "privkey"), transactions)
             }, _netId);
             blockToTest.Header.Finalize(betterBlockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(betterBlockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
-            _transactionValidator.Setup(m => m.ValidateTransaction(transactions.First()));
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(betterBlockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _signerMock.Setup(m => m.SignatureIsValid("signature", betterBlockHash, "to")).Returns(true);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+            _transactionValidatorMock.Setup(m => m.ValidateTransaction(transactions.First()));
 
             sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true);
 
@@ -574,7 +641,7 @@ namespace Mpb.Consensus.Test.Logic
         {
             var blockHash = "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             BigDecimal currentTarget = BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
-            var sut = new PowBlockValidator(_blockFinalizer.Object, _transactionValidator.Object, _timestamper.Object);
+            var sut = new PowBlockValidator(_blockFinalizerMock.Object, _transactionValidatorMock.Object, _timestamperMock.Object, _signerMock.Object);
             var transactions = new List<AbstractTransaction>() {
                 new StateTransaction(null, "to", null, 0, 5000, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0)
             };
@@ -586,10 +653,11 @@ namespace Mpb.Consensus.Test.Logic
                 new Block(new BlockHeader(_netId, 1, "merkleroot", 10, "block2").Finalize("block3", "privkey"), transactions)
             }, _netId);
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizer.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamper.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidator.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
-            _transactionValidator.Setup(m => m.ValidateTransaction(transactions.First()));
+            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
+            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
+            _signerMock.Setup(m => m.SignatureIsValid("signature", blockHash, "to")).Returns(true);
+            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
+            _transactionValidatorMock.Setup(m => m.ValidateTransaction(transactions.First()));
 
             sut.ValidateBlock(blockToTest, currentTarget, blockchain, true, true);
 
@@ -600,10 +668,11 @@ namespace Mpb.Consensus.Test.Logic
         [TestCleanup]
         public void Cleanup()
         {
-            _timestamper.VerifyAll();
-            _blockFinalizer.VerifyAll();
-            _transactionValidator.VerifyAll();
-            _difficultyCalculator.VerifyAll();
+            _timestamperMock.VerifyAll();
+            _blockFinalizerMock.VerifyAll();
+            _transactionValidatorMock.VerifyAll();
+            _difficultyCalculatorMock.VerifyAll();
+            _signerMock.VerifyAll();
         }
     }
 }

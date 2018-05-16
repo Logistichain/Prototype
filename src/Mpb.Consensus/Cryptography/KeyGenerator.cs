@@ -9,7 +9,8 @@ using System.Text;
 
 namespace Mpb.Consensus.Cryptography
 {
-    public class KeyGenerator
+    // © Sander Gerz https://blog.todotnet.com/2018/02/public-private-keys-and-signing/
+    public class KeyGenerator : IKeyGenerator
     {
         public void GenerateKeys(out string publicKey, out string privateKey)
         {

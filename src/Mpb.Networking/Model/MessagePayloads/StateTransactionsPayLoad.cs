@@ -1,5 +1,6 @@
 ﻿using Mpb.Model;
 using Mpb.Networking.Extensions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -25,7 +26,7 @@ namespace Mpb.Networking.Model.MessagePayloads
         public void Deserialize(BinaryReader reader)
         {
             var deserializedTransactions = new List<AbstractTransaction>();
-            var count = reader.ReadInt32();
+            var count = reader.ReadInt16();
             for(int i = 0; i < count; i++)
             {
                 var txPayload = new SingleStateTransactionPayload();
@@ -48,7 +49,12 @@ namespace Mpb.Networking.Model.MessagePayloads
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(_transactions.Count());
+            if (_transactions.Count() > Int16.MaxValue)
+            {
+                throw new InvalidDataException("Too many transactions");
+            }
+
+            writer.Write((Int16)_transactions.Count());
             foreach(var tx in _transactions)
             {
                 var transactionPayload = new SingleStateTransactionPayload(tx);

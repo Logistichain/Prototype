@@ -1,5 +1,7 @@
 ﻿using Mpb.Model;
 using Mpb.Networking.Extensions;
+using Mpb.Shared.Extensions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -26,9 +28,11 @@ namespace Mpb.Networking.Model.MessagePayloads
         public void Deserialize(BinaryReader reader)
         {
             var txHash = reader.ReadFixedString(64);
-            var txSignature = reader.ReadFixedString(64); // todo signature
-            var fromPubKey = reader.ReadFixedString(64); // Todo wallet implementation
-            var toPubKey = reader.ReadFixedString(64); // Todo wallet implementation
+            var txSignatureLength = reader.ReadInt16();
+            reader.ReadByte(); // Move the reader by one byte (I don't know why, but else it's not reading the signature properly.
+            var txSignature = reader.ReadFixedString(txSignatureLength);
+            var fromPubKey = reader.ReadFixedString(88);
+            var toPubKey = reader.ReadFixedString(88);
             var skuBlockHash = reader.ReadFixedString(64);
             var skuTxIndex = reader.ReadInt32();
             var amount = reader.ReadUInt32();
@@ -40,8 +44,8 @@ namespace Mpb.Networking.Model.MessagePayloads
             if (dataSize > 0)
             {
                 // Slide the reading window +1 because it moved one byte somehow.. I don't know why.
-                data = reader.ReadFixedString(dataSize + 1);
-                data = data.Substring(1);
+                reader.ReadByte();
+                data = reader.ReadFixedString(dataSize);
                 data = data.Base64Decode();
             }
 
@@ -75,9 +79,10 @@ namespace Mpb.Networking.Model.MessagePayloads
             var tx = (StateTransaction)_transaction;
             var encodedData = tx.Data?.Base64Encode();
             writer.WriteFixedString(tx.Hash, 64);
-            writer.WriteFixedString(tx.Signature, 64); // Todo signature
-            writer.WriteFixedString(tx.FromPubKey ?? "", 64); // Todo wallet implementation
-            writer.WriteFixedString(tx.ToPubKey ?? "", 64); // Todo wallet implementation
+            writer.Write((Int16)tx.Signature.Length);
+            writer.Write(tx.Signature);
+            writer.WriteFixedString(tx.FromPubKey ?? "", 88);
+            writer.WriteFixedString(tx.ToPubKey ?? "", 88);
             writer.WriteFixedString(tx.SkuBlockHash ?? "", 64);
             writer.Write(tx.SkuTxIndex);
             writer.Write(tx.Amount);

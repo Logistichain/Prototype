@@ -13,6 +13,7 @@ using System.Net;
 using Mpb.Networking.Model;
 using Mpb.Networking.Constants;
 using System.Threading;
+using Mpb.Consensus.Cryptography;
 
 namespace Mpb.Node
 {
@@ -22,8 +23,11 @@ namespace Mpb.Node
 
         public static void Main(string[] args)
         {
-            var walletPubKey = "montaminer";
-            var walletPrivKey = "montaprivatekey";
+            CryptographyCommandhandler cryptographyCmdHandler = new CryptographyCommandhandler(new KeyGenerator());
+            cryptographyCmdHandler.HandleGenerateKeysCommand(out string walletPubKey, out string walletPrivKey);
+            Console.WriteLine("Your new public key: " + walletPubKey);
+            Console.WriteLine("Your new private key: " + walletPrivKey);
+
             var networkIdentifier = "testnet";
             var services = SetupDI(networkIdentifier, walletPubKey, walletPrivKey);
             ushort listeningPort = NetworkConstants.DefaultListeningPort;
@@ -73,6 +77,12 @@ namespace Mpb.Node
                 {
                     case "help":
                         PrintConsoleCommands();
+                        break;
+                    case "generatekeys":
+                        cryptographyCmdHandler.HandleGenerateKeysCommand(out walletPubKey, out walletPrivKey);
+                        Console.WriteLine("Your new public key: " + walletPubKey);
+                        Console.WriteLine("Your new private key: " + walletPrivKey);
+                        Console.Write("> ");
                         break;
                     case "accounts":
                     case "users":
@@ -174,7 +184,8 @@ namespace Mpb.Node
         private static void GetServices(IServiceProvider services, out IBlockchainRepository blockchainRepo,
                                         out ITransactionRepository transactionRepo, out ITransactionCreator transactionCreator,
                                         out ITimestamper timestamper, out ISkuRepository skuRepository,
-                                        out INetworkManager networkManager, out ILoggerFactory loggerFactory, out Miner miner)
+                                        out INetworkManager networkManager, out ILoggerFactory loggerFactory,
+                                        out Miner miner)
         {
             blockchainRepo = services.GetService<IBlockchainRepository>();
             transactionRepo = services.GetService<ITransactionRepository>();
@@ -205,6 +216,10 @@ namespace Mpb.Node
                 .AddTransient<ISkuRepository, SkuStateTxLocalFileRepository>()
                 .AddTransient<ITransactionRepository, StateTransactionLocalFileRepository>()
                 .AddTransient<ITimestamper, UnixTimestamper>()
+
+
+                .AddTransient<ISigner, Signer>()
+                .AddTransient<IKeyGenerator, KeyGenerator>()
 
                 .AddTransient<ITransactionCreator, StateTransactionCreator>()
                 .AddTransient<ITransactionValidator, StateTransactionValidator>()
@@ -242,6 +257,7 @@ namespace Mpb.Node
             Console.WriteLine("----- [MontaBlockchain] -----");
             Console.WriteLine("Available commands:");
             Console.WriteLine("- help");
+            Console.WriteLine("- generatekeys");
             Console.WriteLine("- transactions");
             Console.WriteLine("- txpool / transactionpool / pendingtransactions");
             Console.WriteLine("- accounts / users / balances");

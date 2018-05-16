@@ -1,4 +1,5 @@
-﻿using Mpb.Model;
+﻿using Mpb.Consensus.Cryptography;
+using Mpb.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,12 @@ namespace Mpb.Consensus.BlockLogic
     /// </summary>
     public class PowBlockFinalizer : IBlockFinalizer
     {
+        private readonly ISigner _signer;
+
+        public PowBlockFinalizer(ISigner signer)
+        {
+            _signer = signer;
+        }
 
         public virtual string CalculateHash(Block block)
         {
@@ -26,8 +33,13 @@ namespace Mpb.Consensus.BlockLogic
 
         public virtual string CreateSignature(string hash, string privKey)
         {
-            // Todo: sign the validhash with the privkey
-            return "signature";
+            return _signer.SignString(hash, privKey);
+        }
+
+        public virtual void FinalizeBlock(Block block, string privKey)
+        {
+            var validHash = CalculateHash(block);
+            FinalizeBlock(block, validHash, privKey);
         }
 
         public virtual void FinalizeBlock(Block block, string validHash, string privKey)

@@ -12,6 +12,7 @@ using Mpb.Consensus.MiscLogic;
 using Mpb.Shared;
 using Mpb.Shared.Constants;
 using Mpb.DAL;
+using Mpb.Consensus.Cryptography;
 
 namespace Mpb.Consensus.BlockLogic
 {
@@ -20,15 +21,17 @@ namespace Mpb.Consensus.BlockLogic
         private readonly IBlockFinalizer _blockFinalizer;
         private readonly ITransactionValidator _transactionValidator;
         private readonly ITimestamper _timestamper;
+        private readonly ISigner _signer;
 
-        public PowBlockValidator(IBlockFinalizer blockFinalizer, ITransactionValidator transactionValidator, ITimestamper timestamper)
+        public PowBlockValidator(IBlockFinalizer blockFinalizer, ITransactionValidator transactionValidator, ITimestamper timestamper, ISigner signer)
         {
             _blockFinalizer = blockFinalizer ?? throw new ArgumentNullException(nameof(blockFinalizer));
             _transactionValidator = transactionValidator ?? throw new ArgumentNullException(nameof(transactionValidator));
             _timestamper = timestamper ?? throw new ArgumentNullException(nameof(timestamper));
+            _signer = signer ?? throw new ArgumentNullException(nameof(signer));
         }
 
-        //! Decorator/composite pattern could be possible here. Only check for PoW things, then call the parent for more generic checks
+        //! Chain of Responsibility pattern could be possible here. Only check for PoW things, then call the next one for more generic checks
         public virtual void ValidateBlock(Block block, BigDecimal currentTarget, Blockchain blockchain, bool checkTimestamp, bool writeToBlockchain)
         {
             BigInteger.TryParse(block.Header.Hash, NumberStyles.HexNumber, new CultureInfo("en-US"), out var hashValue);
@@ -48,7 +51,8 @@ namespace Mpb.Consensus.BlockLogic
             }
 
             // First transaction must be coinbase
-            if (block.Transactions.First().Action != TransactionAction.ClaimCoinbase.ToString())
+            var firstTransaction = (StateTransaction)block.Transactions.First();
+            if (firstTransaction.Action != TransactionAction.ClaimCoinbase.ToString())
             {
                 throw new BlockRejectedException("First transaction is not coinbase", block);
             }
@@ -63,6 +67,12 @@ namespace Mpb.Consensus.BlockLogic
             if (block.Header.MagicNumber != blockchain.NetIdentifier)
             {
                 throw new BlockRejectedException("Block comes from a different network", block);
+            }
+
+            // Check the signature to make sure the block wasn't altered
+            if (!_signer.SignatureIsValid(block.Header.Signature, block.Header.Hash, firstTransaction.ToPubKey))
+            {
+                throw new BlockRejectedException("Block's signature is invalid", block);
             }
 
             // Check if the previous hash exists in our blockchain

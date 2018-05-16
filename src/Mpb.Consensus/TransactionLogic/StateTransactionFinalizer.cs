@@ -1,4 +1,5 @@
-﻿using Mpb.Model;
+﻿using Mpb.Consensus.Cryptography;
+using Mpb.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,13 @@ namespace Mpb.Consensus.BlockLogic
 {
     public class StateTransactionFinalizer : ITransactionFinalizer
     {
+        private readonly ISigner _signer;
+
+        public StateTransactionFinalizer(ISigner signer)
+        {
+            _signer = signer;
+        }
+
         public virtual string CalculateHash(AbstractTransaction transaction)
         {
             var txByteArray = GetTransactionBytes(transaction);
@@ -21,21 +29,18 @@ namespace Mpb.Consensus.BlockLogic
             return hashString;
         }
         
-        public virtual string CreateSignature(AbstractTransaction transaction, string privKey)
+        public virtual string CreateSignature(string hash, string privKey)
         {
-            // Todo inject wallet mechanism to sign the transaction
-            // if coinbase, use 'ToPubKey' field
-            return "txsignature";
+            return _signer.SignString(hash, privKey);
         }
         
-        //! Signature is always "" until an appropriate wallet module can be utilized.
-        public void FinalizeTransaction(AbstractTransaction tx, string fromPubKey, string fromPrivKey)
+        public void FinalizeTransaction(AbstractTransaction tx, string fromPrivKey)
         {
             if (tx.IsFinalized()) { return; }
 
             var txByteArray = GetTransactionBytes(tx);
             var hashString = CalculateHash(tx);
-            var signature = CreateSignature(tx, fromPrivKey);
+            var signature = CreateSignature(hashString, fromPrivKey);
 
             tx.Finalize(hashString, signature);
         }
