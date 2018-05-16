@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Mpb.Networking.Extensions
+namespace Mpb.Shared.Extensions
 {
     /// <summary>
     /// Providing handy string extension methods.
