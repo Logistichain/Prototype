@@ -38,7 +38,7 @@ namespace Mpb.Node
         string _walletPrivKey;
 
         BigDecimal difficulty;
-        int maxTransactionsPerBlock = 10;
+        int maxTransactionsPerBlock = BlockchainConstants.MaximumTransactionPerBlock;
         uint secondsPerBlockGoal = 3;
         int difficultyUpdateCycle = 5;
 
@@ -148,7 +148,8 @@ namespace Mpb.Node
             }
             catch (TransactionRejectedException e)
             {
-                _logger.LogInformation("Transaction with hash {0} was rejected: {1}", e.Transaction.Hash, e.Message);
+                var errorTx = e.Transaction ?? tx;
+                _logger.LogInformation("Transaction with hash {0} was rejected: {1}", errorTx.Hash, e.Message);
                 return false;
             }
             catch (Exception e)
@@ -208,11 +209,7 @@ namespace Mpb.Node
                 lock (_txPool)
                 {
                     int transactionsIncludedInBlock = _txPool.Count();
-                    for (int i = 0; i < _txPool.Count(); i++)
-                    {
-                        transactions.AddRange(_txPool.GetTransactions(maxTransactionsPerBlock - 1));
-                    }
-
+                    transactions.AddRange(_txPool.GetTransactions(maxTransactionsPerBlock - 1));
                     _logger.LogDebug("Inserted {0} transactions from the txpool into this block", transactions.Count - 1);
                 }
 

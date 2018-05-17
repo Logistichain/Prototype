@@ -20,8 +20,9 @@ namespace Mpb.Node.Handlers
 
         internal void HandleCommand()
         {
-            Console.WriteLine("Transactions:");
             var allTransactions = _transactionRepository.GetAll(_netId).OfType<StateTransaction>();
+            Console.WriteLine("Transactions (" + allTransactions.Count() + "):");
+            /*
             foreach (var transaction in allTransactions)
             {
                 Console.WriteLine("----- TRANSACTION -----");
@@ -37,6 +38,7 @@ namespace Mpb.Node.Handlers
                 Console.WriteLine("Data: " + transaction.Data);
                 Console.WriteLine("-----=============-----");
             }
+            */
             Console.Write("> ");
         }
     }

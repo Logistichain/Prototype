@@ -47,6 +47,7 @@ namespace Mpb.Node
                 out ISkuRepository skuRepository,
                 out INetworkManager networkManager,
                 out ILoggerFactory loggerFactory,
+                out ISkuRepository skuRepo,
                 out Miner miner
                 );
             _logger = loggerFactory.CreateLogger<Program>();
@@ -61,6 +62,7 @@ namespace Mpb.Node
             CreateSkuCommandHandler createSkuCmdHandler = new CreateSkuCommandHandler(transactionRepo, transactionCreator);
             TransferSupplyCommandHandler transferSupplyCmdHandler = new TransferSupplyCommandHandler(skuRepository, transactionRepo, transactionCreator, networkIdentifier);
             NetworkingCommandHandler networkingCmdHandler = new NetworkingCommandHandler();
+            TransactionGeneratorCommandHandler txGeneratorCmdHandler = new TransactionGeneratorCommandHandler(miner, transactionCreator, skuRepo, blockchainRepo);
 
             _logger.LogInformation("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
             networkManager.AcceptConnections(publicIP, listeningPort, new CancellationTokenSource());
@@ -77,6 +79,15 @@ namespace Mpb.Node
                 {
                     case "help":
                         PrintConsoleCommands();
+                        break;
+                    case "transactiongenerator startandmine":
+                        txGeneratorCmdHandler.HandleStartCommand(true);
+                        break;
+                    case "transactiongenerator start":
+                        txGeneratorCmdHandler.HandleStartCommand(false);
+                        break;
+                    case "transactiongenerator stop":
+                        txGeneratorCmdHandler.HandleStopCommand();
                         break;
                     case "generatekeys":
                         cryptographyCmdHandler.HandleGenerateKeysCommand(out walletPubKey, out walletPrivKey);
@@ -126,6 +137,7 @@ namespace Mpb.Node
                             out skuRepository,
                             out networkManager,
                             out var ingored,
+                            out skuRepo,
                             out miner
                         );
                         networkManager.AcceptConnections(publicIP, listeningPort, new CancellationTokenSource());
@@ -135,6 +147,7 @@ namespace Mpb.Node
                         txpoolCmdHandler = new TransactionPoolCommandHandler();
                         transferTokensCmdHandler = new TransferTokensCommandHandler(transactionRepo, transactionCreator);
                         createSkuCmdHandler = new CreateSkuCommandHandler(transactionRepo, transactionCreator);
+                        txGeneratorCmdHandler = new TransactionGeneratorCommandHandler(miner, transactionCreator, skuRepo, blockchainRepo);
                         _logger.LogInformation("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
                         Console.Write("> ");
                         break;
@@ -185,7 +198,7 @@ namespace Mpb.Node
                                         out ITransactionRepository transactionRepo, out ITransactionCreator transactionCreator,
                                         out ITimestamper timestamper, out ISkuRepository skuRepository,
                                         out INetworkManager networkManager, out ILoggerFactory loggerFactory,
-                                        out Miner miner)
+                                        out ISkuRepository skuRepo, out Miner miner)
         {
             blockchainRepo = services.GetService<IBlockchainRepository>();
             transactionRepo = services.GetService<ITransactionRepository>();
@@ -194,6 +207,7 @@ namespace Mpb.Node
             skuRepository = services.GetService<ISkuRepository>();
             networkManager = services.GetService<INetworkManager>();
             loggerFactory = services.GetService<ILoggerFactory>();
+            skuRepo = services.GetService<ISkuRepository>();
             miner = services.GetService<Miner>();
         }
 
@@ -213,8 +227,8 @@ namespace Mpb.Node
                 .AddTransient<IPowBlockCreator, PowBlockCreator>()
 
                 .AddSingleton<IBlockchainRepository, BlockchainLocalFileRepository>()
-                .AddTransient<ISkuRepository, SkuStateTxLocalFileRepository>()
-                .AddTransient<ITransactionRepository, StateTransactionLocalFileRepository>()
+                .AddSingleton<ISkuRepository, SkuStateTxLocalFileRepository>()
+                .AddSingleton<ITransactionRepository, StateTransactionLocalFileRepository>()
                 .AddTransient<ITimestamper, UnixTimestamper>()
 
 
@@ -258,6 +272,7 @@ namespace Mpb.Node
             Console.WriteLine("Available commands:");
             Console.WriteLine("- help");
             Console.WriteLine("- generatekeys");
+            Console.WriteLine("- transactiongenerator startandmine|start|stop");
             Console.WriteLine("- transactions");
             Console.WriteLine("- txpool / transactionpool / pendingtransactions");
             Console.WriteLine("- accounts / users / balances");

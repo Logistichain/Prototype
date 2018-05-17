@@ -196,8 +196,7 @@ namespace Mpb.Consensus.TransactionLogic
             {
                 throw new TransactionRejectedException(nameof(tx.ToPubKey) + " field must be null", tx);
             }
-
-            CheckSkuBlockHashAndTxIndex(tx.SkuBlockHash, tx.SkuTxIndex, TransactionAction.CreateSku, netIdentifier);
+            
             CheckTransactionFee(tx, BlockchainConstants.DestroySupplyFee);
             CheckTokenBalance(tx.FromPubKey, netIdentifier, BlockchainConstants.DestroySupplyFee);
             CheckSupplyBalance(tx.FromPubKey, tx.SkuBlockHash, tx.SkuTxIndex, netIdentifier, tx.Amount);

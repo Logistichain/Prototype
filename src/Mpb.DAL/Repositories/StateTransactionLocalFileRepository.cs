@@ -79,18 +79,21 @@ namespace Mpb.DAL
         private IEnumerable<StateTransaction> GetAllByPredicate(Func<StateTransaction, bool> predicate, string netId)
         {
             var blockchain = _blockchainRepo.GetChainByNetId(netId);
-            foreach (Block b in blockchain.Blocks)
+            lock (blockchain)
             {
-                if (b.Header.Version > BlockchainConstants.ProtocolVersion)
+                foreach (Block b in blockchain.Blocks)
                 {
-                    // todo log unsupporting block version found, but continue
-                }
+                    if (b.Header.Version > BlockchainConstants.ProtocolVersion)
+                    {
+                        // todo log unsupporting block version found, but continue
+                    }
 
-                var stateTransactions = b.Transactions.OfType<StateTransaction>();
-                var transactionsByPubKey = stateTransactions.Where(predicate);
-                foreach (StateTransaction tx in transactionsByPubKey)
-                {
-                    yield return tx;
+                    var stateTransactions = b.Transactions.OfType<StateTransaction>();
+                    var transactionsByPubKey = stateTransactions.Where(predicate);
+                    foreach (StateTransaction tx in transactionsByPubKey)
+                    {
+                        yield return tx;
+                    }
                 }
             }
         }

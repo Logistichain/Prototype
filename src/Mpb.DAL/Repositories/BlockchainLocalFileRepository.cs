@@ -111,11 +111,14 @@ namespace Mpb.DAL
                 GetChainByNetId(netIdentifier);
             }
 
-            foreach(var block in _trackingBlockchain.Blocks)
+            lock(_trackingBlockchain)
             {
-                if (block.Transactions.Where(tx => tx.Hash == transactionHash).Count() > 0)
+                foreach (var block in _trackingBlockchain.Blocks)
                 {
-                    return block;
+                    if (block.Transactions.Where(tx => tx.Hash == transactionHash).Count() > 0)
+                    {
+                        return block;
+                    }
                 }
             }
 

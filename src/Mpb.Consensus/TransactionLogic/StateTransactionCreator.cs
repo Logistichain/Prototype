@@ -143,8 +143,8 @@ namespace Mpb.Consensus.TransactionLogic
             var tx = new StateTransaction(
                 ownerPubKey,
                 null,
-                null,
-                0,
+                skuBlockHash,
+                skuTxIndex,
                 amount,
                 BlockchainConstants.TransactionVersion,
                 TransactionAction.DestroySupply.ToString(),
