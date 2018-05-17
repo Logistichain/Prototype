@@ -46,6 +46,12 @@ namespace Mpb.Networking.Model.MessagePayloads
                 // Slide the reading window +1 because it moved one byte somehow.. I don't know why.
                 reader.ReadByte();
                 data = reader.ReadFixedString(dataSize);
+                if (data.StartsWith("\u0003"))
+                {
+                    reader.ReadByte();
+                    // Also in this case the reader must be moved one more byte.
+                    // The base64decoder corrects the error by itself.
+                }
                 data = data.Base64Decode();
             }
 
