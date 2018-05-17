@@ -7,6 +7,7 @@ using Mpb.Model;
 using Mpb.Networking.Constants;
 using Mpb.Networking.Model;
 using Mpb.Networking.Model.MessagePayloads;
+using Mpb.Shared;
 using Mpb.Shared.Constants;
 using Mpb.Shared.Events;
 using System;
@@ -25,6 +26,8 @@ namespace Mpb.Networking
         private readonly IBlockchainRepository _blockchainRepo;
         private readonly string _netId;
         private readonly ConcurrentTransactionPool _txPool;
+        private Blockchain _blockchain;
+        private BigDecimal _difficulty;
 
         public MessageHandler(INetworkManager manager, ConcurrentTransactionPool txPool, NetworkNodesPool nodePool, IDifficultyCalculator difficultyCalculator, IBlockValidator blockValidator, ILoggerFactory loggerFactory, IBlockchainRepository blockchainRepo, string netId)
             : base(manager, nodePool, loggerFactory)
@@ -34,6 +37,9 @@ namespace Mpb.Networking
             _blockchainRepo = blockchainRepo;
             _netId = netId;
             _txPool = txPool;
+
+            _blockchain = _blockchainRepo.GetChainByNetId(_netId);
+            _difficulty = _difficultyCalculator.CalculateDifficulty(_blockchain, _blockchain.CurrentHeight, 1, 3, 5); // todo use CalculateCurrentDifficulty when testing is done
         }
 
         // todo Chain of Responsibility pattern, make XXMessageHandler class for each command type
@@ -116,21 +122,28 @@ namespace Mpb.Networking
                     // until the process has completed and all blocks are downloaded. Then, grab a block that points to the
                     // end of our chain and add it to our chain. Repeat that process until all blocks have been added.
 
-                    var blockchain = _blockchainRepo.GetChainByNetId(_netId);
                     var blocksProcessed = 0;
 
-                    while (blocksPayload.Blocks.Where(b => b.Header.PreviousHash == blockchain.Blocks.Last().Header.Hash).Any())
+                    lock(_blockchain)
                     {
-                        var blockToProcess = blocksPayload.Blocks.Where(b => b.Header.PreviousHash == blockchain.Blocks.Last().Header.Hash).First();
-                        var difficulty = _difficultyCalculator.CalculateDifficulty(blockchain, blockchain.CurrentHeight, 1, 3, 5); // todo use CalculateCurrentDifficulty when testing is done
-                        if (difficulty < 1) { difficulty = 1; }
-                        var currentTarget = BlockchainConstants.MaximumTarget / difficulty; // todo refactor these 3 lines. They are copy-pasted from the miner.
-                        _blockValidator.ValidateBlock(blockToProcess, currentTarget, blockchain, false, true); // Rethrow when we have a Block- / TransactionRejectedException. We don't want to keep a connection with bad nodes.
-                        blocksProcessed++;
+                        while (blocksPayload.Blocks.Where(b => b.Header.PreviousHash == _blockchain.Blocks.Last().Header.Hash).Any())
+                        {
+                            var blockToProcess = blocksPayload.Blocks.Where(b => b.Header.PreviousHash == _blockchain.Blocks.Last().Header.Hash).First();
+
+                            if (_blockchain.CurrentHeight % 5 == 0 && _blockchain.CurrentHeight > 0)
+                            {
+                                _difficulty = _difficultyCalculator.CalculateDifficulty(_blockchain, _blockchain.CurrentHeight, 1, 3, 5); // todo use CalculateCurrentDifficulty when testing is done
+                            }
+
+                            if (_difficulty < 1) { _difficulty = 1; }
+                            var currentTarget = BlockchainConstants.MaximumTarget / _difficulty; // todo refactor these 3 lines. They are copy-pasted from the miner.
+                            _blockValidator.ValidateBlock(blockToProcess, currentTarget, _blockchain, false, true); // Rethrow when we have a Block- / TransactionRejectedException. We don't want to keep a connection with bad nodes.
+                            blocksProcessed++;
+                        }
                     }
 
                     _logger.LogDebug("Downloaded and added {0} new blocks from remote node", blocksProcessed);
-                    _logger.LogDebug("Current height: {0}", blockchain.CurrentHeight);
+                    _logger.LogDebug("Current height: {0}", _blockchain.CurrentHeight);
 
                     if (blocksProcessed != blocksPayload.Blocks.Count())
                     {
@@ -139,10 +152,10 @@ namespace Mpb.Networking
                         return;
                     }
 
-                    _blockchainRepo.Update(blockchain);
+                    _blockchainRepo.Update(_blockchain);
 
                     // Block batch processed. Keep on ask for more headers.
-                    var getHeadersPayload = new GetHeadersPayload(blockchain.Blocks.Last().Header.Hash);
+                    var getHeadersPayload = new GetHeadersPayload(_blockchain.Blocks.Last().Header.Hash);
                     await SendMessageToNode(node, NetworkCommand.GetHeaders, getHeadersPayload);
                 }
                 else if (msg.Command == NetworkCommand.GetTxPool.ToString())
@@ -192,32 +205,36 @@ namespace Mpb.Networking
         {
             var blocks = new List<Block>();
             bool stopSearching = false;
-            var previousBlock = _blockchainRepo.GetBlockByHash(beginHash, _netId);
-            var i = 0;
-
-            if (includeBeginBlock)
+            var bLockchain = _blockchainRepo.GetChainByNetId(_netId); // We fetch the blockchain to put a threadlock on it.
+            lock(bLockchain)
             {
-                blocks.Add(previousBlock);
-            }
+                var previousBlock = _blockchainRepo.GetBlockByHash(beginHash, _netId);
+                var i = 0;
 
-            while (i < NetworkConstants.MaxHeadersInMessage && !stopSearching)
-            {
-                // Stale blocks / side chains are not supported here
-                try
+                if (includeBeginBlock)
                 {
-                    previousBlock = _blockchainRepo.GetBlockByPreviousHash(previousBlock.Header.Hash, _netId);
                     blocks.Add(previousBlock);
+                }
 
-                    if (previousBlock.Header.Hash == stopHash)
-                    {
-                        stopSearching = true;
-                    }
-                }
-                catch (KeyNotFoundException)
+                while (i < NetworkConstants.MaxHeadersInMessage && !stopSearching)
                 {
-                    stopSearching = true; // No more blocks found
+                    // Stale blocks / side chains are not supported here
+                    try
+                    {
+                        previousBlock = _blockchainRepo.GetBlockByPreviousHash(previousBlock.Header.Hash, _netId);
+                        blocks.Add(previousBlock);
+
+                        if (previousBlock.Header.Hash == stopHash)
+                        {
+                            stopSearching = true;
+                        }
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        stopSearching = true; // No more blocks found
+                    }
+                    i++;
                 }
-                i++;
             }
 
             return blocks;
