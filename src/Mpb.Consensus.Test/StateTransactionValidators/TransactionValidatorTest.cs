@@ -158,7 +158,7 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
 
             var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
-            Assert.AreEqual("Transaction signature is incorrect", exception.Message);
+            Assert.AreEqual("Transaction signature is invalid", exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);
         }
 
