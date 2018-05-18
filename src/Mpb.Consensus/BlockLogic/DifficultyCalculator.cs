@@ -10,6 +10,14 @@ namespace Mpb.Consensus.BlockLogic
 {
     public class DifficultyCalculator : IDifficultyCalculator
     {
+        private Dictionary<int, BigDecimal> calculatedDifficulties;
+
+        public DifficultyCalculator()
+        {
+            // todo load (and save) previously calculated difficulties from/to DAL
+            calculatedDifficulties = new Dictionary<int, BigDecimal>();
+        }
+
         public virtual BigDecimal CalculateCurrentDifficulty(Blockchain chain)
         {
             return CalculateDifficultyForHeight(chain, chain.CurrentHeight);
@@ -27,14 +35,26 @@ namespace Mpb.Consensus.BlockLogic
                 return 1;
             }
 
+            if (calculatedDifficulties.TryGetValue(height, out BigDecimal cachedDifficulty))
+            {
+                return cachedDifficulty;
+            }
+
             lock (chain)
             {
                 var previousDifficultyInfo = GetPreviousDifficultyUpdateInformation(height, chain, difficultyUpdateCycle);            
                 var totalSeconds = previousDifficultyInfo.TotalSecondsForBlocks == 0 ? 1 : previousDifficultyInfo.TotalSecondsForBlocks;
                 BigDecimal difficultyMultiplier = (double)(secondsPerBlockGoal * difficultyUpdateCycle) / totalSeconds;
-                var previousDifficulty = CalculateDifficulty(chain, previousDifficultyInfo.BeginHeight, protocolVersion, secondsPerBlockGoal, difficultyUpdateCycle); // This is highly inefficient, better to keep a record
+                BigDecimal previousDifficulty = 1;
+                if (!calculatedDifficulties.TryGetValue(previousDifficultyInfo.BeginHeight, out previousDifficulty))
+                {
+                    previousDifficulty = CalculateDifficulty(chain, previousDifficultyInfo.BeginHeight, protocolVersion, secondsPerBlockGoal, difficultyUpdateCycle); // This is highly inefficient, better to keep a record
+                }
                 // todo round the number somehow as it gets larger every time.
-                return previousDifficulty * difficultyMultiplier;
+
+                var currentDificulty = previousDifficulty * difficultyMultiplier;
+                calculatedDifficulties.Add(height, currentDificulty);
+                return currentDificulty;
             }
         }
 
@@ -69,5 +89,7 @@ namespace Mpb.Consensus.BlockLogic
                 return new BlockDifficultyUpdate(chain, calculateForHeight - difficultyUpdateCycle, calculateForHeight - 1);
             }
         }
+
+
     }
 }

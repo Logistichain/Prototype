@@ -27,6 +27,7 @@ namespace Mpb.Node
             cryptographyCmdHandler.HandleGenerateKeysCommand(out string walletPubKey, out string walletPrivKey);
             Console.WriteLine("Your new public key: " + walletPubKey);
             Console.WriteLine("Your new private key: " + walletPrivKey);
+            Console.WriteLine("Loading blockchain..");
 
             var networkIdentifier = "testnet";
             var services = SetupDI(networkIdentifier, walletPubKey, walletPrivKey);
@@ -37,6 +38,7 @@ namespace Mpb.Node
             {
                 listeningPort = ushort.Parse(args[1]);
             }
+
 
             GetServices(
                 services,
