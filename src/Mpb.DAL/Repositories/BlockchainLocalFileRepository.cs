@@ -65,14 +65,14 @@ namespace Mpb.DAL
             return _trackingBlockchain;
         }
 
-        public Block GetBlockByHash(string blockHash, string netIdentifier)
+        public Block GetBlockByHash(string hash, string netIdentifier)
         {
             if (_trackingBlockchain == null)
             {
                 GetChainByNetId(netIdentifier);
             }
 
-            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Header.Hash.ToUpper() == blockHash.ToUpper());
+            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Header.Hash.ToUpper() == hash.ToUpper());
             if (searchQuery.Count() > 0)
             {
                 return searchQuery.First();

@@ -22,6 +22,8 @@ namespace Mpb.Networking
             _nodePool = nodePool;
             _logger = loggerFactory.CreateLogger<MessageHandler>();
         }
+
+        public abstract Task HandleMessage(NetworkNode node, Message msg);
         
         /// <summary>
         /// Helper method to reduce duplicate LOC

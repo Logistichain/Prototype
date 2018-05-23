@@ -31,8 +31,8 @@ namespace Mpb.Networking
         private bool _isDisposed = false;
         private bool _isSyncing = false;
         private ILogger _logger;
-        private IMessageHandler _messageHandler;
-        private IMessageHandler _handshakeMessageHandler;
+        private AbstractMessageHandler _messageHandler;
+        private AbstractMessageHandler _handshakeMessageHandler;
         private List<string> _relayedTransactionHashes; // To prevent endless relays
         private List<string> _relayedBlockHashes;
 
@@ -247,6 +247,7 @@ namespace Mpb.Networking
             _logger.LogDebug("Listening for new messages from node {0} on port {1} with an idle timeout of {2}sec", node.DirectEndpoint.Address.ToString(), node.DirectEndpoint.Port, NetworkConstants.IdleTimeoutSeconds);
             while (node.IsConnected)
             {
+                // todo this seems to be disposed when running the transactiongenerator and letting another node mine for a while..
                 var x = _messageHandler.ListenForNewMessage(node, new TimeSpan(0, 0, NetworkConstants.IdleTimeoutSeconds)).Result;
             }
         }

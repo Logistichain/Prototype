@@ -21,7 +21,7 @@ namespace Mpb.Consensus.BlockLogic
         /// <summary>
         /// Validate the block header only. Throws BlockRejectedException if the validation fails.
         /// </summary>
-        /// <param name="block">The block to validate</param>
+        /// <param name="block">The header to validate</param>
         /// <param name="hashValue">The pre-calculated hash value of the block</param>
         /// <param name="currentTarget">The current target to validate the block's hash</param>
         /// <param name="checkTimestamp">Whether to check if the timestamp is within the acceptable range compared to the current UTC system time. Set this to false when syncing the blockchain from other nodes</param>

@@ -163,7 +163,7 @@ namespace Mpb.Node
                         transferSupplyCmdHandler.HandleCommand();
                         break;
                     case "networking setport":
-                        listeningPort = networkingCmdHandler.HandlePortCommand(listeningPort);
+                        listeningPort = networkingCmdHandler.HandleSetPortCommand(listeningPort);
                         break;
                     case "networking connect":
                         networkingCmdHandler.HandleConnectCommand(networkManager);
@@ -172,7 +172,7 @@ namespace Mpb.Node
                         networkingCmdHandler.HandleDisconnectCommand(networkManager);
                         break;
                     case "networking pool":
-                        networkingCmdHandler.HandlePoolCommand(NetworkNodesPool.GetInstance(loggerFactory));
+                        networkingCmdHandler.HandleListPoolCommand(NetworkNodesPool.GetInstance(loggerFactory));
                         break;
                     case "networking stop":
                         networkManager.Dispose();
@@ -240,7 +240,7 @@ namespace Mpb.Node
                 .AddTransient<ITransactionCreator, StateTransactionCreator>()
                 .AddTransient<ITransactionValidator, StateTransactionValidator>()
                 .AddTransient<ITransactionFinalizer, StateTransactionFinalizer>()
-                .AddTransient<IMessageHandler, MessageHandler>()
+                .AddTransient<AbstractMessageHandler, MessageHandler>()
                 .AddTransient(x => ConcurrentTransactionPool.GetInstance().SetTransactionValidator(x.GetService<ITransactionValidator>()))
                 .AddTransient(x => NetworkNodesPool.GetInstance(x.GetService<ILoggerFactory>()))
                 .AddTransient<INetworkManager, NetworkManager>(

@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Mpb.Networking
 {
-    public class HandshakeMessageHandler : AbstractMessageHandler, IMessageHandler
+    public class HandshakeMessageHandler : AbstractMessageHandler
     {
         IBlockchainRepository _blockchainRepo;
         private readonly string _netId;
@@ -25,7 +25,7 @@ namespace Mpb.Networking
             _netId = netId;
         }
 
-        public async Task HandleMessage(NetworkNode node, Message msg)
+        public override async Task HandleMessage(NetworkNode node, Message msg)
         {
             if (node.HandshakeIsCompleted) return;
 

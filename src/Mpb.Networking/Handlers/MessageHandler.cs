@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace Mpb.Networking
 {
-    public class MessageHandler : AbstractMessageHandler, IMessageHandler
+    public class MessageHandler : AbstractMessageHandler
     {
         private readonly IDifficultyCalculator _difficultyCalculator;
         private readonly IBlockValidator _blockValidator;
@@ -44,7 +44,7 @@ namespace Mpb.Networking
 
         // todo Chain of Responsibility pattern, make XXMessageHandler class for each command type
         // and refactor abstractmessagehandler to a regular MessageHandlerHelper
-        public async Task HandleMessage(NetworkNode node, Message msg)
+        public override async Task HandleMessage(NetworkNode node, Message msg)
         {
             try
             {

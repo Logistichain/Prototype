@@ -18,7 +18,7 @@ namespace Mpb.Node.Handlers
 
         }
 
-        internal ushort HandlePortCommand(ushort currentPort)
+        internal ushort HandleSetPortCommand(ushort currentPort)
         {
             Console.WriteLine("Specify the new listening port. Now it's " + currentPort);
             Console.Write("> ");
@@ -74,7 +74,7 @@ namespace Mpb.Node.Handlers
             }
         }
 
-        internal void HandlePoolCommand(NetworkNodesPool nodePool)
+        internal void HandleListPoolCommand(NetworkNodesPool nodePool)
         {
             var connectedEndpoints =  nodePool.GetAllRemoteListenEndpoints();
             Console.WriteLine($"Networking connections pool ({nodePool.Count()}):");

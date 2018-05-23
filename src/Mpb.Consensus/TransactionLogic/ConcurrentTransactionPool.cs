@@ -40,6 +40,7 @@ namespace Mpb.Consensus.TransactionLogic
 
         /// <summary>
         /// Don't forget to set the transaction validator after instantiating the transactionpool.
+        /// The dependency injector is responsible for this call.
         /// </summary>
         /// <param name="transactionValidator"></param>
         /// <returns>This instance (fluent)</returns>

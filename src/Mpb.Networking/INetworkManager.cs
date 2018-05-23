@@ -42,7 +42,7 @@ namespace Mpb.Networking
         /// <param name="endpoint">The peer to connect to</param>
         Task ConnectToPeer(IPEndPoint endpoint);
 
-        void DisconnectPeer(IPEndPoint iPEndPoint);
+        void DisconnectPeer(IPEndPoint endpoint);
 
         void Dispose();
     }

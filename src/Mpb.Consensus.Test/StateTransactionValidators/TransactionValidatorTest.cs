@@ -162,8 +162,6 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
             Assert.AreEqual(expectedTransaction, exception.Transaction);
         }
 
-        // todo check transaction signature call
-
         [TestCleanup]
         public void Cleanup()
         {
