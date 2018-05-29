@@ -9,6 +9,7 @@ using Mpb.Networking.Model.MessagePayloads;
 using Mpb.Shared.Constants;
 using Mpb.Shared.Events;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -35,6 +36,7 @@ namespace Mpb.Networking
         private AbstractMessageHandler _handshakeMessageHandler;
         private List<string> _relayedTransactionHashes; // To prevent endless relays
         private List<string> _relayedBlockHashes;
+        private ConcurrentBag<int> _delays;
 
         public NetworkManager(NetworkNodesPool nodePool, ILoggerFactory loggerFactory, IBlockValidator blockValidator, IDifficultyCalculator difficultyCalculator, IBlockchainRepository repo, string netId)
         {
@@ -46,6 +48,7 @@ namespace Mpb.Networking
             _relayedBlockHashes = new List<string>();
             _messageHandler = new MessageHandler(this, ConcurrentTransactionPool.GetInstance(), nodePool, difficultyCalculator, blockValidator, loggerFactory, repo, netId);
             _handshakeMessageHandler = new HandshakeMessageHandler(this, nodePool, loggerFactory, repo, netId);
+            _delays = new ConcurrentBag<int>();
 
             EventPublisher.GetInstance().OnValidatedBlockCreated += OnValidatedBlockCreated;
             EventPublisher.GetInstance().OnValidTransactionReceived += OnValidTransactionReceived;
@@ -84,7 +87,13 @@ namespace Mpb.Networking
                 }
 
                 var nwNode = new NetworkNode(ConnectionType.Inbound, socket);
-                _nodePool.AddNetworkNode(nwNode);
+                var added = _nodePool.AddNetworkNode(nwNode);
+                if (!added)
+                {
+                    nwNode?.Disconnect();
+                    return;
+                }
+
                 try
                 {
                     // Listen for new messages with a large timeout
@@ -124,7 +133,13 @@ namespace Mpb.Networking
 
         public async Task ConnectToPeer(NetworkNode node)
         {
-            if (node.ListenEndpoint != null && node.ListenEndpoint?.Address.MapToIPv4().ToString() == _publicIp.ToString() && node.ListenEndpoint.Port == _port)
+            if (node.ListenEndpoint != null && node.ListenEndpoint.Address.MapToIPv4().ToString() == _publicIp.ToString() && node.ListenEndpoint.Port == _port)
+            {
+                _logger.LogDebug("Tried to connect to ourselves as a remote peer. Skipped attempt.");
+                return;
+            }
+
+            if (node.ListenEndpoint != null && node.ListenEndpoint.Address.MapToIPv4().ToString().Contains("127.0.0.1") && node.ListenEndpoint.Port == _port)
             {
                 _logger.LogDebug("Tried to connect to ourselves as a remote peer. Skipped attempt.");
                 return;
@@ -144,7 +159,13 @@ namespace Mpb.Networking
                 return;
             }
 
-            _nodePool.AddNetworkNode(node);
+            var added = _nodePool.AddNetworkNode(node);
+            if (!added)
+            {
+                node?.Disconnect();
+                return;
+            }
+
             try
             {
                 // Send a version message
@@ -302,6 +323,16 @@ namespace Mpb.Networking
                     }
                 }
             });
+        }
+
+        internal void AddDelayRegistration(int sec)
+        {
+            _delays.Add(sec);
+        }
+
+        public IEnumerable<int> GetAllDelays()
+        {
+            return _delays;
         }
 
         #region Dispose

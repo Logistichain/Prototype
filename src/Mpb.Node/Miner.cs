@@ -39,8 +39,6 @@ namespace Mpb.Node
 
         BigDecimal difficulty;
         int maxTransactionsPerBlock = BlockchainConstants.MaximumTransactionPerBlock;
-        uint secondsPerBlockGoal = 3;
-        int difficultyUpdateCycle = 5;
 
         public Miner(string netId, string minerWalletPubKey, string minerWalletPrivKey,
                     IBlockchainRepository blockchainRepo, ITransactionRepository transactionRepo,
@@ -64,7 +62,7 @@ namespace Mpb.Node
 
             EventPublisher.GetInstance().OnUnvalidatedTransactionReceived += OnUnvalidatedTransactionReceived;
             EventPublisher.GetInstance().OnUnvalidatedBlockCreated += OnUnvalidatedBlockCreated;
-            difficulty = _difficultyCalculator.CalculateDifficulty(_blockchain, _blockchain.CurrentHeight, 1, secondsPerBlockGoal, difficultyUpdateCycle); // todo use CalculateCurrentDifficulty when testing is done
+            difficulty = _difficultyCalculator.CalculateCurrentDifficulty(_blockchain);
         }
 
         public bool IsMining => _miningTask != null && _miningTask.Status == TaskStatus.Running;
@@ -189,7 +187,7 @@ namespace Mpb.Node
 
         private void MineForBlocks(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("We want to achieve a total of {0} seconds for each {1} blocks to be created.", (secondsPerBlockGoal * difficultyUpdateCycle), difficultyUpdateCycle);
+            _logger.LogInformation("We want to achieve a total of {0} seconds for each {1} blocks to be created.", (BlockchainConstants.SecondsPerBlockGoal * BlockchainConstants.DifficultyUpdateCycle), BlockchainConstants.DifficultyUpdateCycle);
             _logger.LogInformation("Mining for blocks..");
 
             while (!cancellationToken.IsCancellationRequested)
@@ -247,12 +245,12 @@ namespace Mpb.Node
 
         private void CheckForDifficultyUpdate()
         {
-            if (_blockchain.CurrentHeight % difficultyUpdateCycle == 0 && _blockchain.CurrentHeight > 0)
+            if (_blockchain.CurrentHeight % BlockchainConstants.DifficultyUpdateCycle == 0 && _blockchain.CurrentHeight > 0)
             {
-                difficulty = _difficultyCalculator.CalculateDifficulty(_blockchain, _blockchain.CurrentHeight, 1, secondsPerBlockGoal, difficultyUpdateCycle); // todo use CalculateCurrentDifficulty when testing is done
+                difficulty = _difficultyCalculator.CalculateCurrentDifficulty(_blockchain);
                 _blockchainRepo.Update(_blockchain);
                 _logger.LogInformation("Blockchain persisted.");
-                var difficultyInfo = _difficultyCalculator.GetPreviousDifficultyUpdateInformation(_blockchain, difficultyUpdateCycle);
+                var difficultyInfo = _difficultyCalculator.GetPreviousDifficultyUpdateInformation(_blockchain);
                 _logger.LogInformation("Total time to create blocks {0}-{1}: {2} sec", difficultyInfo.BeginHeight, difficultyInfo.EndHeight - 1, difficultyInfo.TotalSecondsForBlocks);
             }
         }

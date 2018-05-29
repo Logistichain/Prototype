@@ -14,6 +14,8 @@ using Mpb.Networking.Model;
 using Mpb.Networking.Constants;
 using System.Threading;
 using Mpb.Consensus.Cryptography;
+using Mpb.Shared.Events;
+using Mpb.Shared.Constants;
 
 namespace Mpb.Node
 {
@@ -72,6 +74,20 @@ namespace Mpb.Node
             networkManager.ConnectToPeer(new NetworkNode(ConnectionType.Outbound, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 12345)));
 
             PrintConsoleCommands();
+
+            var skuTransactions = 0;
+            var txpool = ConcurrentTransactionPool.GetInstance();
+            EventPublisher.GetInstance().OnValidTransactionReceived += (object sender, TransactionReceivedEventArgs txargs) =>
+            {
+                if (txargs.Transaction.Action == TransactionAction.CreateSku.ToString())
+                    skuTransactions++;
+
+                if (skuTransactions > 200000 && txpool.Count() < 1)
+                {
+                    miner.StopMining(true);
+                    txGeneratorCmdHandler.HandleStopCommand();
+                }
+            };
 
             var input = "";
             while (input != "exit")
@@ -164,6 +180,9 @@ namespace Mpb.Node
                         break;
                     case "networking setport":
                         listeningPort = networkingCmdHandler.HandleSetPortCommand(listeningPort);
+                        break;
+                    case "networking setaddress":
+                        publicIP = networkingCmdHandler.HandleSetAddressCommand(publicIP);
                         break;
                     case "networking connect":
                         networkingCmdHandler.HandleConnectCommand(networkManager);
@@ -285,7 +304,7 @@ namespace Mpb.Node
             Console.WriteLine("- stopmining");
             Console.WriteLine("- resetblockchain");
             Console.WriteLine("- transfertokens");
-            Console.WriteLine("- networking start|stop|restart|setport|connect|disconnect|pool");
+            Console.WriteLine("- networking start|stop|restart|setaddress|setport|connect|disconnect|pool");
             Console.WriteLine("What would you like to do:");
             Console.Write("> ");
         }

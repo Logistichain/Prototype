@@ -53,14 +53,17 @@ namespace Mpb.Networking
         /// <seealso cref="NetworkConstants.MaxConcurrentConnections"/>
         /// </summary>
         /// <param name="node">The node to add</param>
-        public void AddNetworkNode(NetworkNode node)
+        public bool AddNetworkNode(NetworkNode node)
         {
             var added = false;
             if (!node.IsDisposed && Count() < NetworkConstants.MaxConcurrentConnections)
             {
                 lock(_nodesPool)
                 {
-                    if (!_nodesPool.Contains(new KeyValuePair<string, NetworkNode>(node.ToString(), node)))
+                    var endpoint = node.ListenEndpoint ?? node.DirectEndpoint;
+                    if (!_nodesPool.Values.Where(
+                        n => (n.ListenEndpoint != null && n.ListenEndpoint.Address.ToString().Contains(endpoint.Address.ToString()))
+                        || (n.DirectEndpoint != null && n.DirectEndpoint.Address.ToString().Contains(endpoint.Address.ToString()))).Any())
                     {
                         added = _nodesPool.TryAdd(node.ToString(), node);
                     }
@@ -74,6 +77,8 @@ namespace Mpb.Networking
                 node.OnDisconnected += Node_OnDisconnected;
                 node.OnListenerEndpointChanged += Node_OnListenerEndpointChanged;
             }
+
+            return added;
         }
 
         /// <summary>

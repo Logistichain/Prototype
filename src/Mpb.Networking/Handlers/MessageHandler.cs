@@ -39,7 +39,7 @@ namespace Mpb.Networking
             _txPool = txPool;
 
             _blockchain = _blockchainRepo.GetChainByNetId(_netId);
-            _difficulty = _difficultyCalculator.CalculateDifficulty(_blockchain, _blockchain.CurrentHeight, 1, 3, 5); // todo use CalculateCurrentDifficulty when testing is done
+            _difficulty = _difficultyCalculator.CalculateCurrentDifficulty(_blockchain);
         }
 
         // todo Chain of Responsibility pattern, make XXMessageHandler class for each command type
@@ -132,7 +132,7 @@ namespace Mpb.Networking
 
                             if (_blockchain.CurrentHeight % 5 == 0 && _blockchain.CurrentHeight > 0)
                             {
-                                _difficulty = _difficultyCalculator.CalculateDifficulty(_blockchain, _blockchain.CurrentHeight, 1, 3, 5); // todo use CalculateCurrentDifficulty when testing is done
+                                _difficulty = _difficultyCalculator.CalculateCurrentDifficulty(_blockchain); // todo use CalculateCurrentDifficulty when testing is done
                             }
 
                             if (_difficulty < 1) { _difficulty = 1; }

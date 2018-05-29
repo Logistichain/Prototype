@@ -36,6 +36,18 @@ namespace Mpb.Node.Handlers
             return newListeningPort;
         }
 
+        internal IPAddress HandleSetAddressCommand(IPAddress publicIp)
+        {
+            Console.WriteLine("Specify the new listening address. Now it's " + publicIp.ToString());
+            Console.Write("> ");
+            // todo input validation
+            var newIp = IPAddress.Parse(Console.ReadLine().ToLower());
+            Console.WriteLine("Done. Restart the networking module to use the new port.");
+            Console.Write("> ");
+
+            return newIp;
+        }
+
         internal void HandleConnectCommand(INetworkManager networkManager)
         {
             Console.WriteLine("Specify the IP to connect to (ip:port)");
