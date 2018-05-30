@@ -126,7 +126,7 @@ namespace Mpb.Node
 
         public bool AddTransactionToPool(AbstractTransaction tx, bool publishToNetwork)
         {
-            _logger.LogInformation("Miner received transaction: {0}", JsonConvert.SerializeObject(tx));
+            //_logger.LogInformation("Miner received transaction: {0}", JsonConvert.SerializeObject(tx));
             try
             {
                 if (_txPool.Contains(tx))

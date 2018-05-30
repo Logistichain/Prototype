@@ -51,7 +51,7 @@ namespace Mpb.Networking.Model.MessagePayloads
             string endpoints = "";
             foreach(var endpoint in _endpoints)
             {
-                endpoints += endpoint.Address.ToString() + ":" + endpoint.Port + ",";
+                endpoints += endpoint.Address.MapToIPv4().ToString() + ":" + endpoint.Port + ",";
             }
 
             return endpoints;
@@ -67,7 +67,7 @@ namespace Mpb.Networking.Model.MessagePayloads
                 {
                     var ip = endpoint.Substring(0, idx);
                     var port = int.Parse(endpoint.Substring(idx + 1));
-                    yield return new IPEndPoint(IPAddress.Parse(ip), port);
+                    yield return new IPEndPoint(IPAddress.Parse(ip).MapToIPv4(), port);
                 }
             }
         }
