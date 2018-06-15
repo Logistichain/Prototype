@@ -1,9 +1,8 @@
-# Montapacking Blockchain (Mpb) documentation
+# Logistichain documentation
 Hello there, adventurer! Welcome to the world of blockchain. This prototype is meant to generate knowledge about blockchain. That's why this blockchain was created from scratch in C#. The project also investigates if a high-volume supplychain (at least 200K transactions a day) blockchain is feasible or not. To help you understand this project and it's internals, feel free to open up some subjects from the documentation guide. Most interfaces and classes are provided with documentation aswell, so another option is to skip the docs and take a deep-dive into the code.
 
 ## Documentation guide
-- [Tour.md](Tour.md): Take a step-by-step 'tour' through the code.
-- Or explore our components by yourself:
+- Explore our components by yourself:
     * [Libraries.md](Libraries.md): Explanation of the solution architecture
     * [Models.md](Models.md): Block, Transaction, SKU. (Models library)
     * [Mining.md](Mining.md): Mining & Difficulty. (Node library)

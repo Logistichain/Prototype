@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.5</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Logistichain.Model\Logistichain.Model.csproj" />
+    <ProjectReference Include="..\Logistichain.Shared\Logistichain.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
