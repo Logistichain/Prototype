@@ -6,18 +6,18 @@ using System.Collections.Generic;
 using System.Text;
 using Mpb.Shared.Events;
 using System.Linq;
+using Mpb.Shared.Constants;
 
 namespace Mpb.Node.Handlers
 {
-    internal class TransferSupplyCommandHandler
+    internal class CreateSupplyCommandHandler
     {
         private readonly ISkuRepository _skuRepository;
         private readonly ITransactionRepository _transactionRepo;
         private readonly ITransactionCreator _transactionCreator;
         private readonly string _netId;
-        private const ulong TransferSupplyFee = 1;
 
-        internal TransferSupplyCommandHandler(ISkuRepository skuRepository, ITransactionRepository transactionRepo, ITransactionCreator transactionCreator, string netId)
+        internal CreateSupplyCommandHandler(ISkuRepository skuRepository, ITransactionRepository transactionRepo, ITransactionCreator transactionCreator, string netId)
         {
             _skuRepository = skuRepository;
             _transactionRepo = transactionRepo;
@@ -27,12 +27,12 @@ namespace Mpb.Node.Handlers
 
         internal void HandleCommand()
         {
-            ulong transferFee = TransferSupplyFee; // From BlockchainConstants.cs
+            ulong fee = BlockchainConstants.CreateSupplyFee;
             IEnumerable<Sku> skuWithHistory = null;
             var blockHash = "";
             var txIndex = 0;
 
-            Console.WriteLine("Current transfer supply fee is " + TransferSupplyFee + " TK.");
+            Console.WriteLine("Current create supply fee is " + fee + " TK.");
             while (skuWithHistory == null)
             {
                 WriteLineWithInputCursor("Enter the block hash where the SKU was created:");
@@ -61,28 +61,21 @@ namespace Mpb.Node.Handlers
             }
 
             Console.WriteLine("Selected " + skuWithHistory.First().Data.SkuId);
-            WriteLineWithInputCursor("Enter the sender's public key:");
-            var fromPub = Console.ReadLine();
-
-            var fromPriv = Program.GetPrivKey(fromPub);
-            while (String.IsNullOrWhiteSpace(fromPriv))
+            var createTransaction = (StateTransaction)skuWithHistory.First().Transaction;
+            var fromPriv = Program.GetPrivKey(createTransaction.FromPubKey);
+            if (String.IsNullOrWhiteSpace(fromPriv))
             {
-                Console.WriteLine("Private key not found.");
-                WriteLineWithInputCursor("Enter the sender's public key:");
-                fromPub = Console.ReadLine();
+                Console.WriteLine("Private key not found for public key " + createTransaction.FromPubKey);
+                Console.WriteLine("Action terminated.");
+                return;
             }
 
-            var senderBalance = _transactionRepo.GetTokenBalanceForPubKey(fromPub, _netId);
-            var skuSupply = _skuRepository.GetSupplyBalanceForPubKey(fromPub, skuWithHistory);
+            var senderBalance = _transactionRepo.GetTokenBalanceForPubKey(createTransaction.FromPubKey, _netId);
+            var skuSupply = _skuRepository.GetSupplyBalanceForPubKey(createTransaction.FromPubKey, skuWithHistory);
 
             Console.WriteLine("The sender's token balance: " + senderBalance);
             Console.WriteLine("The sender's supply: " + skuSupply);
-
-
-            WriteLineWithInputCursor("Enter the receiver's public key:");
-            var toPub = Console.ReadLine();
-
-
+            
             // Todo support custom fees in transactionCreator
             /*
             var askFeeFirstTime = true;
@@ -120,34 +113,19 @@ namespace Mpb.Node.Handlers
             */
 
             uint amount = 0;
-            bool forceAmount = false;
-            while (amount < 1 || amount > skuSupply && !forceAmount)
+            WriteLineWithInputCursor("Specify the new amount of supply to create:");
+
+            var amountInput = Console.ReadLine().ToLower();
+            while (!UInt32.TryParse(amountInput, out amount))
             {
-                WriteLineWithInputCursor("Specify the amount to transfer:");
-
-                var amountInput = Console.ReadLine().ToLower();
-                while (!UInt32.TryParse(amountInput, out amount))
-                {
-                    WriteLineWithInputCursor("Invalid value. Use a positive numeric value without decimals.");
-                    amountInput = Console.ReadLine().ToLower();
-                }
-
-                if (amount > skuSupply && !forceAmount)
-                {
-                    Console.WriteLine("The given amount is higher than the sender's current supply balance and can cause a rejection.");
-                    WriteLineWithInputCursor("Type 'force' to use the given amount. Press ENTER to specify another amount.");
-                    amountInput = Console.ReadLine().ToLower();
-                    if (amountInput == "force")
-                    {
-                        forceAmount = true;
-                    }
-                }
+                WriteLineWithInputCursor("Invalid value. Use a positive numeric value without decimals.");
+                amountInput = Console.ReadLine().ToLower();
             }
 
             WriteLineWithInputCursor("Enter optional data []:");
             var optionalData = Console.ReadLine();
             
-            AbstractTransaction transactionToSend = _transactionCreator.CreateSupplyTransferTransaction(fromPub, fromPriv, toPub, amount, blockHash, txIndex, optionalData);
+            AbstractTransaction transactionToSend = _transactionCreator.CreateSupplyCreationTransaction(createTransaction.FromPubKey, fromPriv, amount, blockHash, txIndex, optionalData);
             EventPublisher.GetInstance().PublishUnvalidatedTransactionReceived(this, new TransactionReceivedEventArgs(transactionToSend));
             Console.Write("> ");
         }

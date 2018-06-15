@@ -37,8 +37,7 @@ namespace Mpb.Consensus.BlockLogic
         public void FinalizeTransaction(AbstractTransaction tx, string fromPrivKey)
         {
             if (tx.IsFinalized()) { return; }
-
-            var txByteArray = GetTransactionBytes(tx);
+            
             var hashString = CalculateHash(tx);
             var signature = CreateSignature(hashString, fromPrivKey);
 

@@ -14,6 +14,9 @@ using Mpb.Networking.Model;
 using Mpb.Networking.Constants;
 using System.Threading;
 using Mpb.Consensus.Cryptography;
+using Mpb.Shared.Events;
+using Mpb.Shared.Constants;
+using System.Collections.Generic;
 
 namespace Mpb.Node
 {
@@ -25,6 +28,8 @@ namespace Mpb.Node
         {
             CryptographyCommandhandler cryptographyCmdHandler = new CryptographyCommandhandler(new KeyGenerator());
             cryptographyCmdHandler.HandleGenerateKeysCommand(out string walletPubKey, out string walletPrivKey);
+            PushKeyPair(walletPubKey, walletPrivKey);
+
             Console.WriteLine("Your new public key: " + walletPubKey);
             Console.WriteLine("Your new private key: " + walletPrivKey);
             Console.WriteLine("Loading blockchain..");
@@ -38,7 +43,6 @@ namespace Mpb.Node
             {
                 listeningPort = ushort.Parse(args[1]);
             }
-
 
             GetServices(
                 services,
@@ -65,6 +69,8 @@ namespace Mpb.Node
             TransferSupplyCommandHandler transferSupplyCmdHandler = new TransferSupplyCommandHandler(skuRepository, transactionRepo, transactionCreator, networkIdentifier);
             NetworkingCommandHandler networkingCmdHandler = new NetworkingCommandHandler();
             TransactionGeneratorCommandHandler txGeneratorCmdHandler = new TransactionGeneratorCommandHandler(miner, transactionCreator, skuRepo, blockchainRepo);
+            CreateSupplyCommandHandler createSupplyCmdHandler = new CreateSupplyCommandHandler(skuRepository, transactionRepo, transactionCreator, networkIdentifier);
+            DestroySupplyCommandHandler destroySupplyCmdHandler = new DestroySupplyCommandHandler(skuRepository, transactionRepo, transactionCreator, networkIdentifier);
 
             _logger.LogInformation("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
             networkManager.AcceptConnections(publicIP, listeningPort, new CancellationTokenSource());
@@ -72,6 +78,20 @@ namespace Mpb.Node
             networkManager.ConnectToPeer(new NetworkNode(ConnectionType.Outbound, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 12345)));
 
             PrintConsoleCommands();
+
+            var skuTransactions = 0;
+            var txpool = ConcurrentTransactionPool.GetInstance();
+            EventPublisher.GetInstance().OnValidTransactionReceived += (object sender, TransactionReceivedEventArgs txargs) =>
+            {
+                if (txargs.Transaction.Action == TransactionAction.CreateSku.ToString())
+                    skuTransactions++;
+
+                if (skuTransactions > 200000 && txpool.Count() < 1)
+                {
+                    miner.StopMining(true);
+                    txGeneratorCmdHandler.HandleStopCommand();
+                }
+            };
 
             var input = "";
             while (input != "exit")
@@ -93,6 +113,7 @@ namespace Mpb.Node
                         break;
                     case "generatekeys":
                         cryptographyCmdHandler.HandleGenerateKeysCommand(out walletPubKey, out walletPrivKey);
+                        PushKeyPair(walletPubKey, walletPrivKey);
                         Console.WriteLine("Your new public key: " + walletPubKey);
                         Console.WriteLine("Your new private key: " + walletPrivKey);
                         Console.Write("> ");
@@ -162,8 +183,17 @@ namespace Mpb.Node
                     case "transfersupply":
                         transferSupplyCmdHandler.HandleCommand();
                         break;
+                    case "createsupply":
+                        createSupplyCmdHandler.HandleCommand();
+                        break;
+                    case "destroysupply":
+                        destroySupplyCmdHandler.HandleCommand();
+                        break;
                     case "networking setport":
                         listeningPort = networkingCmdHandler.HandleSetPortCommand(listeningPort);
+                        break;
+                    case "networking setaddress":
+                        publicIP = networkingCmdHandler.HandleSetAddressCommand(publicIP);
                         break;
                     case "networking connect":
                         networkingCmdHandler.HandleConnectCommand(networkManager);
@@ -195,6 +225,21 @@ namespace Mpb.Node
                 }
             }
         }
+
+        // This keystore code was hacked together in order to save private keys properly.
+        // The private keys are too long for user input so we need to save them when they are generated.
+        private static Dictionary<string, string> keyStore = new Dictionary<string, string>();
+        public static void PushKeyPair(string pubKey, string privKey)
+        {
+            keyStore.Add(pubKey, privKey);
+        }
+
+        public static string GetPrivKey(string pubKey)
+        {
+            keyStore.TryGetValue(pubKey, out string privKey);
+            return privKey;
+        }
+
 
         private static void GetServices(IServiceProvider services, out IBlockchainRepository blockchainRepo,
                                         out ITransactionRepository transactionRepo, out ITransactionCreator transactionCreator,
@@ -280,12 +325,14 @@ namespace Mpb.Node
             Console.WriteLine("- accounts / users / balances");
             Console.WriteLine("- skus");
             Console.WriteLine("- createsku");
+            Console.WriteLine("- createsupply");
             Console.WriteLine("- transfersupply");
+            Console.WriteLine("- destroysupply");
             Console.WriteLine("- startmining");
             Console.WriteLine("- stopmining");
             Console.WriteLine("- resetblockchain");
             Console.WriteLine("- transfertokens");
-            Console.WriteLine("- networking start|stop|restart|setport|connect|disconnect|pool");
+            Console.WriteLine("- networking start|stop|restart|setaddress|setport|connect|disconnect|pool");
             Console.WriteLine("What would you like to do:");
             Console.Write("> ");
         }

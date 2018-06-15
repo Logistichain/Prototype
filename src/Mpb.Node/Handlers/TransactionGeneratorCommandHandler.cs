@@ -20,6 +20,7 @@ namespace Mpb.Node.Handlers
         private readonly ISkuRepository _skuRepo;
         private readonly IBlockchainRepository _blockchainRepo;
         private CancellationTokenSource _cts;
+        private DateTime _started;
 
         internal TransactionGeneratorCommandHandler(Miner miner, ITransactionCreator txCreator, ISkuRepository skuRepo, IBlockchainRepository blockchainRepo)
         {
@@ -31,13 +32,14 @@ namespace Mpb.Node.Handlers
 
         internal void HandleStartCommand(bool startMining)
         {
+            _started = DateTime.Now;
             _cts = new CancellationTokenSource();
             var keyGen = new KeyGenerator();
 
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 Random rnd = new Random();
-                int skuAmount = rnd.Next(100000, 250000);
+                int skuAmount = 1000;//rnd.Next(100000, 250000);
                 Console.WriteLine("Preparing " + skuAmount + " SKU's..");
                 List<AbstractTransaction> skuTransactions = new List<AbstractTransaction>();
                 List<AbstractTransaction> transferTransactions = new List<AbstractTransaction>();
@@ -73,81 +75,7 @@ namespace Mpb.Node.Handlers
                 {
                     if (_cts.IsCancellationRequested) return;
                     _miner.AddTransactionToPool(transaction, true);
-                }
-
-                while (true)
-                {
-                    var autoresetFlag = new AutoResetEvent(false);
-                    EventPublisher.GetInstance().OnValidatedBlockCreated += (object sender, BlockCreatedEventArgs ev) =>
-                    {
-                        if (ev.Block.Transactions.Count() == 1)
-                        {
-                            autoresetFlag.Set();
-                        }
-                    };
-
-                    autoresetFlag.WaitOne();
-
-                    var destroyedCount = 0;
-                    var allSkus = _skuRepo.GetAllWithHistory(_miner.NetworkIdentifier);
-                    foreach (var skuWithHistory in allSkus)
-                    {
-                        var createSkuTransaction = (StateTransaction)skuWithHistory.First().Transaction;
-                        var createSkuBlock = _blockchainRepo.GetBlockByTransactionHash(createSkuTransaction.Hash, _miner.NetworkIdentifier);
-                        var createSkuTxIndex = 0;
-
-                        for(int skuTxIndex = 0; skuTxIndex < createSkuBlock.Transactions.Count(); skuTxIndex++)
-                        {
-                            if (createSkuBlock.Transactions.ElementAt(skuTxIndex).Hash == createSkuTransaction.Hash)
-                            {
-                                createSkuTxIndex = skuTxIndex;
-                                break;
-                            }
-                        }
-
-                        var lastTransaction = (StateTransaction)skuWithHistory.Last().Transaction;
-                        var currentSupply = _skuRepo.GetSupplyBalanceForPubKey(lastTransaction.ToPubKey, createSkuBlock.Header.Hash, createSkuTxIndex, _miner.NetworkIdentifier);
-                        var isDestroyed = skuWithHistory.Where(sku => sku.Transaction.Action == TransactionAction.DestroySupply.ToString()).Any();
-
-                        if (!isDestroyed)
-                        {
-                            var rand = new Random();
-                            if (rand.NextDouble() >= 0.5)
-                            {
-                                var tx = _txCreator.CreateSupplyDestroyTransaction(
-                                    lastTransaction.ToPubKey,
-                                    keys.Where(k => k.Key == lastTransaction.ToPubKey).First().Value,
-                                    (uint)currentSupply, // todo length check
-                                    createSkuBlock.Header.Hash,
-                                    createSkuTxIndex,
-                                    "");
-                                _miner.AddTransactionToPool(tx, true);
-                            }
-                            else
-                            {
-                                keyGen.GenerateKeys(out var publicKey, out var privateKey);
-                                var tx = _txCreator.CreateSupplyTransferTransaction(
-                                    lastTransaction.ToPubKey,
-                                    keys.Where(k => k.Key == lastTransaction.ToPubKey).First().Value,
-                                    publicKey,
-                                    (uint)currentSupply,
-                                    createSkuBlock.Header.Hash,
-                                    createSkuTxIndex,
-                                    "");
-                                keys.Add(publicKey, privateKey);
-                                transferTransactions.Add(tx);
-                                _miner.AddTransactionToPool(tx, true);
-                            }
-                        }
-                        else
-                        {
-                            destroyedCount++;
-                            if (destroyedCount == allSkus.Count())
-                            {
-                                return;
-                            }
-                        }
-                    }
+                    await Task.Delay(20);
                 }
             }
             );
@@ -158,6 +86,9 @@ namespace Mpb.Node.Handlers
         {
             _cts.Cancel();
             Console.WriteLine("Transaction generator stopped.");
+            Console.WriteLine("Started: " + _started.ToLongTimeString());
+            Console.WriteLine("Stopped: " + DateTime.Now.ToLongTimeString());
+            Console.WriteLine("Time elapsed: " + (DateTime.Now - _started).TotalMinutes + " min");
         }
     }
 }

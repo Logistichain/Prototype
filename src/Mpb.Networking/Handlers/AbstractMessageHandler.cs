@@ -24,7 +24,7 @@ namespace Mpb.Networking
         }
 
         public abstract Task HandleMessage(NetworkNode node, Message msg);
-        
+
         /// <summary>
         /// Helper method to reduce duplicate LOC
         /// </summary>
@@ -33,7 +33,6 @@ namespace Mpb.Networking
         /// <param name="payload">The payload that corresponds with the command</param>
         public async Task SendMessageToNode(NetworkNode node, NetworkCommand command, ISerializableComponent payload)
         {
-            //await Task.Delay(1000);
             IPEndPoint endpoint = node.DirectEndpoint ?? node.ListenEndpoint;
             var msg = new Message(command.ToString(), payload);
             await node.SendMessageAsync(msg);
@@ -46,7 +45,6 @@ namespace Mpb.Networking
         /// <param name="node">The node to receive the message from</param>
         public async Task<Message> ExpectMessageFromNode(NetworkNode node, NetworkCommand expectedCommand)
         {
-            await Task.Delay(1000);
             var msg = await ListenForNewMessage(node, new TimeSpan(0, 0, NetworkConstants.ExpectMsgTimeoutSeconds));
             if (msg.Command != expectedCommand.ToString())
             {
@@ -67,7 +65,27 @@ namespace Mpb.Networking
         {
             try
             {
-                return await node.ReceiveMessageAsync(timeout);
+                var msg = await node.ReceiveMessageAsync(timeout);
+                /*
+                var delaySec = 0;
+                Random rnd = new Random();
+                int delayChance = rnd.Next(1, 100);
+                if (delayChance > 55 && delayChance < 86)
+                {
+                    delaySec = rnd.Next(1, 3);
+                }
+                else if (delayChance > 85 && delayChance < 96)
+                {
+                    delaySec = rnd.Next(3, 6);
+                }
+                else if (delayChance > 95 && delayChance < 101)
+                {
+                    delaySec = rnd.Next(7, 13);
+                }
+
+                await Task.Delay(delaySec * 1000);
+                */
+                return msg;
             }
             catch (Exception)
             {
