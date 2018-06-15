@@ -25,6 +25,7 @@ namespace Mpb.Consensus.BlockLogic
         /// <param name="hashValue">The pre-calculated hash value of the block</param>
         /// <param name="currentTarget">The current target to validate the block's hash</param>
         /// <param name="checkTimestamp">Whether to check if the timestamp is within the acceptable range compared to the current UTC system time. Set this to false when syncing the blockchain from other nodes</param>
-        void ValidateBlockHeader(Block block, BigDecimal hashValue, BigDecimal currentTarget, bool checkTimestamp);
+        /// <param name="netId">Our current blockchain network identifier, to check if the block is in the same network</param>
+        void ValidateBlockHeader(Block block, BigDecimal hashValue, BigDecimal currentTarget, bool checkTimestamp, string netId);
     }
 }

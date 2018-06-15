@@ -3,19 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.10
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mpb.Consensus", "Mpb.Consensus\Mpb.Consensus.csproj", "{989C8821-40B0-4DB5-B35C-0692C73BDDF9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mpb.Consensus", "Mpb.Consensus\Mpb.Consensus.csproj", "{989C8821-40B0-4DB5-B35C-0692C73BDDF9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mpb.DAL", "Mpb.DAL\Mpb.DAL.csproj", "{5372B5A5-C410-45A2-A9A5-26973AB259DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mpb.DAL", "Mpb.DAL\Mpb.DAL.csproj", "{5372B5A5-C410-45A2-A9A5-26973AB259DF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mpb.Networking", "Mpb.Networking\Mpb.Networking.csproj", "{2DA848BB-60E1-40D3-95CA-25A859E2B784}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mpb.Networking", "Mpb.Networking\Mpb.Networking.csproj", "{2DA848BB-60E1-40D3-95CA-25A859E2B784}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mpb.Model", "Mpb.Model\Mpb.Model.csproj", "{BD3BFE27-4CF7-4B14-944F-B5E4DE1A9C51}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mpb.Model", "Mpb.Model\Mpb.Model.csproj", "{BD3BFE27-4CF7-4B14-944F-B5E4DE1A9C51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mpb.Node", "Mpb.Node\Mpb.Node.csproj", "{53B1F111-5EED-480E-AAC2-7222A4E7C1FB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mpb.Node", "Mpb.Node\Mpb.Node.csproj", "{53B1F111-5EED-480E-AAC2-7222A4E7C1FB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mpb.Shared", "Mpb.Shared\Mpb.Shared.csproj", "{9E5C1FDB-0E7D-4C7B-82F5-2E1E3F93394F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mpb.Shared", "Mpb.Shared\Mpb.Shared.csproj", "{9E5C1FDB-0E7D-4C7B-82F5-2E1E3F93394F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mpb.Consensus.Test", "Mpb.Consensus.Test\Mpb.Consensus.Test.csproj", "{E019CF99-C89C-4C42-A2C9-D81110D0B236}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mpb.Consensus.Test", "Mpb.Consensus.Test\Mpb.Consensus.Test.csproj", "{E019CF99-C89C-4C42-A2C9-D81110D0B236}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

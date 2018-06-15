@@ -80,7 +80,7 @@ namespace Mpb.Node.Handlers
                     }
                     else if (transaction.Action == TransactionAction.CreateSupply.ToString())
                     {
-                        currentSupply -= transaction.Amount;
+                        currentSupply += transaction.Amount;
                     }
                     else if (transaction.Action == TransactionAction.TransferSupply.ToString())
                     {
@@ -88,7 +88,7 @@ namespace Mpb.Node.Handlers
                         Console.WriteLine("  To: " + transaction.ToPubKey);
                         Console.WriteLine("  Amount: " + transaction.Amount);
                     }
-                    Console.WriteLine("Total supply after transaction: " + currentSupply);
+                    Console.WriteLine("Total global supply after transaction: " + currentSupply);
                     if (versionNumber != historyList.Count)
                     {
                         Console.WriteLine("-------");
