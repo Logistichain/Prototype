@@ -1,8 +1,9 @@
-# Montapacking Blockchain (Mpb)
+# Logistichain
 This blockchain prototype is built to investigate the possibilities of blockchain for the high-frequency supplychain network. This blockchain prototype specializes in b2c/b2b online orders, flowing through the supplychain. The webshop creates an SKU and is able to create an unlimited amount of supply for that SKU. Then the webshop can send supply to other parties in the entire supplychain. Only parties who own supply can transfer it to another; the webshop stays in control of the SKU data and total supply.
 
 ## Documentation
-Learn more about the Mpb components, guidelines and design rationale in the [documentation section](docs/Index.md).
+Learn more about the Logistichain components, guidelines and design rationale in the [documentation section](docs/Index.md).
+Please be aware that docs are being written at this time. Some docs might be empty, but existing docs are up-to-date.
 
 ## Actions
 This prototype is capable of handling different 'actions' in transactions to register supplychain activities:
