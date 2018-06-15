@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Mpb.Shared.Events;
 
 namespace Mpb.Node.Handlers
 {
@@ -20,17 +21,24 @@ namespace Mpb.Node.Handlers
             _transactionCreator = transactionCreator;
         }
 
-        internal void HandleCommand(Miner miner)
+        internal void HandleCommand(string netId)
         {
             ulong creationFee = CreateSkuFee; // From BlockchainConstants.cs
             Console.WriteLine("Current SKU creation fee is " + creationFee + " TK.");
             WriteLineWithInputCursor("Enter the sender's public key:");
-            var fromPub = Console.ReadLine().ToLower();
-            var balance = _transactionRepo.GetTokenBalanceForPubKey(fromPub, miner.NetworkIdentifier);
+            var fromPub = Console.ReadLine();
+
+            var fromPriv = Program.GetPrivKey(fromPub);
+            while (String.IsNullOrWhiteSpace(fromPriv))
+            {
+                Console.WriteLine("Private key not found.");
+                WriteLineWithInputCursor("Enter the sender's public key:");
+                fromPub = Console.ReadLine();
+            }
+
+            var balance = _transactionRepo.GetTokenBalanceForPubKey(fromPub, netId);
 
             Console.WriteLine("The sender's balance: " + balance);
-            WriteLineWithInputCursor("Enter the sender's private key (can be anything for now):");
-            var fromPriv = Console.ReadLine().ToLower();
 
             // Todo support custom fees in transactionCreator
             /*
@@ -86,7 +94,7 @@ namespace Mpb.Node.Handlers
             }
             
             AbstractTransaction transactionToSend = _transactionCreator.CreateSkuCreationTransaction(fromPub, fromPriv, supplyAmount, sku);
-            miner.AddTransactionToPool(transactionToSend);
+            EventPublisher.GetInstance().PublishUnvalidatedTransactionReceived(this, new TransactionReceivedEventArgs(transactionToSend));
             Console.Write("> ");
         }
 

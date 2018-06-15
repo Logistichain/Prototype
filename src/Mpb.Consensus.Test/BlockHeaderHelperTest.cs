@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using Mpb.Consensus.BlockLogic;
 using Mpb.Model;
+using Moq;
+using Mpb.Consensus.Cryptography;
 
 namespace Mpb.Consensus.Test.Logic
 {
@@ -16,13 +18,15 @@ namespace Mpb.Consensus.Test.Logic
         [TestMethod]
         public void GetBlockHeaderBytes_ThrowsException_NullBlock()
         {
-            var sut = new BlockHeaderHelper();
+            var signerMock = new Mock<ISigner>(MockBehavior.Strict);
+            var sut = new PowBlockFinalizer(signerMock.Object);
             var ex = Assert.ThrowsException<ArgumentNullException>(
                     () => sut.GetBlockHeaderBytes(null)
                 );
             
             // We only want to see if the message is correct. We don't care how the method names their params
             Assert.IsTrue(ex.Message.StartsWith("Block cannot be null"));
+            signerMock.VerifyAll();
         }
         
         /// <summary>
@@ -32,9 +36,11 @@ namespace Mpb.Consensus.Test.Logic
         [TestMethod]
         public void GetBlockHeaderBytes_ReturnsValidHeader()
         {
-            var sut = new BlockHeaderHelper();
+            var signerMock = new Mock<ISigner>(MockBehavior.Strict);
+            var sut = new PowBlockFinalizer(signerMock.Object);
             var expectedHash = "FF5648F9B5FEB7AA0ACECA5AF77938A811B5F18E4D1CC5A806C475E4AFED47EA";
-            var blockToTest = new Block("testnet", 1, "abc", 1, new List<AbstractTransaction>());
+
+            var blockToTest = new Block(new BlockHeader("testnet", 1, "abc", 1, ""), new List<AbstractTransaction>());
 
             var bytesResult = sut.GetBlockHeaderBytes(blockToTest);
             var hashString = "";
@@ -46,6 +52,7 @@ namespace Mpb.Consensus.Test.Logic
             }
 
             Assert.AreEqual(expectedHash, hashString);
+            signerMock.VerifyAll();
         }
     }
 }

@@ -8,11 +8,11 @@ namespace Mpb.DAL
 {
     public class StateTransactionLocalFileRepository : ITransactionRepository
     {
-        private Blockchain _trackingBlockchain;
+        private readonly IBlockchainRepository _blockchainRepo;
 
-        public StateTransactionLocalFileRepository (Blockchain blockchainSource)
+        public StateTransactionLocalFileRepository(IBlockchainRepository blockchainRepository)
         {
-            _trackingBlockchain = blockchainSource;
+            _blockchainRepo = blockchainRepository;
         }
 
         // todo add parameter 'includeTxPool' so StateTransactionValidator can correctly check balances
@@ -58,38 +58,42 @@ namespace Mpb.DAL
 
         public IEnumerable<AbstractTransaction> GetAll(string netId)
         {
-            return GetAllByPredicate(tx => true);
+            return GetAllByPredicate(tx => true, netId);
         }
 
         public IEnumerable<AbstractTransaction> GetAllByPublicKey(string pubKey, string netId)
         {
-            return GetAllByPredicate(tx => tx.FromPubKey == pubKey || tx.ToPubKey == pubKey);
+            return GetAllByPredicate(tx => tx.FromPubKey == pubKey || tx.ToPubKey == pubKey, netId);
         }
 
         public IEnumerable<AbstractTransaction> GetAllSentByPublicKey(string pubKey, string netId)
         {
-            return GetAllByPredicate(tx => tx.FromPubKey == pubKey);
+            return GetAllByPredicate(tx => tx.FromPubKey == pubKey, netId);
         }
 
         public IEnumerable<AbstractTransaction> GetAllReceivedByPublicKey(string pubKey, string netId)
         {
-            return GetAllByPredicate(tx => tx.ToPubKey == pubKey);
+            return GetAllByPredicate(tx => tx.ToPubKey == pubKey, netId);
         }
 
-        private IEnumerable<StateTransaction> GetAllByPredicate(Func<StateTransaction, bool> predicate)
+        private IEnumerable<StateTransaction> GetAllByPredicate(Func<StateTransaction, bool> predicate, string netId)
         {
-            foreach (Block b in _trackingBlockchain.Blocks)
+            var blockchain = _blockchainRepo.GetChainByNetId(netId);
+            lock (blockchain)
             {
-                if (b.Version > BlockchainConstants.ProtocolVersion)
+                foreach (Block b in blockchain.Blocks)
                 {
-                    // todo log unsupporting block version found, but continue
-                }
+                    if (b.Header.Version > BlockchainConstants.ProtocolVersion)
+                    {
+                        // todo log unsupporting block version found, but continue
+                    }
 
-                var stateTransactions = b.Transactions.OfType<StateTransaction>();
-                var transactionsByPubKey = stateTransactions.Where(predicate);
-                foreach (StateTransaction tx in transactionsByPubKey)
-                {
-                    yield return tx;
+                    var stateTransactions = b.Transactions.OfType<StateTransaction>();
+                    var transactionsByPubKey = stateTransactions.Where(predicate);
+                    foreach (StateTransaction tx in transactionsByPubKey)
+                    {
+                        yield return tx;
+                    }
                 }
             }
         }

@@ -56,7 +56,7 @@ namespace Mpb.DAL
             {
                 var createTxBlock = _blockchainRepo.GetBlockByTransactionHash(createTx.Hash, netId);
                 var txIndex = createTxBlock.Transactions.ToList().IndexOf(createTx);
-                yield return GetSkuWithHistory(createTxBlock.Hash, txIndex, netId);
+                yield return GetSkuWithHistory(createTxBlock.Header.Hash, txIndex, netId);
             }
         }
 

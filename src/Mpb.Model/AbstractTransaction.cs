@@ -12,14 +12,32 @@ namespace Mpb.Model
         private readonly uint _fee;
         private string _hash;
         private string _signature;
+
+        /// <summary>
+        /// The transaction version
+        /// </summary>
         public uint Version => _version;
+
+        /// <summary>
+        /// The action to perform
+        /// <seealso cref="Shared.Constants.TransactionAction"/>
+        /// </summary>
         public string Action => _action;
+
+        /// <summary>
+        /// Free text field
+        /// (or in case of 'createsku' transaction, the SKU data)
+        /// </summary>
         public string Data => _data;
+
+        /// <summary>
+        /// The fee to pay in order to send this transaction
+        /// </summary>
         public uint Fee => _fee;
 
         /// <summary>
-        /// The string representation of the transaction hash.
-        /// Does not contain dashes (-).
+        /// The string representation of the transaction hash
+        /// Does not contain dashes (-)
         /// </summary>
         public string Hash => _hash;
         /// <summary>

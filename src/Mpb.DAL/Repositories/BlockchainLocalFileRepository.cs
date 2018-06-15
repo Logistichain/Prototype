@@ -7,6 +7,7 @@ using System.IO;
 using System.Reflection;
 using System.Linq;
 using Mpb.DAL.Converters;
+using Mpb.Shared.Constants;
 
 namespace Mpb.DAL
 {
@@ -14,6 +15,7 @@ namespace Mpb.DAL
     {
         private string _blockchainFolderPath => Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
         private Blockchain _trackingBlockchain;
+        private object fileLock = new object();
 
         /// <summary>
         /// Serializes a Blockchain object to JSON and saves that to the given path.
@@ -21,13 +23,16 @@ namespace Mpb.DAL
         /// <param name="chain">The blockchain object that needs to be persisted</param>
         public void Update(Blockchain chain)
         {
-            var filePath = Path.Combine(_blockchainFolderPath, $"blockchain-{chain.NetIdentifier}.json");
-            var blockchainFile = File.Create(filePath);
-            JsonSerializer serializer = new JsonSerializer();
-            using (StreamWriter stream = new StreamWriter(blockchainFile))
-            using (JsonWriter writer = new JsonTextWriter(stream))
+            lock (chain)
             {
-                serializer.Serialize(writer, chain);
+                var filePath = Path.Combine(_blockchainFolderPath, $"blockchain-{chain.NetIdentifier}.json");
+                var blockchainFile = File.Create(filePath);
+                JsonSerializer serializer = new JsonSerializer();
+                using (StreamWriter stream = new StreamWriter(blockchainFile))
+                using (JsonWriter writer = new JsonTextWriter(stream))
+                {
+                    serializer.Serialize(writer, chain);
+                }
             }
         }
 
@@ -60,20 +65,36 @@ namespace Mpb.DAL
             return _trackingBlockchain;
         }
 
-        public Block GetBlockByHash(string blockHash, string netIdentifier)
+        public Block GetBlockByHash(string hash, string netIdentifier)
         {
             if (_trackingBlockchain == null)
             {
                 GetChainByNetId(netIdentifier);
             }
 
-            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Hash == blockHash.ToUpper());
+            var searchQuery = _trackingBlockchain.Blocks.Where(tx => tx.Header.Hash.ToUpper() == hash.ToUpper());
             if (searchQuery.Count() > 0)
             {
                 return searchQuery.First();
             }
 
             throw new KeyNotFoundException("Block not found in blockchain");
+        }
+
+        public Block GetBlockByPreviousHash(string previousBlockHash, string netIdentifier)
+        {
+            if (_trackingBlockchain == null)
+            {
+                GetChainByNetId(netIdentifier);
+            }
+
+            var searchQuery = _trackingBlockchain.Blocks.Where(b => b.Header.PreviousHash != null && b.Header.PreviousHash.ToUpper() == previousBlockHash.ToUpper());
+            if (searchQuery.Count() > 0)
+            {
+                return searchQuery.First();
+            }
+
+            throw new KeyNotFoundException("Previous hash not found in blockchain");
         }
 
         /// <summary>
@@ -90,11 +111,14 @@ namespace Mpb.DAL
                 GetChainByNetId(netIdentifier);
             }
 
-            foreach(var block in _trackingBlockchain.Blocks)
+            lock(_trackingBlockchain)
             {
-                if (block.Transactions.Where(tx => tx.Hash == transactionHash).Count() > 0)
+                foreach (var block in _trackingBlockchain.Blocks)
                 {
-                    return block;
+                    if (block.Transactions.Where(tx => tx.Hash == transactionHash).Count() > 0)
+                    {
+                        return block;
+                    }
                 }
             }
 
@@ -110,23 +134,19 @@ namespace Mpb.DAL
         /// <returns>The height for the given block hash</returns>
         public int GetHeightForBlock(string hash, string netIdentifier)
         {
-            int height = 0;
-
             if (_trackingBlockchain == null)
             {
                 GetChainByNetId(netIdentifier);
             }
+            
+            int height = _trackingBlockchain.GetHeightForBlock(hash);
 
-            foreach (var block in _trackingBlockchain.Blocks)
+            if (height == -1)
             {
-                if (block.Hash == hash)
-                {
-                    return height;
-                }
-                height++;
+                throw new KeyNotFoundException("No block found with the given hash");
             }
 
-            throw new KeyNotFoundException("No block found with the given hash");
+            return height;
         }
 
         private Blockchain LoadBlockchainFromFileSystem(string netIdentifier)
@@ -134,20 +154,27 @@ namespace Mpb.DAL
             var filePath = Path.Combine(_blockchainFolderPath, $"blockchain-{netIdentifier}.json");
             try
             {
-                var blockchainFile = File.OpenRead(filePath);
-                JsonSerializer serializer = new JsonSerializer();
-                using (StreamReader stream = new StreamReader(blockchainFile))
+                lock (fileLock)
                 {
-                    JsonSerializerSettings settings = new JsonSerializerSettings();
-                    settings.Converters.Add(new BlockchainJsonConverter());
-                    settings.Converters.Add(new StateTransactionJsonConverter());
-                    return JsonConvert.DeserializeObject<Blockchain>(stream.ReadToEnd(), settings);
+                    var blockchainFile = File.OpenRead(filePath);
+                    JsonSerializer serializer = new JsonSerializer();
+                    using (StreamReader stream = new StreamReader(blockchainFile))
+                    {
+                        JsonSerializerSettings settings = new JsonSerializerSettings();
+                        settings.Converters.Add(new BlockHeaderJsonConverter());
+                        settings.Converters.Add(new BlockchainJsonConverter());
+                        settings.Converters.Add(new StateTransactionJsonConverter());
+                        return JsonConvert.DeserializeObject<Blockchain>(stream.ReadToEnd(), settings);
+                    }
                 }
             }
             catch (Exception ex) when (ex is DirectoryNotFoundException || ex is FileNotFoundException)
             {
                 // File does not exist, return a new blockchain.
-                var loadedBlockchain = new Blockchain(netIdentifier);
+                var loadedBlockchain = new Blockchain(
+                    new List<Block>() {
+                        new GenesisBlock(BlockchainConstants.DefaultNetworkIdentifier, BlockchainConstants.TransactionVersion)
+                    }, netIdentifier);
                 return loadedBlockchain;
             }
         }

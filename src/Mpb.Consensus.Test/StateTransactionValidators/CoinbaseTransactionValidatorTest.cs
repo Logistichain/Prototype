@@ -8,6 +8,7 @@ using Mpb.Model;
 using Mpb.Shared.Constants;
 using Mpb.Consensus.TransactionLogic;
 using Mpb.Consensus.Exceptions;
+using Mpb.Consensus.Cryptography;
 
 namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
 {
@@ -17,62 +18,54 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
     [TestClass]
     public class CoinbaseTransactionValidatorTest
     {
-        Mock<ITimestamper> _timestamper;
+        Mock<ITimestamper> _timestamperMock;
         Mock<IBlockchainRepository> _blockchainRepoMock;
         Mock<ITransactionRepository> _transactionRepoMock;
         Mock<ISkuRepository> _skuRepoMock;
-        Mock<ITransactionFinalizer> _transactionFinalizer;
+        Mock<ITransactionFinalizer> _transactionFinalizerMock;
+        Mock<ISigner> _signerMock;
+        string _hash = "hash";
+        string _signature = "sig";
+        string _toPubKey = "miner";
         string _netid;
 
         [TestInitialize]
         public void Initialize()
         {
-            _timestamper = new Mock<ITimestamper>(MockBehavior.Strict);
+            _timestamperMock = new Mock<ITimestamper>(MockBehavior.Strict);
             _blockchainRepoMock = new Mock<IBlockchainRepository>(MockBehavior.Strict);
             _transactionRepoMock = new Mock<ITransactionRepository>(MockBehavior.Strict);
             _skuRepoMock = new Mock<ISkuRepository>(MockBehavior.Strict);
-            _transactionFinalizer = new Mock<ITransactionFinalizer>(MockBehavior.Strict);
+            _transactionFinalizerMock = new Mock<ITransactionFinalizer>(MockBehavior.Strict);
+            _signerMock = new Mock<ISigner>(MockBehavior.Strict);
             _netid = "testnet"; // This value is not coupled to the BlockchainConstants.cs value
-
-            // Setup transactionfinalizer because it's applied for all tests
-            _transactionFinalizer.Setup(m => m.CalculateHash(It.IsAny<AbstractTransaction>())).Returns("");
-            _transactionFinalizer.Setup(m => m.CreateSignature(It.IsAny<AbstractTransaction>())).Returns("");
         }
 
         [TestMethod]
         public void CoinbaseValidateTransaction_ThrowsException_NotNullFromPubKey()
         {
             var expectedTransaction = new StateTransaction("wrongvalue", "b", null, 0, 1, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
-            expectedTransaction.Finalize("", "");
-            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
+            expectedTransaction.Finalize(_hash, _signature);
+            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizerMock.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object, _signerMock.Object);
+            _signerMock.Setup(m => m.SignatureIsValid(_signature, _hash, "b")).Returns(true);
+            _transactionFinalizerMock.Setup(m => m.CalculateHash(expectedTransaction)).Returns(_hash);
 
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual(nameof(expectedTransaction.FromPubKey) + " field must be null in a Coinbase transaction", exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);
         }
 
         [TestMethod]
-        public void CoinbaseValidateTransaction_ThrowsException_NotNullToPubKey()
-        {
-            var expectedTransaction = new StateTransaction(null, null, null, 0, 1, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
-            expectedTransaction.Finalize("", "");
-            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
-
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
-
-            Assert.AreEqual(nameof(expectedTransaction.ToPubKey) + " field cannot be null", exception.Message);
-            Assert.AreEqual(expectedTransaction, exception.Transaction);
-        }
-
-        [TestMethod]
         public void CoinbaseValidateTransaction_ThrowsException_FeeNotZero()
         {
-            var expectedTransaction = new StateTransaction(null, "miner", null, 0, 1, 1, TransactionAction.ClaimCoinbase.ToString(), null, 10);
-            expectedTransaction.Finalize("", "");
-            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
+            var expectedTransaction = new StateTransaction(null, _toPubKey, null, 0, 1, 1, TransactionAction.ClaimCoinbase.ToString(), null, 10);
+            expectedTransaction.Finalize(_hash, _signature);
+            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizerMock.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object, _signerMock.Object);
+            _signerMock.Setup(m => m.SignatureIsValid(_signature, _hash, _toPubKey)).Returns(true);
+            _transactionFinalizerMock.Setup(m => m.CalculateHash(expectedTransaction)).Returns(_hash);
 
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual("Fee must be zero on Coinbase transactions", exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);
@@ -82,11 +75,13 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
         public void CoinbaseValidateTransaction_ThrowsException_CoinbaseRewardTooHigh()
         {
             uint consensusCoinbaseReward = 5000; //! change this whenever the coinbasereward changes in the mpb.consensus assembly!
-            var expectedTransaction = new StateTransaction(null, "miner", null, 0, consensusCoinbaseReward + 1, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
-            expectedTransaction.Finalize("", "");
-            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
+            var expectedTransaction = new StateTransaction(null, _toPubKey, null, 0, consensusCoinbaseReward + 1, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
+            expectedTransaction.Finalize(_hash, _signature);
+            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizerMock.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object, _signerMock.Object);
+            _signerMock.Setup(m => m.SignatureIsValid(_signature, _hash, _toPubKey)).Returns(true);
+            _transactionFinalizerMock.Setup(m => m.CalculateHash(expectedTransaction)).Returns(_hash);
 
-            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid, true));
+            var exception = Assert.ThrowsException<TransactionRejectedException>(() => sut.ValidateTransaction(expectedTransaction, _netid));
 
             Assert.AreEqual("Coinbase reward is too high. Maximum: " + consensusCoinbaseReward, exception.Message);
             Assert.AreEqual(expectedTransaction, exception.Transaction);
@@ -98,11 +93,13 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
         [TestMethod]
         public void CoinbaseValidateTransaction_Successful_ZeroCoinbaseReward()
         {
-            var expectedTransaction = new StateTransaction(null, "miner", null, 0, 0, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
-            expectedTransaction.Finalize("", "");
-            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
+            var expectedTransaction = new StateTransaction(null, _toPubKey, null, 0, 0, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
+            expectedTransaction.Finalize(_hash, _signature);
+            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizerMock.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object, _signerMock.Object);
+            _signerMock.Setup(m => m.SignatureIsValid(_signature, _hash, _toPubKey)).Returns(true);
+            _transactionFinalizerMock.Setup(m => m.CalculateHash(expectedTransaction)).Returns(_hash);
 
-            sut.ValidateTransaction(expectedTransaction, _netid, true);
+            sut.ValidateTransaction(expectedTransaction, _netid);
 
             // Should not throw exception
         }
@@ -114,11 +111,13 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
         public void CoinbaseValidateTransaction_Successful_ExactCoinbaseReward()
         {
             uint consensusCoinbaseReward = 5000; //! change this whenever the coinbasereward changes in the mpb.consensus assembly!
-            var expectedTransaction = new StateTransaction(null, "miner", null, 0, consensusCoinbaseReward, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
-            expectedTransaction.Finalize("", "");
-            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizer.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object);
+            var expectedTransaction = new StateTransaction(null, _toPubKey, null, 0, consensusCoinbaseReward, 1, TransactionAction.ClaimCoinbase.ToString(), null, 0);
+            expectedTransaction.Finalize(_hash, _signature);
+            StateTransactionValidator sut = new StateTransactionValidator(_transactionFinalizerMock.Object, _blockchainRepoMock.Object, _transactionRepoMock.Object, _skuRepoMock.Object, _signerMock.Object);
+            _signerMock.Setup(m => m.SignatureIsValid(_signature, _hash, _toPubKey)).Returns(true);
+            _transactionFinalizerMock.Setup(m => m.CalculateHash(expectedTransaction)).Returns(_hash);
 
-            sut.ValidateTransaction(expectedTransaction, _netid, true);
+            sut.ValidateTransaction(expectedTransaction, _netid);
 
             // Should not throw exception
         }
@@ -126,11 +125,12 @@ namespace Mpb.Consensus.Test.Logic.StateTransactionValidators
         [TestCleanup]
         public void Cleanup()
         {
-            _timestamper.VerifyAll();
+            _timestamperMock.VerifyAll();
             _blockchainRepoMock.VerifyAll();
             _transactionRepoMock.VerifyAll();
             _skuRepoMock.VerifyAll();
-            _transactionFinalizer.VerifyAll();
+            _transactionFinalizerMock.VerifyAll();
+            _signerMock.VerifyAll();
         }
     }
 }

@@ -6,7 +6,7 @@ using System;
 namespace Mpb.DAL.Converters
 {
     /// <summary>
-    /// This JsonConverted was created to prevent JSON-specific annotations or a parameterless constructor for the Blockchain class.
+    /// This JsonConverted was created to prevent JSON-specific annotations or a parameterless constructor for the StateTransaction class.
     /// </summary>
     public class StateTransactionJsonConverter : JsonConverter
     {

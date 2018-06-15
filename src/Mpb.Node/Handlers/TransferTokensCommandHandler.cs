@@ -4,6 +4,7 @@ using Mpb.Model;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Mpb.Shared.Events;
 
 namespace Mpb.Node.Handlers
 {
@@ -18,17 +19,23 @@ namespace Mpb.Node.Handlers
             _transactionCreator = transactionCreator;
         }
 
-        internal void HandleCommand(Miner miner)
+        internal void HandleCommand(string netId)
         {
             uint tokenFee = 10; // From BlockchainConstants.cs
             Console.WriteLine("Current transfer token fee is " + tokenFee + " TK.");
             WriteLineWithInputCursor("Enter the sender's public key:");
-            var fromPub = Console.ReadLine().ToLower();
-            var balance = _transactionRepo.GetTokenBalanceForPubKey(fromPub, miner.NetworkIdentifier);
+            var fromPub = Console.ReadLine();
 
+            var fromPriv = Program.GetPrivKey(fromPub);
+            while(String.IsNullOrWhiteSpace(fromPriv))
+            {
+                Console.WriteLine("Private key not found.");
+                WriteLineWithInputCursor("Enter the sender's public key:");
+                fromPub = Console.ReadLine();
+            }
+
+            var balance = _transactionRepo.GetTokenBalanceForPubKey(fromPub, netId);
             Console.WriteLine("The sender's balance: " + balance);
-            WriteLineWithInputCursor("Enter the sender's private key (can be anything for now):");
-            var fromPriv = Console.ReadLine().ToLower();
 
             WriteLineWithInputCursor("Enter the receiver's public key:");
             var toPub = Console.ReadLine().ToLower();
@@ -98,7 +105,7 @@ namespace Mpb.Node.Handlers
             var optionalData = Console.ReadLine();
             
             AbstractTransaction transactionToSend = _transactionCreator.CreateTokenTransferTransaction(fromPub, fromPriv, toPub, amount, optionalData);
-            miner.AddTransactionToPool(transactionToSend);
+            EventPublisher.GetInstance().PublishUnvalidatedTransactionReceived(this, new TransactionReceivedEventArgs(transactionToSend));
             Console.Write("> ");
         }
         

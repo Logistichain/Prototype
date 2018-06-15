@@ -9,6 +9,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Mpb.Shared.Constants;
+using Mpb.Consensus.Cryptography;
 
 namespace Mpb.Consensus.TransactionLogic
 {
@@ -18,13 +19,16 @@ namespace Mpb.Consensus.TransactionLogic
         private readonly IBlockchainRepository _blockchainRepository;
         private readonly ITransactionRepository _transactionRepo;
         private readonly ISkuRepository _skuRepo;
+        private readonly ISigner _signer;
 
-        public StateTransactionValidator(ITransactionFinalizer txFinalizer, IBlockchainRepository blockchainRepository, ITransactionRepository transactionRepo, ISkuRepository skuRepo)
+        public StateTransactionValidator(ITransactionFinalizer txFinalizer, IBlockchainRepository blockchainRepository,
+            ITransactionRepository transactionRepo, ISkuRepository skuRepo, ISigner signer)
         {
             _txFinalizer = txFinalizer;
             _blockchainRepository = blockchainRepository;
             _transactionRepo = transactionRepo;
             _skuRepo = skuRepo;
+            _signer = signer;
         }
 
         // Todo this is not state-specific. Place this in an abstract class?
@@ -80,18 +84,13 @@ namespace Mpb.Consensus.TransactionLogic
 
         // Maybe we can solve the scalability of this class with a pattern: Visitor?
         // Also take into account the multiple transaction versions that may exist.
-        /// <summary>
-        /// Validates a transaction, including balance checks, on the current network.
-        /// Throws TransactionRejectedException if the validation fails.
-        /// </summary>
-        /// <param name="tx">The transaction to validate</param>
         public virtual void ValidateTransaction(AbstractTransaction tx)
         {
-            ValidateTransaction(tx, BlockchainConstants.DefaultNetworkIdentifier, true);
+            ValidateTransaction(tx, BlockchainConstants.DefaultNetworkIdentifier);
         }
 
 
-        public virtual void ValidateTransaction(AbstractTransaction tx, string netIdentifier, bool checkBalance)
+        public virtual void ValidateTransaction(AbstractTransaction tx, string netIdentifier)
         {
             if (!(tx is StateTransaction))
             {
@@ -103,6 +102,11 @@ namespace Mpb.Consensus.TransactionLogic
             if (tx.Version != BlockchainConstants.TransactionVersion)
             {
                 throw new TransactionRejectedException("Unsupported transaction version", tx);
+            }
+
+            if (String.IsNullOrWhiteSpace(stateTx.FromPubKey) && String.IsNullOrWhiteSpace(stateTx.ToPubKey))
+            {
+                throw new TransactionRejectedException(nameof(stateTx.FromPubKey) + " and " + nameof(stateTx.ToPubKey) + " are both null or empty", tx);
             }
 
             CheckTxIsCorrectlyHashedAndSigned(stateTx);
@@ -142,6 +146,23 @@ namespace Mpb.Consensus.TransactionLogic
             }
         }
 
+        public void ValidateSignature(AbstractTransaction tx)
+        {
+            var stateTx = (StateTransaction)tx;
+            var pubKey = stateTx.Action == TransactionAction.ClaimCoinbase.ToString() ? stateTx.ToPubKey : stateTx.FromPubKey;
+
+            // todo use custom 'ValidationException'
+            if (String.IsNullOrWhiteSpace(pubKey))
+            {
+                throw new TransactionRejectedException("Tried to validate a signature with an empty public key", tx);
+            }
+
+            if (!_signer.SignatureIsValid(stateTx.Signature, stateTx.Hash, pubKey))
+            {
+                throw new TransactionRejectedException("Transaction signature is invalid", tx);
+            }
+        }
+
         private void ValidateTransferTokenTransaction(StateTransaction tx, string netIdentifier)
         {
             CheckFromAndToNotNull(tx);
@@ -175,8 +196,7 @@ namespace Mpb.Consensus.TransactionLogic
             {
                 throw new TransactionRejectedException(nameof(tx.ToPubKey) + " field must be null", tx);
             }
-
-            CheckSkuBlockHashAndTxIndex(tx.SkuBlockHash, tx.SkuTxIndex, TransactionAction.CreateSku, netIdentifier);
+            
             CheckTransactionFee(tx, BlockchainConstants.DestroySupplyFee);
             CheckTokenBalance(tx.FromPubKey, netIdentifier, BlockchainConstants.DestroySupplyFee);
             CheckSupplyBalance(tx.FromPubKey, tx.SkuBlockHash, tx.SkuTxIndex, netIdentifier, tx.Amount);
@@ -347,13 +367,17 @@ namespace Mpb.Consensus.TransactionLogic
                 throw new TransactionRejectedException(nameof(tx.Hash) + " is incorrect", tx);
             }
             
-            if (_txFinalizer.CreateSignature(tx) != tx.Signature)
+            try
             {
+                ValidateSignature(tx);
+            }
+            catch (TransactionRejectedException)
+            {
+                throw;
+            }
+            catch (Exception) {
                 throw new TransactionRejectedException(nameof(tx.Signature) + " is incorrect", tx);
             }
-
-            // todo finish signature check this with wallet implementation
-            // if tx.action == coinbase, use the 'To' field for the signature. Otherwise, use the 'From' field.
         }
     }
 }

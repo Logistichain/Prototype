@@ -1,4 +1,5 @@
-﻿using Mpb.Model;
+﻿using Mpb.Consensus.TransactionLogic;
+using Mpb.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,11 +9,11 @@ namespace Mpb.Node.Handlers
 {
     internal class TransactionPoolCommandHandler
     {
-        internal void HandleCommand(IEnumerable<AbstractTransaction> transactionPool)
+        internal void HandleCommand(ConcurrentTransactionPool transactionPool)
         {
-            var allPendingTransactions = transactionPool.OfType<StateTransaction>();
+            var allPendingStateTransactions = transactionPool.GetAllTransactions().OfType<StateTransaction>();
 
-            if (allPendingTransactions.Count() == 0)
+            if (allPendingStateTransactions.Count() == 0)
             {
                 Console.WriteLine("No pending transactions.");
             }
@@ -21,7 +22,7 @@ namespace Mpb.Node.Handlers
                 Console.WriteLine("Pending transactions:");
             }
 
-            foreach (var transaction in allPendingTransactions)
+            foreach (var transaction in allPendingStateTransactions)
             {
                 Console.WriteLine("----- PENDING TRANSACTION -----");
                 Console.WriteLine("Hash: " + transaction.Hash);

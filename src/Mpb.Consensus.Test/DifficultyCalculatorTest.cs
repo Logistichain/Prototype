@@ -84,23 +84,23 @@ namespace Mpb.Consensus.Test.Logic
         }
 
         [TestMethod]
-        public void CalculateDifficulty__For10Blocks_ReturnsCorrectDifficulty()
+        public void CalculateDifficulty_For10Blocks_ReturnsCorrectDifficulty()
         {
             var blocks = new List<Block>();
             for (int i = 10; i < 111; i = i + 10)
             {
-                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<AbstractTransaction>()));
+                blocks.Add(new Block(new BlockHeader(_netId, _protocol, "abc", i, ""), new List<AbstractTransaction>()));
             }
             CalculateDifficultyAndExpectValue(10, "16666666666666668E-16", blocks);
         }
 
         [TestMethod]
-        public void CalculateDifficulty__For63Blocks_ReturnsCorrectDifficulty()
+        public void CalculateDifficulty_For63Blocks_ReturnsCorrectDifficulty()
         {
             var blocks = new List<Block>();
             for (int i = 10; i < 641; i = i + 10)
             {
-                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<AbstractTransaction>()));
+                blocks.Add(new Block(new BlockHeader(_netId, _protocol, "abc", i, ""), new List<AbstractTransaction>()));
             }
             CalculateDifficultyAndExpectValue(63, "21433470507544591906721536351168038408779149520109739368998628271056241426611797403566529492455424E-96", blocks);
         }
@@ -193,7 +193,7 @@ namespace Mpb.Consensus.Test.Logic
             // Add 11 blocks
             for (int i = 10; i < 111; i = i+10)
             {
-                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<AbstractTransaction>()));
+                blocks.Add(new Block(new BlockHeader(_netId, _protocol, "abc", i, ""), new List<AbstractTransaction>()));
             }
             var blockchain = new Blockchain(blocks, _netId);
 
@@ -215,7 +215,7 @@ namespace Mpb.Consensus.Test.Logic
             // Add 64 blocks
             for (int i = 10; i < 641; i = i + 10)
             {
-                blocks.Add(new Block(_netId, _protocol, "abc", i, new List<AbstractTransaction>()));
+                blocks.Add(new Block(new BlockHeader(_netId, _protocol, "abc", i, ""), new List<AbstractTransaction>()));
             }
             var blockchain = new Blockchain(blocks, _netId);
 

@@ -35,7 +35,7 @@ namespace Mpb.Model
         /// Keep in mind that these block timestamps are the times when the miner STARTED mining,
         /// so the time it took to create the last block in this range (EndHeight) is not known.
         /// </summary>
-        public long TotalSecondsForBlocks => _blockchain.Blocks[_endHeight].Timestamp - _blockchain.Blocks[_beginHeight].Timestamp;
+        public long TotalSecondsForBlocks => _blockchain.Blocks[_endHeight].Header.Timestamp - _blockchain.Blocks[_beginHeight].Header.Timestamp;
 
         public BlockDifficultyUpdate(Blockchain chain, int beginHeight, int endHeight)
         {

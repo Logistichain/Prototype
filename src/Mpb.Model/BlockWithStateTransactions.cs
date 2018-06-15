@@ -13,10 +13,9 @@ namespace Mpb.Model
     {
         public new IEnumerable<StateTransaction> Transactions => _transactions.OfType<StateTransaction>();
 
-        public BlockWithStateTransactions(string hash, ulong nonce, string magicNumber, uint version, string merkleRoot, long timestamp, IEnumerable<StateTransaction> transactions) : base(magicNumber, version, merkleRoot, timestamp, transactions)
+        public BlockWithStateTransactions(BlockHeader header, IEnumerable<StateTransaction> transactions)
+            : base(header, transactions)
         {
-            this.IncrementNonce(nonce);
-            this.SetHash(hash);
         }
     }
 }

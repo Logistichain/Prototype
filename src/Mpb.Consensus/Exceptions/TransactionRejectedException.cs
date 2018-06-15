@@ -7,6 +7,9 @@ namespace Mpb.Consensus.Exceptions
 {
     public class TransactionRejectedException : Exception
     {
+        /// <summary>
+        /// Throw this exception when the given transaction doesn't pass validation.
+        /// </summary>
         public TransactionRejectedException()
         {
         }

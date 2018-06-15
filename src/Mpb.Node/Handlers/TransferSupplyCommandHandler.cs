@@ -4,6 +4,8 @@ using Mpb.Model;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Mpb.Shared.Events;
+using System.Linq;
 
 namespace Mpb.Node.Handlers
 {
@@ -23,7 +25,7 @@ namespace Mpb.Node.Handlers
             _netId = netId;
         }
 
-        internal void HandleCommand(Miner miner)
+        internal void HandleCommand()
         {
             ulong transferFee = TransferSupplyFee; // From BlockchainConstants.cs
             IEnumerable<Sku> skuWithHistory = null;
@@ -42,26 +44,43 @@ namespace Mpb.Node.Handlers
 
                 try
                 {
-                    skuWithHistory = _skuRepository.GetSkuWithHistory(blockHash, txIndex, _netId);
+                    if (blockHash == "LAST")
+                    {
+                        skuWithHistory = _skuRepository.GetAllWithHistory(_netId).Last();
+                        blockHash = skuWithHistory.First().Block.Header.Hash;
+                    }
+                    else
+                    {
+                        skuWithHistory = _skuRepository.GetSkuWithHistory(blockHash, txIndex, _netId);
+                    }
                 }
                 catch (Exception)
                 {
                     Console.WriteLine("The block or transaction could not be found. Try again.");
                 }
             }
-            
+
+            Console.WriteLine("Selected " + skuWithHistory.First().Data.SkuId);
             WriteLineWithInputCursor("Enter the sender's public key:");
-            var fromPub = Console.ReadLine().ToLower();
+            var fromPub = Console.ReadLine();
+
+            var fromPriv = Program.GetPrivKey(fromPub);
+            while (String.IsNullOrWhiteSpace(fromPriv))
+            {
+                Console.WriteLine("Private key not found.");
+                WriteLineWithInputCursor("Enter the sender's public key:");
+                fromPub = Console.ReadLine();
+            }
+
             var senderBalance = _transactionRepo.GetTokenBalanceForPubKey(fromPub, _netId);
-            var skuSupply = _skuRepository.GetSupplyBalanceForPubKey(fromPub,  skuWithHistory);
+            var skuSupply = _skuRepository.GetSupplyBalanceForPubKey(fromPub, skuWithHistory);
 
             Console.WriteLine("The sender's token balance: " + senderBalance);
             Console.WriteLine("The sender's supply: " + skuSupply);
-            WriteLineWithInputCursor("Enter the sender's private key (can be anything for now):");
-            var fromPriv = Console.ReadLine().ToLower();
+
 
             WriteLineWithInputCursor("Enter the receiver's public key:");
-            var toPub = Console.ReadLine().ToLower();
+            var toPub = Console.ReadLine();
 
 
             // Todo support custom fees in transactionCreator
@@ -129,7 +148,7 @@ namespace Mpb.Node.Handlers
             var optionalData = Console.ReadLine();
             
             AbstractTransaction transactionToSend = _transactionCreator.CreateSupplyTransferTransaction(fromPub, fromPriv, toPub, amount, blockHash, txIndex, optionalData);
-            miner.AddTransactionToPool(transactionToSend);
+            EventPublisher.GetInstance().PublishUnvalidatedTransactionReceived(this, new TransactionReceivedEventArgs(transactionToSend));
             Console.Write("> ");
         }
 

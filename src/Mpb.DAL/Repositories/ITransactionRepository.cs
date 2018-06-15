@@ -3,7 +3,6 @@ using Mpb.Model;
 
 namespace Mpb.DAL
 {
-    // Todo update documentation
     public interface ITransactionRepository
     {
         ulong GetTokenBalanceForPubKey(string pubKey, string netId);

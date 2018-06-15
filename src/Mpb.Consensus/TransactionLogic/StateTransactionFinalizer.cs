@@ -1,4 +1,5 @@
-﻿using Mpb.Model;
+﻿using Mpb.Consensus.Cryptography;
+using Mpb.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,11 +8,15 @@ using System.Text;
 
 namespace Mpb.Consensus.BlockLogic
 {
-    /// <summary>
-    /// Adapter to convert a transaction to a byte array.
-    /// </summary>
     public class StateTransactionFinalizer : ITransactionFinalizer
     {
+        private readonly ISigner _signer;
+
+        public StateTransactionFinalizer(ISigner signer)
+        {
+            _signer = signer;
+        }
+
         public virtual string CalculateHash(AbstractTransaction transaction)
         {
             var txByteArray = GetTransactionBytes(transaction);
@@ -24,28 +29,17 @@ namespace Mpb.Consensus.BlockLogic
             return hashString;
         }
         
-        public virtual string CreateSignature(AbstractTransaction transaction)
+        public virtual string CreateSignature(string hash, string privKey)
         {
-            // Todo dependency inject wallet mechanism to sign the transaction!
-            // if coinbase, use 'ToPubKey' field
-            return "";
+            return _signer.SignString(hash, privKey);
         }
         
-        //! Signature is always "" until an appropriate wallet module can be utilized.
-        /// <summary>
-        /// Create a hash for the entire transaction object and sign that hash
-        /// with the private key from the sender. The given transaction object will be updated.
-        /// </summary>
-        /// <param name="tx">The transaction to hash and sign</param>
-        /// <param name="fromPubKey">The creator of the transaction</param>
-        /// <param name="fromPrivKey">The creator's private key to sign the transaction hash</param>
-        public void FinalizeTransaction(AbstractTransaction tx, string fromPubKey, string fromPrivKey)
+        public void FinalizeTransaction(AbstractTransaction tx, string fromPrivKey)
         {
             if (tx.IsFinalized()) { return; }
-
-            var txByteArray = GetTransactionBytes(tx);
+            
             var hashString = CalculateHash(tx);
-            var signature = CreateSignature(tx);
+            var signature = CreateSignature(hashString, fromPrivKey);
 
             tx.Finalize(hashString, signature);
         }
