@@ -16,6 +16,7 @@ using System.Threading;
 using Mpb.Consensus.Cryptography;
 using Mpb.Shared.Events;
 using Mpb.Shared.Constants;
+using System.Collections.Generic;
 
 namespace Mpb.Node
 {
@@ -26,7 +27,25 @@ namespace Mpb.Node
         public static void Main(string[] args)
         {
             CryptographyCommandhandler cryptographyCmdHandler = new CryptographyCommandhandler(new KeyGenerator());
-            cryptographyCmdHandler.HandleGenerateKeysCommand(out string walletPubKey, out string walletPrivKey);
+            string walletPubKey = "";
+            string walletPrivKey = "";
+            if (args.Length > 1 && args[0] == "-key" && args[1] == "1")
+            {
+                walletPubKey = "Ndwd8RhQTCuP3i7zxoiZboScLYVto1kZsTKZu3ejzQpwzw7tpCohpNCwXSaRxDjUtTpyC1pgjTeNXDEZ5qeEmXSU";
+                walletPrivKey = "2a5a9964e175b551ee60621611f07cb45d10157334aa0377f58d9b6927b7949bc9985294e7183bb38fdac0de68098554f0102079d6c2657f57216e54d94b2a36cbc64d799ee7cd44d561e45aea240fec07467916961ac50632d23dc6aae6da43b08912a1bc0cb60943dba475de0b953211814d92d2139fb1014646cbaa069aee87a0aa60116e30fa906fd3bb764f27273c0ab4289947709ce9619f75c6ea5e3c40b6ee3e603420a3515201633fe43bb11e1e8e9f5172543f2f0d76b0ceba34a610977abf61e9c708e911d646450d5c0526ee56a75bbfeace61ae0f53bd70d4971e5b52a8697b50355786b53f9c0df921b0718ae0638c4b51acac5eb2da744a79";
+            }
+            else
+            if (args.Length > 1 && args[0] == "-key" && args[1] == "2")
+            {
+                walletPubKey = "P86FGHAHaeoPiaJpysH1ahJMtfTg6jLFsHpaeN4RMyXFXioayL26PjXcpNiyzc3r7Xpn8mx1MUgSsRQXbM3TfY9u";
+                walletPrivKey = "553c57ea38f82bdd0cd2dff6308c09b1f6c7f9d6a9406e9a15474458182883b3e190de71940404f551be2fdde2ad59b4680452fc92508514cebcd4f1b4d3c5e44e2b14a0ad981df1c30485ea1190b868ed90f014d68721900bc9a2d73013417df94a8fb698b906cfe660398dcb9a033e046c0323e3b10ec60a8494e3f545c1afc308f0c60001d0348a202d754e93c570c664d3c30f1d99483cc8ac142422d9a19e89cac2a93d3d029cce99c384987876be241d9171fda0a56ea8893855bc1067468bd6c4c902c78927d1274183d6c4a45035550004482fa1e9245401b305acdfbe317cf8c1b3adbb5d946aa0d55e2198e3e5e81f661063fe5c35dba4aec5d521";
+            }
+            else
+            {
+                cryptographyCmdHandler.HandleGenerateKeysCommand(out walletPubKey, out walletPrivKey);
+            }
+            PushKeyPair(walletPubKey, walletPrivKey);
+
             Console.WriteLine("Your new public key: " + walletPubKey);
             Console.WriteLine("Your new private key: " + walletPrivKey);
             Console.WriteLine("Loading blockchain..");
@@ -40,7 +59,6 @@ namespace Mpb.Node
             {
                 listeningPort = ushort.Parse(args[1]);
             }
-
 
             GetServices(
                 services,
@@ -67,6 +85,8 @@ namespace Mpb.Node
             TransferSupplyCommandHandler transferSupplyCmdHandler = new TransferSupplyCommandHandler(skuRepository, transactionRepo, transactionCreator, networkIdentifier);
             NetworkingCommandHandler networkingCmdHandler = new NetworkingCommandHandler();
             TransactionGeneratorCommandHandler txGeneratorCmdHandler = new TransactionGeneratorCommandHandler(miner, transactionCreator, skuRepo, blockchainRepo);
+            CreateSupplyCommandHandler createSupplyCmdHandler = new CreateSupplyCommandHandler(skuRepository, transactionRepo, transactionCreator, networkIdentifier);
+            DestroySupplyCommandHandler destroySupplyCmdHandler = new DestroySupplyCommandHandler(skuRepository, transactionRepo, transactionCreator, networkIdentifier);
 
             _logger.LogInformation("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
             networkManager.AcceptConnections(publicIP, listeningPort, new CancellationTokenSource());
@@ -109,6 +129,7 @@ namespace Mpb.Node
                         break;
                     case "generatekeys":
                         cryptographyCmdHandler.HandleGenerateKeysCommand(out walletPubKey, out walletPrivKey);
+                        PushKeyPair(walletPubKey, walletPrivKey);
                         Console.WriteLine("Your new public key: " + walletPubKey);
                         Console.WriteLine("Your new private key: " + walletPrivKey);
                         Console.Write("> ");
@@ -178,6 +199,12 @@ namespace Mpb.Node
                     case "transfersupply":
                         transferSupplyCmdHandler.HandleCommand();
                         break;
+                    case "createsupply":
+                        createSupplyCmdHandler.HandleCommand();
+                        break;
+                    case "destroysupply":
+                        destroySupplyCmdHandler.HandleCommand();
+                        break;
                     case "networking setport":
                         listeningPort = networkingCmdHandler.HandleSetPortCommand(listeningPort);
                         break;
@@ -214,6 +241,21 @@ namespace Mpb.Node
                 }
             }
         }
+
+        // This keystore code was hacked together in order to save private keys properly.
+        // The private keys are too long for user input so we need to save them when they are generated.
+        private static Dictionary<string, string> keyStore = new Dictionary<string, string>();
+        public static void PushKeyPair(string pubKey, string privKey)
+        {
+            keyStore.Add(pubKey, privKey);
+        }
+
+        public static string GetPrivKey(string pubKey)
+        {
+            keyStore.TryGetValue(pubKey, out string privKey);
+            return privKey;
+        }
+
 
         private static void GetServices(IServiceProvider services, out IBlockchainRepository blockchainRepo,
                                         out ITransactionRepository transactionRepo, out ITransactionCreator transactionCreator,
@@ -299,7 +341,9 @@ namespace Mpb.Node
             Console.WriteLine("- accounts / users / balances");
             Console.WriteLine("- skus");
             Console.WriteLine("- createsku");
+            Console.WriteLine("- createsupply");
             Console.WriteLine("- transfersupply");
+            Console.WriteLine("- destroysupply");
             Console.WriteLine("- startmining");
             Console.WriteLine("- stopmining");
             Console.WriteLine("- resetblockchain");

@@ -35,7 +35,7 @@ namespace Mpb.Consensus.BlockLogic
         public virtual void ValidateBlock(Block block, BigDecimal currentTarget, Blockchain blockchain, bool checkTimestamp, bool writeToBlockchain)
         {
             BigInteger.TryParse(block.Header.Hash, NumberStyles.HexNumber, new CultureInfo("en-US"), out var hashValue);
-            ValidateBlockHeader(block, hashValue, currentTarget, checkTimestamp);
+            ValidateBlockHeader(block, hashValue, currentTarget, checkTimestamp, blockchain.NetIdentifier);
 
             // Transaction list may not be empty
             if (block.Transactions.Count() == 0)
@@ -61,12 +61,6 @@ namespace Mpb.Consensus.BlockLogic
             if (block.Transactions.Where(tx => tx.Action == TransactionAction.ClaimCoinbase.ToString()).Count() > 1)
             {
                 throw new BlockRejectedException("Multiple coinbase transactions found", block);
-            }
-
-            // The block must be in the same network as our node
-            if (block.Header.MagicNumber != blockchain.NetIdentifier)
-            {
-                throw new BlockRejectedException("Block comes from a different network", block);
             }
 
             // Check the signature to make sure the block wasn't altered
@@ -135,8 +129,14 @@ namespace Mpb.Consensus.BlockLogic
             }
         }
 
-        public virtual void ValidateBlockHeader(Block block, BigDecimal hashValue, BigDecimal currentTarget, bool checkTimestamp)
+        public virtual void ValidateBlockHeader(Block block, BigDecimal hashValue, BigDecimal currentTarget, bool checkTimestamp, string netId)
         {
+            // The block must be in the same network as our node
+            if (block.Header.MagicNumber != netId)
+            {
+                throw new BlockRejectedException("Block comes from a different network", block);
+            }
+
             if (!block.Header.IsFinalized())
             {
                 throw new BlockRejectedException("Block is not hashed or signed or hashed properly", block);
@@ -165,7 +165,7 @@ namespace Mpb.Consensus.BlockLogic
             // Timestamp must not be lower than UTC - 2 min and not higher than UTC + 2 min
             if (_timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp > BlockchainConstants.MaximumTimestampOffset || _timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp < (BlockchainConstants.MaximumTimestampOffset * -1))
             {
-                throw new BlockRejectedException("Timestamp is not within the acceptable time range", block);
+                throw new BlockRejectedException("Block timestamp differs too much");
             }
         }
     }
