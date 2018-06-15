@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.5</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Logistichain.DAL\Logistichain.DAL.csproj" />
+    <ProjectReference Include="..\Logistichain.Model\Logistichain.Model.csproj" />
+    <ProjectReference Include="..\Logistichain.Shared\Logistichain.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
