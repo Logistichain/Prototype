@@ -38,7 +38,7 @@ namespace Logistichain.Node.Handlers
             Console.WriteLine("The sender's balance: " + balance);
 
             WriteLineWithInputCursor("Enter the receiver's public key:");
-            var toPub = Console.ReadLine().ToLower();
+            var toPub = Console.ReadLine();
 
             // Todo support custom fees in transactionCreator
             /*
