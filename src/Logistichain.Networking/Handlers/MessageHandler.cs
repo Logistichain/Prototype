@@ -130,9 +130,9 @@ namespace Logistichain.Networking
                         {
                             var blockToProcess = blocksPayload.Blocks.Where(b => b.Header.PreviousHash == _blockchain.Blocks.Last().Header.Hash).First();
 
-                            if (_blockchain.CurrentHeight % 5 == 0 && _blockchain.CurrentHeight > 0)
+                            if (_blockchain.CurrentHeight % BlockchainConstants.DifficultyUpdateCycle == 0 && _blockchain.CurrentHeight > 0)
                             {
-                                _difficulty = _difficultyCalculator.CalculateCurrentDifficulty(_blockchain); // todo use CalculateCurrentDifficulty when testing is done
+                                _difficulty = _difficultyCalculator.CalculateCurrentDifficulty(_blockchain);
                             }
 
                             if (_difficulty < 1) { _difficulty = 1; }
