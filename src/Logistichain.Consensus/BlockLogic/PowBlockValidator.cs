@@ -165,7 +165,7 @@ namespace Logistichain.Consensus.BlockLogic
             // Timestamp must not be lower than UTC - 2 min and not higher than UTC + 2 min
             if (_timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp > BlockchainConstants.MaximumTimestampOffset || _timestamper.GetCurrentUtcTimestamp() - block.Header.Timestamp < (BlockchainConstants.MaximumTimestampOffset * -1))
             {
-                throw new BlockRejectedException("Block timestamp differs too much");
+                throw new BlockRejectedException("Timestamp is not within the acceptable time range", block);
             }
         }
     }

@@ -5,24 +5,6 @@ This blockchain prototype is built to investigate the possibilities of blockchai
 Learn more about the Logistichain components, guidelines and design rationale in the [documentation section](docs/Index.md).
 Please be aware that docs are being written at this time. Some docs might be empty, but existing docs are up-to-date.
 
-## Actions
-This prototype is capable of handling different 'actions' in transactions to register supplychain activities:
-- CreateSku
-- ChangeSku (will update all fields except initial supply)
-- CreateSupply (for an existing SKU)
-- TransferSupply
-- DestroySupply (this can happen when the product reaches the end of the supplychain: The recipient of the order)
-- TransferToken
-
-## Fees
-Every action costs a certain amount of fee (in tokens):
-- CreateSku: 100TK
-- ChangeSku: 100TK
-- CreateSupply: 100TK
-- TransferSupply: 1TK
-- DestroySupply: 1TK
-- TransferToken: 10TK
-
 ## Specifications
 The blockchain protocol is heavily based on bitcoin, but is built from scratch in C# with dotnet core 2.0. The blockchain network must handle atleast 200,000 transactions every day.
 - Consensus algorithm: Proof-of-Work
@@ -49,8 +31,29 @@ Now navigate to `src/Mpb.Node/bin/Release/netcoreapp2.0/{supporting-platform}` a
 ### Docker
 Docker is not yet supported.
 
+## Known bugs
+This prototype contains a few bugs. All bugs will be reported in the [Github issue tracker](https://github.com/Logistichain/Prototype/issues).
+
+## Actions
+This prototype is capable of handling different 'actions' in transactions to register supplychain activities:
+- CreateSku
+- ChangeSku (will update all fields except initial supply)
+- CreateSupply (for an existing SKU)
+- TransferSupply
+- DestroySupply (this can happen when the product reaches the end of the supplychain: The recipient of the order)
+- TransferToken
+
+## Fees
+Every action costs a certain amount of fee (in tokens):
+- CreateSku: 100TK
+- ChangeSku: 100TK
+- CreateSupply: 100TK
+- TransferSupply: 1TK
+- DestroySupply: 1TK
+- TransferToken: 10TK
+
 ## Code
-Every class that contains logic must be interfaced, unless explicitly explained otherwise. Using interfaces allows design patterns to be implemented properly and it enhances testability and inversion of control.
+Every class which consists logic must have an interface, unless explicitly explained otherwise. Using interfaces allows design patterns to be implemented properly and it enhances testability and inversion of control.
 
 ### Overloads
 Lot of methods have overloads to increase testability and support custom actions and settings, but take care. Using custom parameters overrides the consensus rules and may result in block/transaction rejections.

@@ -432,9 +432,6 @@ namespace Logistichain.Consensus.Test.Logic
             };
             var blockToTest = new Block(new BlockHeader("network1", 1, "merkleroot", 1, ""), transactions);
             blockToTest.Header.Finalize(blockHash, "signature");
-            _blockFinalizerMock.Setup(m => m.CalculateHash(blockToTest)).Returns(blockHash);
-            _timestamperMock.Setup(m => m.GetCurrentUtcTimestamp()).Returns(1);
-            _transactionValidatorMock.Setup(m => m.CalculateMerkleRoot(transactions)).Returns("merkleroot");
 
             var ex = Assert.ThrowsException<BlockRejectedException>(
                     () => sut.ValidateBlock(blockToTest, currentTarget, new Blockchain("network2"), true, true)
