@@ -37,7 +37,7 @@ This prototype contains a few bugs. All bugs will be reported in the [Github iss
 ## Actions
 This prototype is capable of handling different 'actions' in transactions to register supplychain activities:
 - CreateSku
-- ChangeSku (will update all fields except initial supply)
+- ChangeSku (will update all fields except initial supply, not implemented yet!)
 - CreateSupply (for an existing SKU)
 - TransferSupply
 - DestroySupply (this can happen when the product reaches the end of the supplychain: The recipient of the order)
