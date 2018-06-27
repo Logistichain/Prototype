@@ -6,7 +6,7 @@ Learn more about the Logistichain components, guidelines and design rationale in
 Please be aware that docs are being written at this time. Some docs might be empty, but existing docs are up-to-date.
 
 ## Specifications
-The blockchain protocol is heavily based on bitcoin, but is built from scratch in C# with dotnet core 2.0. The blockchain network must handle atleast 200,000 transactions every day.
+The blockchain protocol is heavily based on bitcoin, but is built from scratch in C# with dotnet core 2.1. The blockchain network must handle atleast 200,000 transactions every day.
 - Consensus algorithm: Proof-of-Work
 - Block time: 15 sec
 - Difficulty readjust: every 10 blocks
