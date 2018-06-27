@@ -224,7 +224,7 @@ namespace Logistichain.Node
                         }
                     }
 
-                    _logger.LogInformation("Created a new block!");
+                    _logger.LogInformation("Created a new block with hash " + newBlock.Header.Hash);
 
                     EventPublisher.GetInstance().PublishValidatedBlockCreated(this, new BlockCreatedEventArgs(newBlock));
                 }
