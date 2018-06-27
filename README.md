@@ -6,12 +6,12 @@ Learn more about the Logistichain components, guidelines and design rationale in
 Please be aware that docs are being written at this time. Some docs might be empty, but existing docs are up-to-date.
 
 ## Specifications
-The blockchain protocol is heavily based on bitcoin, but is built from scratch in C# with dotnet core 2.0. The blockchain network must handle atleast 200,000 transactions every day.
+The blockchain protocol is heavily based on bitcoin, but is built from scratch in C# with dotnet core 2.1. The blockchain network must handle atleast 200,000 transactions every day.
 - Consensus algorithm: Proof-of-Work
 - Block time: 15 sec
 - Difficulty readjust: every 10 blocks
 - Block mining reward: fixed 5000 tokens
-- Supporting platforms: MacOS, Linux x86 and Windows x86
+- Supporting platforms: MacOS, Linux and Windows
 
 ### Supporting platforms
 - win10-x64
@@ -26,7 +26,8 @@ dotnet build -c release
 dotnet publish -c release -r {supporting-platform}
 ```
 
-Now navigate to `src/Mpb.Node/bin/Release/netcoreapp2.0/{supporting-platform}` and there you will find the executable, named `Mpb.Node`. Run the executable.
+Now navigate to `src/Logistichain.Node/bin/Release/netcoreapp2.0/{supporting-platform}` and there you will find the executable, named `Logistichain.Node`. Run the executable.
+Get familiar with the commands by doing some [functional tests](docs/functionaltests.pdf).
 
 ### Docker
 Docker is not yet supported.
@@ -37,7 +38,7 @@ This prototype contains a few bugs. All bugs will be reported in the [Github iss
 ## Actions
 This prototype is capable of handling different 'actions' in transactions to register supplychain activities:
 - CreateSku
-- ChangeSku (will update all fields except initial supply)
+- ChangeSku (will update all fields except initial supply, not implemented yet!)
 - CreateSupply (for an existing SKU)
 - TransferSupply
 - DestroySupply (this can happen when the product reaches the end of the supplychain: The recipient of the order)
@@ -54,38 +55,4 @@ Every action costs a certain amount of fee (in tokens):
 
 ## Code
 Every class which consists logic must have an interface, unless explicitly explained otherwise. Using interfaces allows design patterns to be implemented properly and it enhances testability and inversion of control.
-
-### Overloads
-Lot of methods have overloads to increase testability and support custom actions and settings, but take care. Using custom parameters overrides the consensus rules and may result in block/transaction rejections.
-We advise you to use the minimum amount of arguments if you plan to use one of the Mpb libraries.
-
-### Avoid default parameters
-We explicitly use overloading instead of default parameters to prevent mismatches in case of Mpb library updates. [Some compilers copy-paste the default value](https://docs.microsoft.com/en-us/visualstudio/code-quality/ca1026-default-parameters-should-not-be-used).
-*Mpb library with default parameter example:*
-```csharp
-public class Test {
-	void TestMethod(string input, string addition = "abc") {};
-}
-```
-
-*Your project, using the Mpb library:*
-```csharp
-public class Consumer {
-	void Consume() {
-	var t = new Mpb.Test();
-	t.TestMethod("Hi!");
-	};
-}
-```
-
-*Your compiler:*
-```csharp
-public class Consumer {
-	void Consume() {
-	var t = new Test();
-	t.TestMethod("Hi!", "abc");
-	};
-}
-```
-
-Whenever the default value changes in an update, **you must recompile** your project in order to use the new default value. This may introduce bugs, so we decided to use overloading.
+We also use method overloading instead of default parameters. When you contribute to this project, please read more about our [code conventions](CodeConventions.md).

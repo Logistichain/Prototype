@@ -44,18 +44,15 @@ namespace Logistichain.Node
                 listeningPort = ushort.Parse(args[1]);
             }
 
-            GetServices(
-                services,
-                out IBlockchainRepository blockchainRepo,
-                out ITransactionRepository transactionRepo,
-                out ITransactionCreator transactionCreator,
-                out ITimestamper timestamper,
-                out ISkuRepository skuRepository,
-                out INetworkManager networkManager,
-                out ILoggerFactory loggerFactory,
-                out ISkuRepository skuRepo,
-                out Miner miner
-                );
+            IBlockchainRepository blockchainRepo = services.GetService<IBlockchainRepository>();
+            ITransactionRepository transactionRepo = services.GetService<ITransactionRepository>();
+            ITransactionCreator transactionCreator = services.GetService<ITransactionCreator>();
+            ITimestamper timestamper = services.GetService<ITimestamper>();
+            ISkuRepository skuRepository = services.GetService<ISkuRepository>();
+            INetworkManager networkManager = services.GetService<INetworkManager>();
+            ILoggerFactory loggerFactory = services.GetService<ILoggerFactory>();
+            ISkuRepository skuRepo = services.GetService<ISkuRepository>();
+            Miner miner = services.GetService<Miner>();
             _logger = loggerFactory.CreateLogger<Program>();
             Blockchain blockchain = blockchainRepo.GetChainByNetId(networkIdentifier);
 
@@ -143,36 +140,12 @@ namespace Logistichain.Node
                         PrintConsoleCommands();
                         break;
                     case "resetblockchain":
-                        miner.StopMining(false);
-                        blockchainRepo.Delete(networkIdentifier);
-                        Console.WriteLine("Blockchain deleted.");
-                        blockchain = blockchainRepo.GetChainByNetId(networkIdentifier);
                         networkManager.Dispose();
                         _logger.LogWarning("All network connections shut down.");
-                        // Initialize all variables again because the heap references changed.
-                        services = SetupDI(networkIdentifier, walletPubKey, walletPrivKey);
-                        GetServices(
-                            services,
-                            out blockchainRepo,
-                            out transactionRepo,
-                            out transactionCreator,
-                            out timestamper,
-                            out skuRepository,
-                            out networkManager,
-                            out var ingored,
-                            out skuRepo,
-                            out miner
-                        );
-                        networkManager.AcceptConnections(publicIP, listeningPort, new CancellationTokenSource());
-                        accountsCmdHandler = new AccountsCommandHandler(transactionRepo, networkIdentifier);
-                        skusCmdHandler = new SkusCommandHandler(blockchainRepo, timestamper, skuRepository, networkIdentifier);
-                        transactionsCmdHandler = new TransactionsCommandHandler(transactionRepo, networkIdentifier);
-                        txpoolCmdHandler = new TransactionPoolCommandHandler();
-                        transferTokensCmdHandler = new TransferTokensCommandHandler(transactionRepo, transactionCreator);
-                        createSkuCmdHandler = new CreateSkuCommandHandler(transactionRepo, transactionCreator);
-                        txGeneratorCmdHandler = new TransactionGeneratorCommandHandler(miner, transactionCreator, skuRepo, blockchainRepo);
-                        _logger.LogInformation("Loaded blockchain. Current height: {Height}", blockchain.CurrentHeight == -1 ? "GENESIS" : blockchain.CurrentHeight.ToString());
-                        Console.Write("> ");
+                        miner.StopMining(false);
+                        blockchainRepo.Delete(networkIdentifier);
+                        _logger.LogInformation("Local blockchain file deleted as requested by user");
+                        Console.WriteLine("Please restart the logistichain executable now to reload a fresh blockchain instance!");                        
                         break;
                     case "transfertokens":
                         transferTokensCmdHandler.HandleCommand(networkIdentifier);
@@ -238,24 +211,6 @@ namespace Logistichain.Node
         {
             keyStore.TryGetValue(pubKey, out string privKey);
             return privKey;
-        }
-
-
-        private static void GetServices(IServiceProvider services, out IBlockchainRepository blockchainRepo,
-                                        out ITransactionRepository transactionRepo, out ITransactionCreator transactionCreator,
-                                        out ITimestamper timestamper, out ISkuRepository skuRepository,
-                                        out INetworkManager networkManager, out ILoggerFactory loggerFactory,
-                                        out ISkuRepository skuRepo, out Miner miner)
-        {
-            blockchainRepo = services.GetService<IBlockchainRepository>();
-            transactionRepo = services.GetService<ITransactionRepository>();
-            transactionCreator = services.GetService<ITransactionCreator>();
-            timestamper = services.GetService<ITimestamper>();
-            skuRepository = services.GetService<ISkuRepository>();
-            networkManager = services.GetService<INetworkManager>();
-            loggerFactory = services.GetService<ILoggerFactory>();
-            skuRepo = services.GetService<ISkuRepository>();
-            miner = services.GetService<Miner>();
         }
 
         private static T GetService<T>(IServiceProvider services)
