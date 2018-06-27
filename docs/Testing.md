@@ -5,3 +5,4 @@ Because this is still a prototype, only the most critical parts of the code are 
 Other components which aren't subject to regular change are also good to test.
 
 ## Functional testing
+A test documentat was created to test functionalities and to get you familiar with the software: [functional tests](docs/functionaltests.pdf). 
